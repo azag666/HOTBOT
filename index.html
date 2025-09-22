@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciador de Bots</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.production.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
     <style>
         :root {
             --bg-dark: #1A202C; --bg-medium: #2D3748; --bg-light: #4A5568;
@@ -70,7 +71,6 @@
         const { HashRouter, Routes, Route, Link, useNavigate, useParams, Navigate, useLocation } = ReactRouterDOM;
         const { useState, useEffect, useCallback, createContext, useContext } = React;
 
-        // --- Contexto de Autenticação ---
         const AuthContext = createContext(null);
         const AuthProvider = ({ children }) => {
             const [token, setToken] = useState(localStorage.getItem('authToken'));
@@ -103,7 +103,6 @@
         };
         const useAuth = () => useContext(AuthContext);
 
-        // --- Rotas e Notificações ---
         const ProtectedRoute = ({ children }) => useAuth().token ? children : React.createElement(Navigate, { to: "/login", replace: true });
         const AuthRoute = ({ children }) => useAuth().token ? React.createElement(Navigate, { to: "/", replace: true }) : children;
         
@@ -123,7 +122,6 @@
         };
         const useToast = () => useContext(ToastContext);
 
-        // --- Componentes ---
         const Sidebar = () => {
             const { logout } = useAuth();
             const navigate = useNavigate();
@@ -154,7 +152,6 @@
             )
         );
 
-        // --- Páginas ---
         const LoginPage = () => {
             const [isLogin, setIsLogin] = useState(true);
             const [email, setEmail] = useState('');
@@ -232,7 +229,6 @@
         
         const PlaceholderPage = ({ title }) => React.createElement('h1', { className: 'page-title' }, title);
         
-        // --- Aplicação Principal ---
         const App = () => (
             React.createElement(ToastProvider, null,
                 React.createElement(HashRouter, null,
