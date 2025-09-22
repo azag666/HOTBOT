@@ -55,7 +55,7 @@
             const [loading, setLoading] = useState(true);
             const navigate = useNavigate();
 
-            axios.defaults.baseURL = 'http://localhost:3001/api'; // Mude a URL base se o seu backend rodar em outra porta/endereço
+            axios.defaults.baseURL = 'https://novaapi-one.vercel.app/'; // Mude a URL base se o seu backend rodar em outra porta/endereço
 
             useEffect(() => {
                 if (token) {
