@@ -3,260 +3,657 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Bots</title>
-    
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.production.min.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-
+    <title>HotTrack Dashboard - Gerenciamento de Bots</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #1A202C; --bg-medium: #2D3748; --bg-light: #4A5568;
-            --text-primary: #FFFFFF; --text-secondary: #A0AEC0; --accent-blue: #3182CE;
-            --accent-red: #E53E3E;
+            --primary-color: #6a00ff;
+            --primary-dark: #5300cc;
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --card-color: #2a2a2a;
+            --text-color: #e0e0e0;
+            --text-secondary: #999;
+            --border-color: #333;
+            --success-color: #4CAF50;
+            --error-color: #F44336;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: sans-serif; background-color: var(--bg-dark); color: var(--text-primary); }
-        #root { display: flex; flex-direction: column; min-height: 100vh; }
-        .button {
-            display: inline-block; padding: 10px 18px; border: none; border-radius: 6px; font-size: 16px;
-            font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s;
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
         }
-        .button-blue { background-color: var(--accent-blue); color: white; }
-        .button-blue:hover { background-color: #2b6cb0; }
-        .button-red { background-color: var(--accent-red); color: white; }
-        .button-red:hover { background-color: #c53030; }
-        .button-link { background: none; border: none; color: var(--accent-blue); cursor: pointer; text-decoration: underline; }
-        .input {
-            width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--bg-light);
-            background-color: var(--bg-medium); color: var(--text-primary); font-size: 16px;
+        
+        /* Layout */
+        .app-container {
+            display: flex;
+            width: 100%;
         }
-        .input:focus { outline: none; border-color: var(--accent-blue); }
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid var(--text-primary);
-            width: 40px; height: 40px; animation: spin 1s linear infinite; margin: auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .layout-container { display: flex; width: 100%; min-height: 100vh; }
+
         .sidebar {
-            width: 250px; background-color: #171923; padding: 24px 16px; display: flex;
-            flex-direction: column; border-right: 1px solid var(--bg-medium);
+            width: 250px;
+            background-color: var(--surface-color);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .sidebar-heading { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 32px; }
-        .sidebar-link {
-            display: block; padding: 12px 16px; border-radius: 6px; text-decoration: none;
-            color: var(--text-secondary); font-weight: 500; margin-bottom: 8px;
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
         }
-        .sidebar-link:hover, .sidebar-link.active { background-color: var(--bg-medium); color: var(--text-primary); }
-        .sidebar-footer { margin-top: auto; }
-        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .page-title { font-size: 28px; font-weight: bold; }
-        .login-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100vh; }
-        .login-box { background-color: var(--bg-medium); padding: 32px; border-radius: 8px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
-        .bot-card { background-color: var(--bg-medium); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .toast {
-            position: fixed; top: 20px; right: 20px; background-color: var(--bg-medium); padding: 15px 20px;
-            border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: white; z-index: 1000;
-            border-left: 4px solid;
+
+        .nav-item {
+            display: block;
+            padding: 12px 15px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
         }
-        .toast-success { border-color: var(--accent-green); }
-        .toast-error { border-color: var(--accent-red); }
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--primary-dark);
+            color: var(--text-color);
+        }
+
+        /* Common Components */
+        .card {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input, select, button, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        .btn-secondary:hover {
+            background-color: rgba(106, 0, 255, 0.1);
+            color: white;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .success { background-color: rgba(76, 175, 80, 0.2); color: var(--success-color); }
+        .error { background-color: rgba(244, 67, 54, 0.2); color: var(--error-color); }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .bot-list, .flow-list, .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bot-item, .flow-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--surface-color);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .bot-actions, .flow-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            background-color: transparent;
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            transition: background-color 0.2s;
+        }
+        .logout-btn:hover {
+            background-color: rgba(244, 67, 54, 0.2);
+        }
+
+        /* ManyChat style Flow Builder - Simplificado */
+        .flow-builder-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .flow-node {
+            background-color: var(--card-color);
+            padding: 15px;
+            border-radius: 10px;
+            position: relative;
+            border: 2px dashed var(--border-color);
+        }
+        .flow-node .node-header {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        .flow-node textarea { height: 100px; }
+        
+        .flow-connections {
+            margin-top: 10px;
+        }
+        .flow-connections select { width: auto; }
+        
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script>
-        const { HashRouter, Routes, Route, Link, useNavigate, useParams, Navigate, useLocation } = ReactRouterDOM;
-        const { useState, useEffect, useCallback, createContext, useContext } = React;
 
-        const AuthContext = createContext(null);
-        const AuthProvider = ({ children }) => {
-            const [token, setToken] = useState(localStorage.getItem('authToken'));
-            const [loading, setLoading] = useState(true);
-            axios.defaults.baseURL = 'https://lead-tracker-api.vercel.app/api';
+<div id="login-page" class="card">
+    <h2>Login</h2>
+    <form id="login-form">
+        <div class="form-group">
+            <input type="email" id="email" placeholder="Email" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="password" placeholder="Senha" required>
+        </div>
+        <button type="submit">Entrar</button>
+    </form>
+    <div id="login-status" class="status-message hidden"></div>
+</div>
 
-            useEffect(() => {
-                if (token) {
-                    localStorage.setItem('authToken', token);
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                } else {
-                    localStorage.removeItem('authToken');
-                    delete axios.defaults.headers.common['Authorization'];
-                }
-                setLoading(false);
-            }, [token]);
+<div id="dashboard-page" class="app-container hidden">
+    <aside class="sidebar">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="font-size: 1.8rem; margin: 0; font-weight: 700;">HotTrack</h1>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Dashboard</span>
+        </div>
+        <a class="nav-item active" href="#" data-view="dashboard">Visão Geral</a>
+        <a class="nav-item" href="#" data-view="bots">Meus Bots</a>
+        <a class="nav-item" href="#" data-view="flows">Fluxos de Conversa</a>
+        <a class="nav-item" href="#" data-view="live-chat">Chat ao Vivo</a>
+        <button id="logout-btn" class="logout-btn">Sair</button>
+    </aside>
 
-            const login = async (email, password) => {
-                const response = await axios.post('/sellers/login', { email, password });
-                setToken(response.data.token);
-            };
-            const register = async (name, email, password) => {
-                await axios.post('/sellers/register', { name, email, password });
-                await login(email, password);
-            };
-            const logout = () => setToken(null);
-            
-            if (loading) return React.createElement('div', { className: 'spinner', style: { margin: 'auto' } });
-            return React.createElement(AuthContext.Provider, { value: { token, login, register, logout } }, children);
-        };
-        const useAuth = () => useContext(AuthContext);
+    <main class="main-content">
+        <div id="dashboard-view" class="view">
+            <h1>Visão Geral</h1>
+            <div id="metrics-container" class="card">
+                <p>Carregando métricas...</p>
+            </div>
+        </div>
 
-        const ProtectedRoute = ({ children }) => useAuth().token ? children : React.createElement(Navigate, { to: "/login", replace: true });
-        const AuthRoute = ({ children }) => useAuth().token ? React.createElement(Navigate, { to: "/", replace: true }) : children;
+        <div id="bots-view" class="view hidden">
+            <h1>Meus Bots</h1>
+            <div class="card">
+                <h2>Adicionar Novo Bot</h2>
+                <form id="add-bot-form">
+                    <div class="form-group">
+                        <input type="text" id="bot-name" placeholder="Nome de Usuário do Bot (ex: meu_bot)" required>
+                    </div>
+                    <button type="submit">Adicionar Bot</button>
+                </form>
+                <div id="bot-add-status" class="status-message hidden"></div>
+            </div>
+            <div class="card">
+                <h2>Bots Cadastrados</h2>
+                <div id="bots-list" class="bot-list">
+                    <p>Carregando bots...</p>
+                </div>
+            </div>
+        </div>
         
-        const ToastContext = createContext();
-        const ToastProvider = ({ children }) => {
-            const [toast, setToast] = useState(null);
-            const showToast = (message, status = 'success') => {
-                setToast({ message, status });
-                setTimeout(() => setToast(null), 4000);
-            };
-            return (
-                React.createElement(ToastContext.Provider, { value: { showToast } },
-                    children,
-                    toast && React.createElement('div', { className: `toast toast-${toast.status}` }, toast.message)
-                )
-            );
+        <div id="flows-view" class="view hidden">
+            <h1>Fluxos de Conversa</h1>
+            <div class="card">
+                <h2>Criar Novo Fluxo</h2>
+                <form id="add-flow-form">
+                    <div class="form-group">
+                        <input type="text" id="flow-name" placeholder="Nome do Fluxo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="flow-bot-select">Vincular a qual Bot?</label>
+                        <select id="flow-bot-select" required></select>
+                    </div>
+                    <button type="submit">Criar Fluxo</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>Fluxos Existentes</h2>
+                <div id="flows-list" class="flow-list">
+                    <p>Carregando fluxos...</p>
+                </div>
+            </div>
+            
+            <div id="flow-editor" class="card hidden">
+                <h2>Editor de Fluxo</h2>
+                <p>Edite o JSON do seu fluxo:</p>
+                <div class="flow-builder-container">
+                    <textarea id="flow-nodes-json" rows="20"></textarea>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <button id="save-flow-btn">Salvar Fluxo</button>
+                    <button id="cancel-flow-btn" class="btn-secondary">Cancelar Edição</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="live-chat-view" class="view hidden">
+            <h1>Chat ao Vivo</h1>
+            <div class="card">
+                <div class="form-group">
+                    <label for="live-chat-bot-select">Selecione o Bot:</label>
+                    <select id="live-chat-bot-select"></select>
+                </div>
+                <button id="fetch-users-btn">Atualizar Contagem de Usuários</button>
+            </div>
+            <div class="card">
+                <h2>Contagem de Usuários</h2>
+                <div id="user-count-display">Nenhum bot selecionado.</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const API_URL = 'https://novaapi-one.vercel.app/api';
+    let jwtToken = localStorage.getItem('jwtToken');
+
+    const elements = {
+        loginPage: document.getElementById('login-page'),
+        dashboardPage: document.getElementById('dashboard-page'),
+        loginForm: document.getElementById('login-form'),
+        loginStatus: document.getElementById('login-status'),
+        navItems: document.querySelectorAll('.nav-item'),
+        content: document.querySelector('.main-content'),
+        views: document.querySelectorAll('.view'),
+        logoutBtn: document.getElementById('logout-btn'),
+        
+        dashboardView: document.getElementById('dashboard-view'),
+        metricsContainer: document.getElementById('metrics-container'),
+        
+        botsView: document.getElementById('bots-view'),
+        addBotForm: document.getElementById('add-bot-form'),
+        botAddStatus: document.getElementById('bot-add-status'),
+        botsList: document.getElementById('bots-list'),
+        
+        flowsView: document.getElementById('flows-view'),
+        addFlowForm: document.getElementById('add-flow-form'),
+        flowBotSelect: document.getElementById('flow-bot-select'),
+        flowsList: document.getElementById('flows-list'),
+        flowEditor: document.getElementById('flow-editor'),
+        flowNodesJson: document.getElementById('flow-nodes-json'),
+        saveFlowBtn: document.getElementById('save-flow-btn'),
+        cancelFlowBtn: document.getElementById('cancel-flow-btn'),
+
+        liveChatView: document.getElementById('live-chat-view'),
+        liveChatBotSelect: document.getElementById('live-chat-bot-select'),
+        fetchUsersBtn: document.getElementById('fetch-users-btn'),
+        userCountDisplay: document.getElementById('user-count-display')
+    };
+
+    let allBots = [];
+    let currentFlowId = null;
+
+    // --- VIEW MANAGEMENT ---
+    function showView(viewId) {
+        elements.views.forEach(view => {
+            view.classList.add('hidden');
+        });
+        document.getElementById(viewId).classList.remove('hidden');
+
+        elements.navItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.view === viewId.replace('-view', '')) {
+                item.classList.add('active');
+            }
+        });
+    }
+
+    // --- API CALLS ---
+    async function apiFetch(endpoint, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
         };
-        const useToast = () => useContext(ToastContext);
 
-        const Sidebar = () => {
-            const { logout } = useAuth();
-            const navigate = useNavigate();
-            const location = useLocation();
-            const links = [
-                { to: '/', label: 'Dashboard' }, { to: '/bots', label: 'Bots' },
-                { to: '/flows', label: 'Fluxos' }, { to: '/dispatches', label: 'Disparos' },
-                { to: '/live-chat', label: 'Chat ao Vivo' },
-            ];
-            return (
-                React.createElement('div', { className: 'sidebar' },
-                    React.createElement('div', null,
-                        React.createElement('h1', { className: 'sidebar-heading' }, 'BotManager'),
-                        links.map(link => (
-                            React.createElement(Link, { key: link.to, to: link.to, className: `sidebar-link ${location.pathname === link.to ? 'active' : ''}` }, link.label)
-                        ))
-                    ),
-                    React.createElement('div', { className: 'sidebar-footer' },
-                        React.createElement('button', { className: 'button button-red', style: { width: '100%' }, onClick: () => { logout(); navigate('/login'); } }, 'Sair')
-                    )
-                )
-            );
-        };
-        const MainLayout = ({ children }) => (
-            React.createElement('div', { className: 'layout-container' },
-                React.createElement(Sidebar),
-                React.createElement('main', { className: 'main-content' }, children)
-            )
-        );
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            ...options,
+            headers: { ...headers, ...options.headers }
+        });
 
-        const LoginPage = () => {
-            const [isLogin, setIsLogin] = useState(true);
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [name, setName] = useState('');
-            const [loading, setLoading] = useState(false);
-            const { login, register } = useAuth();
-            const navigate = useNavigate();
-            const { showToast } = useToast();
+        if (response.status === 401 || response.status === 403) {
+            alert('Sessão expirada. Faça login novamente.');
+            logout();
+            return null;
+        }
 
-            const handleSubmit = async (e) => {
+        const data = await response.json();
+        return { ok: response.ok, data };
+    }
+    
+    // --- AUTHENTICATION ---
+    async function handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        elements.loginStatus.classList.add('hidden');
+
+        const result = await apiFetch('/sellers/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+            headers: { 'Content-Type': 'application/json', 'Authorization': null }
+        });
+
+        if (result && result.ok) {
+            jwtToken = result.data.token;
+            localStorage.setItem('jwtToken', jwtToken);
+            elements.loginPage.classList.add('hidden');
+            elements.dashboardPage.classList.remove('hidden');
+            loadDashboardData();
+        } else {
+            elements.loginStatus.textContent = result?.data?.message || 'Erro no login.';
+            elements.loginStatus.classList.remove('hidden', 'success');
+            elements.loginStatus.classList.add('error');
+        }
+    }
+
+    function logout() {
+        jwtToken = null;
+        localStorage.removeItem('jwtToken');
+        elements.dashboardPage.classList.add('hidden');
+        elements.loginPage.classList.remove('hidden');
+    }
+
+    // --- DASHBOARD DATA LOADING ---
+    async function loadDashboardData() {
+        const dashboardData = await apiFetch('/dashboard/data');
+        if (dashboardData && dashboardData.ok) {
+            allBots = dashboardData.data.bots;
+            renderBotsList(allBots);
+            renderFlowsList(dashboardData.data.flows);
+            
+            // Populate select inputs
+            elements.flowBotSelect.innerHTML = allBots.map(bot => `<option value="${bot.id}">${bot.bot_name}</option>`).join('');
+            elements.liveChatBotSelect.innerHTML = allBots.map(bot => `<option value="${bot.id}">${bot.bot_name}</option>`).join('');
+            
+            // Load dashboard metrics
+            const metrics = await apiFetch('/dashboard/metrics');
+            if (metrics && metrics.ok) {
+                elements.metricsContainer.innerHTML = `
+                    <p>Total de Cliques: <strong>${metrics.data.total_clicks}</strong></p>
+                    <p>Total de PIX Pagos: <strong>${metrics.data.total_pix_paid}</strong></p>
+                    <p>Receita Total: <strong>R$ ${metrics.data.paid_revenue.toFixed(2)}</strong></p>
+                    <h3>Desempenho dos Bots:</h3>
+                    <ul>
+                        ${metrics.data.bots_performance.map(b => `<li><strong>${b.bot_name}</strong>: ${b.total_clicks} cliques, ${b.total_pix_paid} vendas (R$ ${b.paid_revenue.toFixed(2)})</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                elements.metricsContainer.innerHTML = '<p>Erro ao carregar métricas.</p>';
+            }
+        }
+    }
+
+    // --- BOT MANAGEMENT ---
+    async function handleAddBot(event) {
+        event.preventDefault();
+        const botName = document.getElementById('bot-name').value;
+        const result = await apiFetch('/bots', {
+            method: 'POST',
+            body: JSON.stringify({ bot_name: botName })
+        });
+        if (result && result.ok) {
+            elements.botAddStatus.textContent = 'Bot adicionado com sucesso!';
+            elements.botAddStatus.classList.remove('hidden', 'error');
+            elements.botAddStatus.classList.add('success');
+            document.getElementById('add-bot-form').reset();
+            loadDashboardData();
+        } else {
+            elements.botAddStatus.textContent = result?.data?.message || 'Erro ao adicionar bot.';
+            elements.botAddStatus.classList.remove('hidden', 'success');
+            elements.botAddStatus.classList.add('error');
+        }
+    }
+
+    async function handleTestConnection(botId) {
+        const statusElement = document.getElementById(`status-${botId}`);
+        statusElement.textContent = 'Testando conexão...';
+        const result = await apiFetch('/bots/test-connection', {
+            method: 'POST',
+            body: JSON.stringify({ bot_id: botId })
+        });
+        if (result && result.ok) {
+            statusElement.textContent = `✅ ${result.data.message}`;
+            statusElement.style.color = 'var(--success-color)';
+        } else {
+            statusElement.textContent = `❌ ${result?.data?.message || 'Falha na conexão.'}`;
+            statusElement.style.color = 'var(--error-color)';
+        }
+    }
+    
+    function renderBotsList(bots) {
+        if (bots.length === 0) {
+            elements.botsList.innerHTML = '<p>Nenhum bot cadastrado.</p>';
+            return;
+        }
+        elements.botsList.innerHTML = bots.map(bot => `
+            <div class="bot-item">
+                <span><strong>${bot.bot_name}</strong></span>
+                <div class="bot-actions">
+                    <button class="btn-secondary" onclick="handleTestConnection(${bot.id})">Testar</button>
+                    <button class="btn-delete" onclick="handleDeleteBot(${bot.id})">Excluir</button>
+                </div>
+            </div>
+            <div id="status-${bot.id}" class="status-message"></div>
+        `).join('');
+    }
+
+    async function handleDeleteBot(botId) {
+        if (confirm('Tem certeza que deseja excluir este bot?')) {
+            const result = await apiFetch(`/bots/${botId}`, { method: 'DELETE' });
+            if (result && result.ok) {
+                loadDashboardData();
+            } else {
+                alert('Erro ao excluir o bot.');
+            }
+        }
+    }
+
+    // --- FLOWS MANAGEMENT ---
+    async function handleAddFlow(event) {
+        event.preventDefault();
+        const name = document.getElementById('flow-name').value;
+        const botId = document.getElementById('flow-bot-select').value;
+        
+        const result = await apiFetch('/flows', {
+            method: 'POST',
+            body: JSON.stringify({ name, botId: parseInt(botId) })
+        });
+        
+        if (result && result.ok) {
+            alert('Fluxo criado com sucesso!');
+            loadDashboardData();
+        } else {
+            alert(result?.data?.message || 'Erro ao criar fluxo.');
+        }
+    }
+
+    async function handleEditFlow(flowId) {
+        const flow = await apiFetch(`/flows/${flowId}`);
+        if (flow && flow.ok) {
+            currentFlowId = flowId;
+            elements.flowNodesJson.value = JSON.stringify(flow.data.nodes, null, 2);
+            elements.flowEditor.classList.remove('hidden');
+        } else {
+            alert('Erro ao carregar o fluxo.');
+        }
+    }
+
+    async function handleSaveFlow() {
+        try {
+            const nodes = JSON.parse(elements.flowNodesJson.value);
+            const result = await apiFetch(`/flows/${currentFlowId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ name: 'Nome do Fluxo', nodes })
+            });
+            if (result && result.ok) {
+                alert('Fluxo salvo com sucesso!');
+                elements.flowEditor.classList.add('hidden');
+                currentFlowId = null;
+                loadDashboardData();
+            } else {
+                alert(result?.data?.message || 'Erro ao salvar o fluxo.');
+            }
+        } catch (e) {
+            alert('O JSON do fluxo é inválido.');
+        }
+    }
+
+    function handleCancelFlow() {
+        elements.flowEditor.classList.add('hidden');
+        currentFlowId = null;
+    }
+    
+    function renderFlowsList(flows) {
+        if (flows.length === 0) {
+            elements.flowsList.innerHTML = '<p>Nenhum fluxo cadastrado.</p>';
+            return;
+        }
+        elements.flowsList.innerHTML = flows.map(flow => `
+            <div class="flow-item">
+                <span><strong>${flow.name}</strong> (${allBots.find(b => b.id === flow.bot_id)?.bot_name || 'Bot não encontrado'})</span>
+                <div class="flow-actions">
+                    <button class="btn-secondary" onclick="handleEditFlow(${flow.id})">Editar</button>
+                    <button class="btn-delete" onclick="handleDeleteFlow(${flow.id})">Excluir</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function handleDeleteFlow(flowId) {
+        if (confirm('Tem certeza que deseja excluir este fluxo?')) {
+            const result = await apiFetch(`/flows/${flowId}`, { method: 'DELETE' });
+            if (result && result.ok) {
+                loadDashboardData();
+            } else {
+                alert('Erro ao excluir o fluxo.');
+            }
+        }
+    }
+
+    // --- LIVE CHAT (SIMPLIFIED) ---
+    async function handleFetchUsers() {
+        const botId = elements.liveChatBotSelect.value;
+        if (!botId) {
+            elements.userCountDisplay.textContent = 'Selecione um bot.';
+            return;
+        }
+
+        elements.userCountDisplay.textContent = 'Carregando...';
+        const result = await apiFetch(`/bots/users?botIds=${botId}`);
+        if (result && result.ok) {
+            elements.userCountDisplay.innerHTML = `<p><strong>${result.data.total_users}</strong> usuário(s) encontrado(s) para este bot.</p>`;
+        } else {
+            elements.userCountDisplay.textContent = 'Erro ao buscar contagem de usuários.';
+        }
+    }
+
+    // --- INITIALIZATION AND EVENT LISTENERS ---
+    function init() {
+        if (jwtToken) {
+            elements.loginPage.classList.add('hidden');
+            elements.dashboardPage.classList.remove('hidden');
+            loadDashboardData();
+        } else {
+            elements.loginPage.classList.remove('hidden');
+            elements.dashboardPage.classList.add('hidden');
+        }
+
+        elements.loginForm.addEventListener('submit', handleLogin);
+        elements.addBotForm.addEventListener('submit', handleAddBot);
+        elements.addFlowForm.addEventListener('submit', handleAddFlow);
+        elements.saveFlowBtn.addEventListener('click', handleSaveFlow);
+        elements.cancelFlowBtn.addEventListener('click', handleCancelFlow);
+        elements.fetchUsersBtn.addEventListener('click', handleFetchUsers);
+        elements.logoutBtn.addEventListener('click', logout);
+        
+        elements.navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
                 e.preventDefault();
-                setLoading(true);
-                try {
-                    isLogin ? await login(email, password) : await register(name, email, password);
-                    navigate('/');
-                } catch (error) {
-                    showToast(error.response?.data?.message || "Erro de conexão", 'error');
-                } finally {
-                    setLoading(false);
+                showView(e.target.dataset.view + '-view');
+                if (e.target.dataset.view === 'bots') {
+                    renderBotsList(allBots);
+                } else if (e.target.dataset.view === 'flows') {
+                    // Re-render flows list
+                } else if (e.target.dataset.view === 'live-chat') {
+                    elements.userCountDisplay.textContent = 'Selecione um bot.';
                 }
-            };
+            });
+        });
+    }
 
-            return (
-                React.createElement('div', { className: 'login-container' },
-                    React.createElement('form', { className: 'login-box', onSubmit: handleSubmit },
-                        React.createElement('h2', null, isLogin ? "Acessar Plataforma" : "Criar Conta"),
-                        !isLogin && React.createElement('input', { className: 'input', placeholder: "Seu Nome", value: name, onChange: e => setName(e.target.value), required: true }),
-                        React.createElement('input', { className: 'input', type: 'email', placeholder: "Email", value: email, onChange: e => setEmail(e.target.value), required: true }),
-                        React.createElement('input', { className: 'input', type: 'password', placeholder: "Senha", value: password, onChange: e => setPassword(e.target.value), required: true }),
-                        React.createElement('button', { className: 'button button-blue', type: 'submit', disabled: loading }, loading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')),
-                        React.createElement('button', { type: 'button', className: 'button-link', onClick: () => setIsLogin(!isLogin) }, isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Faça login")
-                    )
-                )
-            );
-        };
-        
-        const BotsPage = () => {
-            const [bots, setBots] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const { showToast } = useToast();
-            
-            const fetchBots = useCallback(async () => {
-                try {
-                    const response = await axios.get('/dashboard/data');
-                    setBots(response.data.bots);
-                } catch (err) {
-                    showToast("Erro ao carregar os bots.", "error");
-                } finally {
-                    setLoading(false);
-                }
-            }, [showToast]);
+    init();
+</script>
 
-            useEffect(() => { fetchBots() }, [fetchBots]);
-            
-            return (
-                React.createElement('div', null,
-                    React.createElement('div', { className: 'page-header' },
-                        React.createElement('h1', { className: 'page-title' }, 'Meus Bots'),
-                        React.createElement('button', { className: 'button button-blue' }, 'Adicionar Bot')
-                    ),
-                    loading ? React.createElement('div', { className: 'spinner' }) : (
-                        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '16px' } },
-                            bots.length > 0 ? bots.map(bot => (
-                                React.createElement('div', { key: bot.id, className: 'bot-card' },
-                                    React.createElement('span', null, bot.bot_name),
-                                    React.createElement('button', { className: 'button button-link' }, 'Gerenciar')
-                                )
-                            )) : React.createElement('p', null, 'Nenhum bot encontrado.')
-                        )
-                    )
-                )
-            );
-        };
-        
-        const PlaceholderPage = ({ title }) => React.createElement('h1', { className: 'page-title' }, title);
-        
-        const App = () => (
-            React.createElement(ToastProvider, null,
-                React.createElement(HashRouter, null,
-                    React.createElement(AuthProvider, null,
-                        React.createElement(Routes, null,
-                            React.createElement(Route, { path: "/login", element: React.createElement(AuthRoute, null, React.createElement(LoginPage)) }),
-                            React.createElement(Route, { path: "/*", element:
-                                React.createElement(ProtectedRoute, null,
-                                    React.createElement(MainLayout, null,
-                                        React.createElement(Routes, null,
-                                            React.createElement(Route, { index: true, element: React.createElement(PlaceholderPage, { title: "Dashboard" }) }),
-                                            React.createElement(Route, { path: "bots", element: React.createElement(BotsPage) }),
-                                            React.createElement(Route, { path: "flows", element: React.createElement(PlaceholderPage, { title: "Fluxos" }) }),
-                                            React.createElement(Route, { path: "dispatches", element: React.createElement(PlaceholderPage, { title: "Disparos" }) }),
-                                            React.createElement(Route, { path: "live-chat", element: React.createElement(PlaceholderPage, { title: "Chat ao Vivo" }) }),
-                                            React.createElement(Route, { path: "*", element: React.createElement(Navigate, { to: "/" }) })
-                                        )
-                                    )
-                                )
-                            })
-                        )
-                    )
-                )
-            )
-        );
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(App, null));
-    </script>
 </body>
 </html>
