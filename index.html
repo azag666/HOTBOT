@@ -1,12 +1,266 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gerenciador de Bots - Telegram</title>
-  </head>
-  <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Bots</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #1A202C; --bg-medium: #2D3748; --bg-light: #4A5568;
+            --text-primary: #FFFFFF; --text-secondary: #A0AEC0; --accent-blue: #3182CE;
+            --accent-red: #E53E3E;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background-color: var(--bg-dark); color: var(--text-primary); }
+        #root { display: flex; flex-direction: column; min-height: 100vh; }
+        .button {
+            display: inline-block; padding: 10px 18px; border: none; border-radius: 6px; font-size: 16px;
+            font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s;
+        }
+        .button-blue { background-color: var(--accent-blue); color: white; }
+        .button-blue:hover { background-color: #2b6cb0; }
+        .button-red { background-color: var(--accent-red); color: white; }
+        .button-red:hover { background-color: #c53030; }
+        .button-link { background: none; border: none; color: var(--accent-blue); cursor: pointer; text-decoration: underline; }
+        .input {
+            width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--bg-light);
+            background-color: var(--bg-medium); color: var(--text-primary); font-size: 16px;
+        }
+        .input:focus { outline: none; border-color: var(--accent-blue); }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid var(--text-primary);
+            width: 40px; height: 40px; animation: spin 1s linear infinite; margin: auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .layout-container { display: flex; width: 100%; min-height: 100vh; }
+        .sidebar {
+            width: 250px; background-color: #171923; padding: 24px 16px; display: flex;
+            flex-direction: column; border-right: 1px solid var(--bg-medium);
+        }
+        .sidebar-heading { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 32px; }
+        .sidebar-link {
+            display: block; padding: 12px 16px; border-radius: 6px; text-decoration: none;
+            color: var(--text-secondary); font-weight: 500; margin-bottom: 8px;
+        }
+        .sidebar-link:hover, .sidebar-link.active { background-color: var(--bg-medium); color: var(--text-primary); }
+        .sidebar-footer { margin-top: auto; }
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 28px; font-weight: bold; }
+        .login-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100vh; }
+        .login-box { background-color: var(--bg-medium); padding: 32px; border-radius: 8px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
+        .bot-card { background-color: var(--bg-medium); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .toast {
+            position: fixed; top: 20px; right: 20px; background-color: var(--bg-medium); padding: 15px 20px;
+            border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: white; z-index: 1000;
+            border-left: 4px solid;
+        }
+        .toast-success { border-color: var(--accent-green); }
+        .toast-error { border-color: var(--accent-red); }
+    </style>
+</head>
+<body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    <script>
+        const { HashRouter, Routes, Route, Link, useNavigate, useParams, Navigate, useLocation } = ReactRouterDOM;
+        const { useState, useEffect, useCallback, createContext, useContext } = React;
+
+        // --- Contexto de Autenticação ---
+        const AuthContext = createContext(null);
+        const AuthProvider = ({ children }) => {
+            const [token, setToken] = useState(localStorage.getItem('authToken'));
+            const [loading, setLoading] = useState(true);
+            axios.defaults.baseURL = 'https://lead-tracker-api.vercel.app/api';
+
+            useEffect(() => {
+                if (token) {
+                    localStorage.setItem('authToken', token);
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                } else {
+                    localStorage.removeItem('authToken');
+                    delete axios.defaults.headers.common['Authorization'];
+                }
+                setLoading(false);
+            }, [token]);
+
+            const login = async (email, password) => {
+                const response = await axios.post('/sellers/login', { email, password });
+                setToken(response.data.token);
+            };
+            const register = async (name, email, password) => {
+                await axios.post('/sellers/register', { name, email, password });
+                await login(email, password);
+            };
+            const logout = () => setToken(null);
+            
+            if (loading) return React.createElement('div', { className: 'spinner', style: { margin: 'auto' } });
+            return React.createElement(AuthContext.Provider, { value: { token, login, register, logout } }, children);
+        };
+        const useAuth = () => useContext(AuthContext);
+
+        // --- Rotas e Notificações ---
+        const ProtectedRoute = ({ children }) => useAuth().token ? children : React.createElement(Navigate, { to: "/login", replace: true });
+        const AuthRoute = ({ children }) => useAuth().token ? React.createElement(Navigate, { to: "/", replace: true }) : children;
+        
+        const ToastContext = createContext();
+        const ToastProvider = ({ children }) => {
+            const [toast, setToast] = useState(null);
+            const showToast = (message, status = 'success') => {
+                setToast({ message, status });
+                setTimeout(() => setToast(null), 4000);
+            };
+            return (
+                React.createElement(ToastContext.Provider, { value: { showToast } },
+                    children,
+                    toast && React.createElement('div', { className: `toast toast-${toast.status}` }, toast.message)
+                )
+            );
+        };
+        const useToast = () => useContext(ToastContext);
+
+        // --- Componentes ---
+        const Sidebar = () => {
+            const { logout } = useAuth();
+            const navigate = useNavigate();
+            const location = useLocation();
+            const links = [
+                { to: '/', label: 'Dashboard' }, { to: '/bots', label: 'Bots' },
+                { to: '/flows', label: 'Fluxos' }, { to: '/dispatches', label: 'Disparos' },
+                { to: '/live-chat', label: 'Chat ao Vivo' },
+            ];
+            return (
+                React.createElement('div', { className: 'sidebar' },
+                    React.createElement('div', null,
+                        React.createElement('h1', { className: 'sidebar-heading' }, 'BotManager'),
+                        links.map(link => (
+                            React.createElement(Link, { key: link.to, to: link.to, className: `sidebar-link ${location.pathname === link.to ? 'active' : ''}` }, link.label)
+                        ))
+                    ),
+                    React.createElement('div', { className: 'sidebar-footer' },
+                        React.createElement('button', { className: 'button button-red', style: { width: '100%' }, onClick: () => { logout(); navigate('/login'); } }, 'Sair')
+                    )
+                )
+            );
+        };
+        const MainLayout = ({ children }) => (
+            React.createElement('div', { className: 'layout-container' },
+                React.createElement(Sidebar),
+                React.createElement('main', { className: 'main-content' }, children)
+            )
+        );
+
+        // --- Páginas ---
+        const LoginPage = () => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [name, setName] = useState('');
+            const [loading, setLoading] = useState(false);
+            const { login, register } = useAuth();
+            const navigate = useNavigate();
+            const { showToast } = useToast();
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    isLogin ? await login(email, password) : await register(name, email, password);
+                    navigate('/');
+                } catch (error) {
+                    showToast(error.response?.data?.message || "Erro de conexão", 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                React.createElement('div', { className: 'login-container' },
+                    React.createElement('form', { className: 'login-box', onSubmit: handleSubmit },
+                        React.createElement('h2', null, isLogin ? "Acessar Plataforma" : "Criar Conta"),
+                        !isLogin && React.createElement('input', { className: 'input', placeholder: "Seu Nome", value: name, onChange: e => setName(e.target.value), required: true }),
+                        React.createElement('input', { className: 'input', type: 'email', placeholder: "Email", value: email, onChange: e => setEmail(e.target.value), required: true }),
+                        React.createElement('input', { className: 'input', type: 'password', placeholder: "Senha", value: password, onChange: e => setPassword(e.target.value), required: true }),
+                        React.createElement('button', { className: 'button button-blue', type: 'submit', disabled: loading }, loading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')),
+                        React.createElement('button', { type: 'button', className: 'button-link', onClick: () => setIsLogin(!isLogin) }, isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Faça login")
+                    )
+                )
+            );
+        };
+        
+        const BotsPage = () => {
+            const [bots, setBots] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const { showToast } = useToast();
+            
+            const fetchBots = useCallback(async () => {
+                try {
+                    const response = await axios.get('/dashboard/data');
+                    setBots(response.data.bots);
+                } catch (err) {
+                    showToast("Erro ao carregar os bots.", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }, [showToast]);
+
+            useEffect(() => { fetchBots() }, [fetchBots]);
+            
+            return (
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'page-header' },
+                        React.createElement('h1', { className: 'page-title' }, 'Meus Bots'),
+                        React.createElement('button', { className: 'button button-blue' }, 'Adicionar Bot')
+                    ),
+                    loading ? React.createElement('div', { className: 'spinner' }) : (
+                        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '16px' } },
+                            bots.length > 0 ? bots.map(bot => (
+                                React.createElement('div', { key: bot.id, className: 'bot-card' },
+                                    React.createElement('span', null, bot.bot_name),
+                                    React.createElement('button', { className: 'button button-link' }, 'Gerenciar')
+                                )
+                            )) : React.createElement('p', null, 'Nenhum bot encontrado.')
+                        )
+                    )
+                )
+            );
+        };
+        
+        const PlaceholderPage = ({ title }) => React.createElement('h1', { className: 'page-title' }, title);
+        
+        // --- Aplicação Principal ---
+        const App = () => (
+            React.createElement(ToastProvider, null,
+                React.createElement(HashRouter, null,
+                    React.createElement(AuthProvider, null,
+                        React.createElement(Routes, null,
+                            React.createElement(Route, { path: "/login", element: React.createElement(AuthRoute, null, React.createElement(LoginPage)) }),
+                            React.createElement(Route, { path: "/*", element:
+                                React.createElement(ProtectedRoute, null,
+                                    React.createElement(MainLayout, null,
+                                        React.createElement(Routes, null,
+                                            React.createElement(Route, { index: true, element: React.createElement(PlaceholderPage, { title: "Dashboard" }) }),
+                                            React.createElement(Route, { path: "bots", element: React.createElement(BotsPage) }),
+                                            React.createElement(Route, { path: "flows", element: React.createElement(PlaceholderPage, { title: "Fluxos" }) }),
+                                            React.createElement(Route, { path: "dispatches", element: React.createElement(PlaceholderPage, { title: "Disparos" }) }),
+                                            React.createElement(Route, { path: "live-chat", element: React.createElement(PlaceholderPage, { title: "Chat ao Vivo" }) }),
+                                            React.createElement(Route, { path: "*", element: React.createElement(Navigate, { to: "/" }) })
+                                        )
+                                    )
+                                )
+                            })
+                        )
+                    )
+                )
+            )
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App, null));
+    </script>
+</body>
 </html>
