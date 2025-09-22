@@ -18,15 +18,14 @@
             to { transform: translateX(0); }
         }
     </style>
-    
-    <!-- Scripts movidos para o head para garantir o carregamento antes do corpo da página -->
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-gray-100">
-    <div id="root"></div>
 
     <script type="text/babel">
         // Aguarda o DOM estar completamente carregado antes de executar o React
@@ -370,268 +369,140 @@
                     </div>
                 );
             };
-
-            // ############################################################################
-            // --- COMPONENTES DE TELAS ---
-            // ############################################################################
-
-            const SettingsView = ({ bots, setBots, token }) => {
-                const [tokenInput, setTokenInput] = useState('');
-                const [botName, setBotName] = useState('');
-                const [isLoading, setIsLoading] = useState(false);
-                const [error, setError] = useState('');
-
-                const handleAddBot = async () => {
-                    if (!tokenInput || !botName) {
-                        setError('Nome e token são obrigatórios.');
-                        return;
-                    }
-                    setIsLoading(true);
-                    setError('');
-                    
-                    try {
-                        const newBot = await api.post('/bots', { name: botName, token: tokenInput }, token);
-                        setBots(prev => [newBot, ...prev]);
-                        setTokenInput('');
-                        setBotName('');
-                    } catch(err) {
-                        setError(err.message || "Erro ao conectar bot.");
-                    } finally {
-                        setIsLoading(false);
-                    }
+            
+            const FlowNode = ({ node, onMouseDown, isSelected, onStartConnection, setHoveredInputNodeId, isHoveredAsTarget }) => {
+                const nodeStyles = {
+                    start: { bg: 'bg-green-100', border: 'border-green-300', icon: Bot },
+                    contentBlock: { bg: 'bg-white', border: 'border-gray-300', icon: MessageSquare },
+                    redirectFlow: { bg: 'bg-teal-50', border: 'border-teal-300', icon: GitBranchPlus },
+                    queryClickIdCity: { bg: 'bg-orange-50', border: 'border-orange-300', icon: MapPin },
+                    generatePix: { bg: 'bg-emerald-50', border: 'border-emerald-300', icon: DollarSign },
+                    queryPixStatus: { bg: 'bg-indigo-50', border: 'border-indigo-300', icon: BadgeCheck },
                 };
                 
-                const handleDeleteBot = async (botId) => {
-                    if(window.confirm("Tem certeza que quer remover este bot?")){
-                        try {
-                            await api.delete(`/bots/${botId}`, token);
-                            setBots(prev => prev.filter(b => b.id !== botId));
-                        } catch(err) {
-                            alert("Falha ao remover bot.");
-                        }
-                    }
+                const actionIcons = {
+                    text: MessageSquare,
+                    delay: Clock,
+                    image: Image,
+                    audio: FileAudio,
+                    video: Video,
+                };
+
+                const style = nodeStyles[node.type] || nodeStyles.contentBlock;
+                const nodeTitle = node.type.replace(/([A-Z])/g, ' $1').trim();
+                
+                let outputs = node.outputs || [];
+                if(node.type === 'contentBlock' && node.replySettings?.awaitsReply) {
+                    outputs = [
+                        {id: 'onTimeout', label: `SE NÃO RESPONDER`},
+                        {id: 'onReply', label: 'SE RESPONDER'}
+                    ];
                 }
-
-                return (
-                    <div className="p-8 max-w-4xl mx-auto">
-                        <h1 className="text-3xl font-bold text-gray-800 mb-6">Configurações de Bots</h1>
-                        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-8">
-                            <h2 className="text-xl font-semibold mb-4">Adicionar Novo Bot</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Bot</label>
-                                    <input type="text" value={botName} onChange={(e) => setBotName(e.target.value)} placeholder="Ex: Bot de Vendas" className="w-full p-2 border rounded-md" disabled={isLoading}/>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Token do Bot (do BotFather)</label>
-                                    <input type="text" value={tokenInput} onChange={(e) => setTokenInput(e.target.value)} placeholder="Ex: 123456:ABC-DEF1234..." className="w-full p-2 border rounded-md" disabled={isLoading}/>
-                                </div>
-                            </div>
-                            <div className="mt-4 flex justify-end">
-                                <button onClick={handleAddBot} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:bg-indigo-300" disabled={isLoading}>
-                                    {isLoading ? 'Adicionando...' : 'Adicionar Bot'}
-                                </button>
-                            </div>
-                            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                        </div>
-
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Bots Conectados</h2>
-                        <div className="space-y-4">
-                            {bots.map(bot => (
-                                <div key={bot.id} className="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
-                                    <div>
-                                        <p className="font-bold text-lg">{bot.name}</p>
-                                        <p className="text-sm text-gray-500">@{bot.username}</p>
-                                    </div>
-                                    <button onClick={() => handleDeleteBot(bot.id)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-            };
-
-            const BroadcastsView = ({ bots }) => {
-                const [broadcasts, setBroadcasts] = useState([]);
-                const [selectedBotId, setSelectedBotId] = useState('all');
-                const [actions, setActions] = useState([]);
-                const [broadcastName, setBroadcastName] = useState('');
-                
-                useEffect(() => {
-                    setBroadcasts([
-                        { id: 1, name: 'Promoção da Semana', actions: [{id: 1, type: 'text', content: 'Olá! Temos uma nova promoção esta semana.'}], botId: 1, sentAt: '2025-09-21 10:30' },
-                        { id: 2, name: 'Aviso de Manutenção', actions: [{id: 1, type: 'text', content: 'Nosso suporte estará offline por 1 hora.'}], botId: 2, sentAt: '2025-09-20 15:00' },
-                    ]);
-                }, []);
-
-                const handleSend = () => {
-                    if(!actions.length) {
-                        alert("Por favor, adicione pelo menos uma ação de conteúdo.");
-                        return;
-                    }
-                    const target = selectedBotId === 'all' ? 'todos os bots' : bots.find(b => b.id === parseInt(selectedBotId))?.name;
-                    const newBroadcast = {
-                        id: broadcasts.length > 0 ? Math.max(...broadcasts.map(b => b.id)) + 1 : 1,
-                        name: broadcastName || "Disparo sem nome",
-                        actions,
-                        botId: selectedBotId === 'all' ? null : parseInt(selectedBotId),
-                        sentAt: new Date().toLocaleString()
-                    };
-                    setBroadcasts(prev => [newBroadcast, ...prev]);
-                    alert(`Disparo "${newBroadcast.name}" enviado para ${target}!`);
-                    setActions([]);
-                    setBroadcastName('');
-                };
-
-                const handleReuse = (broadcast) => {
-                    setActions(broadcast.actions);
-                    setBroadcastName(`Cópia de ${broadcast.name}`);
-                }
-
-                const addAction = (type) => {
-                    if (actions.length >= 10) { alert("Máximo de 10 ações por disparo."); return; }
-                    let action;
-                    switch(type) {
-                        case 'image': action = { id: `act_${Date.now()}`, type: 'image', url: '' }; break;
-                        case 'delay': action = { id: `act_${Date.now()}`, type: 'delay', delaySeconds: 3 }; break;
-                        default: action = { id: `act_${Date.now()}`, type: 'text', content: '' };
-                    }
-                    setActions(prev => [...prev, action]);
-                };
-                
-                const updateAction = (actionId, data) => {
-                    setActions(prev => prev.map(a => a.id === actionId ? {...a, ...data} : a));
-                };
-
-                const removeAction = (actionId) => {
-                    setActions(prev => prev.filter(a => a.id !== actionId));
-                };
                 
                 return (
-                    <div className="p-8 max-w-4xl mx-auto h-full flex flex-col">
-                         <h1 className="text-3xl font-bold text-gray-800 mb-6">Disparos em Massa</h1>
-                         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-8">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Disparo (interno)</label>
-                                    <input type="text" value={broadcastName} onChange={e => setBroadcastName(e.target.value)} className="w-full p-2 border rounded-md" />
-                                 </div>
-                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Enviar para:</label>
-                                    <select value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)} className="w-full p-2 border rounded-md">
-                                        <option value="all">Todos os Bots</option>
-                                        {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}
-                                    </select>
-                                 </div>
-                             </div>
-                             <div className="border-t pt-4">
-                                <h3 className="text-lg font-semibold mb-2">Conteúdo do Disparo</h3>
-                                <div className="space-y-2 mb-4">
-                                    {actions.map(act => <ActionEditor key={act.id} action={act} onUpdate={updateAction} onRemove={removeAction} />)}
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <button onClick={() => addAction('text')} className="text-sm text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Texto</button>
-                                    <button onClick={() => addAction('delay')} className="text-sm text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Atraso</button>
-                                    <button onClick={() => addAction('image')} className="text-sm text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Imagem</button>
-                                </div>
-                             </div>
-                             <div className="mt-6 flex justify-end">
-                                <button onClick={handleSend} className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 flex items-center">
-                                    <Send size={16} className="mr-2"/>
-                                    Enviar Disparo
-                                </button>
-                             </div>
-                         </div>
-                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Histórico de Disparos</h2>
-                         <div className="flex-1 bg-white rounded-lg shadow-sm border overflow-y-auto">
-                            <ul className="divide-y divide-gray-200">
-                                {broadcasts.map(b => {
-                                    const botName = b.botId ? bots.find(bot => bot.id === b.botId)?.name : 'Todos os Bots';
+                    <div
+                        className={`node-wrapper absolute p-3 w-72 rounded-lg shadow-md transition-all duration-150 ${style.bg} border ${isSelected ? 'ring-2 ring-indigo-500 shadow-xl' : ''} ${style.border} cursor-grab active:cursor-grabbing`}
+                        style={{ left: node.position.x, top: node.position.y }}
+                        onMouseDown={(e) => onMouseDown(e, node.id)}
+                    >
+                        <div className="flex items-center mb-2 pb-2 border-b">
+                             {React.createElement(style.icon, { className: "w-5 h-5 mr-2" })}
+                            <span className="font-bold text-sm text-gray-700 capitalize">{nodeTitle}</span>
+                        </div>
+
+                        <div className="space-y-1 mb-2">
+                            {node.type === 'contentBlock' ? (
+                                (node.actions || []).map(action => (
+                                     <div key={action.id} className="text-xs text-gray-600 flex items-center bg-gray-50 p-1 rounded-sm">
+                                        {React.createElement(actionIcons[action.type], { size: 14, className: "mr-2 flex-shrink-0" })}
+                                        <span className="truncate">{action.type === 'delay' ? `Digitando por ${action.delaySeconds || 0} segundos...` : action.content || action.url}</span>
+                                     </div>
+                                ))
+                            ) : <p className="text-sm text-gray-600 break-words">{node.content}</p>}
+                        </div>
+
+                        {(node.urlButtons || []).map(button => (
+                            <div key={button.id} className="relative text-center text-sm bg-gray-100 border border-gray-200 rounded-md py-1 px-3 mt-2 flex items-center justify-center">
+                               <ExternalLink size={12} className="mr-2"/> {button.label}
+                            </div>
+                        ))}
+                        
+                        {node.replySettings?.awaitsReply && (
+                            <div className="mt-2 pt-2 border-t border-gray-200 space-y-2">
+                                {outputs.map(output => {
+                                    const isTimeout = output.id === 'onTimeout';
+                                    const color = isTimeout ? 'bg-red-400' : 'bg-green-400';
+                                    const textColor = isTimeout ? 'text-red-500' : 'text-green-600';
                                     return (
-                                    <li key={b.id} className="p-4 flex justify-between items-start">
-                                        <div>
-                                            <p className="font-semibold text-gray-800">{b.name}</p>
-                                            <p className="text-sm text-gray-600 mt-1">"{b.actions[0].content.substring(0, 50)}..."</p>
-                                            <p className="text-xs text-gray-500 mt-2">Enviado para <span className="font-semibold">{botName}</span> em {b.sentAt}</p>
+                                        <div key={output.id} className="relative flex items-center justify-end h-6">
+                                            <span className={`text-[10px] font-semibold pr-5 ${textColor}`}>{output.label}</span>
+                                            <div 
+                                                onMouseDown={(e) => { e.stopPropagation(); onStartConnection(node.id, output.id); }} 
+                                                className={`node-output absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ${color} border-2 border-white cursor-crosshair z-10`}
+                                            />
                                         </div>
-                                        <button onClick={() => handleReuse(b)} className="p-2 text-gray-400 hover:text-indigo-500" title="Reutilizar mensagem">
-                                            <Copy size={16}/>
-                                        </button>
-                                    </li>
-                                )})}
-                            </ul>
-                         </div>
-                    </div>
-                );
-            }
-
-            const LiveChatView = ({ bots }) => {
-                const [selectedBotId, setSelectedBotId] = useState('all');
-                const conversations = [
-                    { id: 1, botId: 1, name: 'João Silva', lastMessage: 'Olá, gostaria de saber mais...', time: '10:05', unread: 2 },
-                    { id: 2, botId: 2, name: 'Maria Pereira', lastMessage: 'Obrigada!', time: '09:48', unread: 0 },
-                    { id: 3, botId: 1, name: 'Carlos Souza', lastMessage: 'Qual o valor?', time: 'Ontem', unread: 0 },
-                ];
-                const activeChat = { name: 'João Silva', messages: [ { id: 1, sender: 'user', text: 'Olá, gostaria de saber mais sobre o produto.' }, { id: 2, sender: 'bot', text: 'Claro! Qual sua dúvida?' }, ] };
-                const filteredConversations = selectedBotId === 'all' ? conversations : conversations.filter(c => c.botId === parseInt(selectedBotId));
-
-                return (
-                    <div className="flex h-full bg-white">
-                        <aside className="w-1/3 border-r border-gray-200 h-full flex flex-col">
-                             <div className="p-4 border-b">
-                                <h2 className="text-xl font-bold mb-4">Conversas</h2>
-                                <select value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)} className="w-full p-2 border rounded-md">
-                                    <option value="all">Todos os Bots</option>
-                                    {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}
-                                </select>
+                                    );
+                                })}
                             </div>
-                            <ul className="overflow-y-auto">
-                                {filteredConversations.map(conv => (
-                                    <li key={conv.id} className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${conv.id === 1 ? 'bg-indigo-50' : ''}`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold">{conv.name}</span>
-                                            <span className="text-xs text-gray-500">{conv.time}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center mt-1">
-                                            <p className="text-sm text-gray-600 truncate">{conv.lastMessage}</p>
-                                            {conv.unread > 0 && <span className="bg-indigo-600 text-white text-xs rounded-full px-2 py-1">{conv.unread}</span>}
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        </aside>
-                        <main className="w-2/3 h-full flex flex-col">
-                            <header className="p-4 border-b flex items-center">
-                                <h2 className="text-xl font-bold">{activeChat.name}</h2>
-                            </header>
-                            <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-                                {activeChat.messages.map(msg => (
-                                    <div key={msg.id} className={`flex mb-4 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`p-3 rounded-lg max-w-md ${msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                                            {msg.text}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                             <footer className="p-4 border-t">
-                                <input type="text" placeholder="Digite sua mensagem..." className="w-full p-2 border rounded-md" />
-                            </footer>
-                        </main>
+                        )}
+                        
+                        <div 
+                            className="absolute -left-5 top-0 bottom-0 w-10 z-10"
+                            onMouseEnter={() => setHoveredInputNodeId(node.id)} 
+                            onMouseLeave={() => setHoveredInputNodeId(null)}
+                        >
+                            {node.type !== 'start' && <div className={`node-input absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-400 border-2 border-white transition-all ${isHoveredAsTarget ? 'ring-4 ring-indigo-400 scale-125' : ''}`} title="Ponto de entrada"></div>}
+                        </div>
+                        
+                        {(outputs && (!node.replySettings || !node.replySettings.awaitsReply)) && (outputs || []).map((output) => {
+                             const yOffset = Connections.getOutputYOffset(node, output.id);
+                             return <div key={output.id} onMouseDown={(e) => { e.stopPropagation(); onStartConnection(node.id, output.id); }} className="node-output absolute -right-2 w-4 h-4 rounded-full bg-indigo-400 border-2 border-white cursor-crosshair z-10" style={{ top: `${yOffset}px` }} title={output.label || 'Próximo passo'}></div>
+                        })}
                     </div>
                 );
             };
+            
+            const FlowSidebar = ({ addNode, handleSave, onBack, flowName, setFlowName }) => (
+                <aside className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col shadow-lg z-10">
+                    <button onClick={onBack} className="flex items-center text-sm text-gray-500 hover:text-indigo-600 mb-4">
+                        <ArrowLeft size={16} className="mr-2" />
+                        Voltar para Fluxos
+                    </button>
+                    <input 
+                        type="text"
+                        value={flowName}
+                        onChange={(e) => setFlowName(e.target.value)}
+                        className="text-xl font-bold mb-6 text-gray-700 w-full border-b-2 border-transparent focus:border-indigo-500 outline-none bg-transparent"
+                    />
+                    <div className="flex-1 overflow-y-auto">
+                        <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase">Conteúdo</h3>
+                        <SidebarButton icon={MessageSquare} label="Bloco de Mensagens" onClick={() => addNode('contentBlock')} />
+                        
+                        <h3 className="text-sm font-semibold text-gray-500 mt-4 mb-2 uppercase">Ações</h3>
+                        <SidebarButton icon={MapPin} label="Consultar Cidade" onClick={() => addNode('queryClickIdCity')} />
+                        <SidebarButton icon={DollarSign} label="Gerar PIX" onClick={() => addNode('generatePix')} />
+                        <SidebarButton icon={BadgeCheck} label="Consultar Status PIX" onClick={() => addNode('queryPixStatus')} />
+                        <SidebarButton icon={GitBranchPlus} label="Enviar para Fluxo" onClick={() => addNode('redirectFlow')} />
+                    </div>
+                    <div>
+                         <button onClick={handleSave} className="w-full flex items-center justify-center p-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200">
+                            <Save className="w-5 h-5 mr-3" /><span>Salvar Fluxo</span>
+                        </button>
+                    </div>
+                </aside>
+            );
 
+            // --- TELAS PRINCIPAIS ---
             const FlowsView = ({ flows, bots, onEdit, onCreate, onDelete }) => {
                 const [selectedBotId, setSelectedBotId] = useState(bots[0]?.id.toString() || 'all');
-
                 const filteredFlows = selectedBotId === 'all' ? flows : flows.filter(f => f.botId === parseInt(selectedBotId));
 
                 return (
-                    <div className="p-8">
+                    <div className="p-8 h-full overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-3xl font-bold text-gray-800">Seus Fluxos</h1>
                              <div className="flex items-center space-x-4">
-                                <select value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)} className="p-2 border rounded-md bg-white">
+                                <select value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)} className="p-2 border rounded-md bg-white shadow-sm">
                                     <option value="all">Todos os Bots</option>
                                     {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}
                                 </select>
@@ -717,7 +588,18 @@
                 );
             };
 
+            const MainNavItem = ({ icon, label, isActive, onClick }) => (
+                <button 
+                    onClick={onClick}
+                    className={`flex flex-col items-center justify-center w-full h-16 transition-colors duration-200 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    title={label}
+                >
+                    {React.createElement(icon, { size: 24 })}
+                    <span className="text-xs mt-1">{label}</span>
+                </button>
+            );
 
+            // --- COMPONENTE PRINCIPAL ---
             const App = () => {
                 const [token, setToken] = useState(localStorage.getItem('authToken'));
                 const [activeTab, setActiveTab] = useState('flows');
@@ -823,8 +705,8 @@
                                 return <FlowBuilder flow={flowToEdit} allFlows={allFlowsForBot} onSave={handleSaveFlow} onBack={() => setEditingFlowId(null)} />;
                             }
                             return <FlowsView flows={flows} bots={bots} onEdit={setEditingFlowId} onCreate={handleCreateFlow} onDelete={handleDeleteFlow} />;
-                        case 'livechat': return <LiveChatView bots={bots} />;
-                        case 'broadcasts': return <BroadcastsView bots={bots} />;
+                        case 'livechat': return <p>Chat ao Vivo (em construção)</p>;
+                        case 'broadcasts': return <p>Disparos (em construção)</p>;
                         default: return <p>Selecione uma aba</p>;
                     }
                 };
@@ -848,20 +730,8 @@
                 );
             }
 
-            const MainNavItem = ({ icon, label, isActive, onClick }) => (
-                <button 
-                    onClick={onClick}
-                    className={`flex flex-col items-center justify-center w-full h-16 transition-colors duration-200 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
-                    title={label}
-                >
-                    {React.createElement(icon, { size: 24 })}
-                    <span className="text-xs mt-1">{label}</span>
-                </button>
-            );
-
-            ReactDOM.render(React.createElement(App), document.getElementById('root'));
+            ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
         });
     </script>
 </body>
 </html>
-
