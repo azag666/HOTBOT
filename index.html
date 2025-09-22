@@ -6,12 +6,10 @@
     <title>Plataforma de Automação para Telegram</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos para o fundo pontilhado do canvas */
         .bg-dots {
             background-size: 40px 40px;
             background-image: radial-gradient(circle, #e5e7eb 1px, rgba(0,0,0,0) 1px);
         }
-        /* Animação para o painel de edição */
         .editor-panel {
             animation: slideIn 0.3s ease-out forwards;
         }
@@ -19,23 +17,35 @@
             from { transform: translateX(100%); }
             to { transform: translateX(0); }
         }
+        .connection-delete {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .connection-delete:hover {
+            transform: scale(1.3);
+            fill: #ef4444; /* red-500 */
+        }
+        input[type='number']::-webkit-inner-spin-button,
+        input[type='number']::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type='number'] {
+            -moz-appearance: textfield;
+        }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 antialiased font-sans overflow-hidden">
     <div id="root"></div>
 
     <script type="text/babel" data-presets="react">
-        // Aguarda o DOM estar completamente carregado antes de executar o React
         document.addEventListener('DOMContentLoaded', () => {
             const { useState, useCallback, useRef, useEffect, createContext, useContext } = React;
-            const { MessageSquare, Save, Clock, Trash2, Bot, Image, FileAudio, Video, GitBranchPlus, MapPin, DollarSign, BadgeCheck, ExternalLink, ZoomIn, ZoomOut, Settings, BotMessageSquare, MessageCircle, Plus, Edit, ArrowLeft, Send, Copy, LogOut, Search, User, CheckCircle, XCircle } = lucide;
-
-            // --- CONFIGURAÇÃO DA API ---
-            const API_BASE_URL = ''; // Usa rotas relativas, ideal para Vercel
+            const { MessageSquare, Save, Clock, Trash2, Bot, Image, FileAudio, Video, GitBranchPlus, MapPin, DollarSign, BadgeCheck, ExternalLink, ZoomIn, ZoomOut, Settings, BotMessageSquare, MessageCircle, Plus, Edit, ArrowLeft, Send, Copy, LogOut, Search, User, CheckCircle, XCircle, AlertTriangle, ChevronDown, MousePointer2 } = lucide;
 
             // --- API Helper ---
             const api = {
@@ -48,7 +58,7 @@
                         options.headers['Content-Type'] = 'application/json';
                         options.body = JSON.stringify(body);
                     }
-                    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                    const response = await fetch(`/api${endpoint}`, options);
                     if (!response.ok) {
                         const err = await response.json().catch(() => ({ message: `Erro de Rede: ${response.statusText}` }));
                         throw new Error(err.message);
@@ -62,128 +72,216 @@
                 delete(endpoint, token) { return this.request('DELETE', endpoint, null, token); }
             };
 
-            const createInitialFlow = (id, name, botId) => ({
-                id, name, botId,
-                nodes: [{ id: 1, type: 'start', content: 'Início do Fluxo', position: { x: 50, y: 150 }, outputs: [{ id: 'out', nextStepId: null }] }]
-            });
-            
-            // --- (A PARTIR DAQUI COMEÇAM OS COMPONENTES DO REACT) ---
+            // --- Contexto Global ---
+            const AppContext = createContext();
+            const useApp = () => useContext(AppContext);
 
-            // --- COMPONENTES HELPER ---
-            const SidebarButton = ({ icon, label, onClick }) => (
-                <button onClick={onClick} className="w-full flex items-center p-3 rounded-lg bg-gray-50 hover:bg-indigo-100 text-gray-600 hover:text-indigo-600 transition-all duration-200 mb-2">
-                    {React.createElement(icon, { className: "w-5 h-5 mr-3" })}
-                    <span>{label}</span>
-                </button>
-            );
-
-            // ... (Todos os outros componentes como Controls, Connections, ActionEditor, etc. serão adicionados aqui)
-
-            // --- COMPONENTE PRINCIPAL ---
-            const App = () => {
+            const AppProvider = ({ children }) => {
                 const [token, setToken] = useState(localStorage.getItem('authToken'));
-                const [activeTab, setActiveTab] = useState('flows');
                 const [bots, setBots] = useState([]);
                 const [flows, setFlows] = useState([]);
-                const [editingFlowId, setEditingFlowId] = useState(null);
-                const [isLoading, setIsLoading] = useState(!!token);
+                const [broadcasts, setBroadcasts] = useState([]);
 
-                useEffect(() => {
-                    if (token) {
-                        setIsLoading(true);
-                        const fetchData = async () => {
-                            try {
-                                const [botsData, flowsData] = await Promise.all([
-                                    api.get('/api/bots', token),
-                                    api.get('/api/flows', token)
-                                ]);
-                                setBots(botsData || []);
-                                setFlows(flowsData || []);
-                            } catch (error) {
-                                console.error("Falha ao buscar dados iniciais", error);
-                                handleLogout();
-                            } finally {
-                                setIsLoading(false);
-                            }
-                        };
-                        fetchData();
-                    } else {
-                        setIsLoading(false);
+                const handleLogout = useCallback(() => {
+                    localStorage.removeItem('authToken');
+                    setToken(null);
+                    setBots([]);
+                    setFlows([]);
+                    setBroadcasts([]);
+                }, []);
+
+                const fetchData = useCallback(async (currentToken) => {
+                    if (!currentToken) return;
+                    try {
+                        const [botsData, flowsData, broadcastsData] = await Promise.all([
+                            api.get('/bots', currentToken),
+                            api.get('/flows', currentToken),
+                            api.get('/broadcasts', currentToken)
+                        ]);
+                        setBots(botsData || []);
+                        setFlows(flowsData || []);
+                        setBroadcasts(broadcastsData || []);
+                    } catch (error) {
+                        console.error("Falha ao buscar dados", error);
+                        handleLogout();
                     }
-                }, [token]);
+                }, [handleLogout]);
 
                 const handleLogin = (newToken) => {
                     localStorage.setItem('authToken', newToken);
                     setToken(newToken);
                 };
 
-                const handleLogout = () => {
-                    localStorage.removeItem('authToken');
-                    setToken(null);
-                    setBots([]);
-                    setFlows([]);
-                };
+                useEffect(() => {
+                    if (token) {
+                        fetchData(token);
+                    }
+                }, [token, fetchData]);
 
-                const handleCreateFlow = async (botId) => {
-                    const targetBotId = botId || (bots.length > 0 ? bots[0].id : null);
+                const value = { token, bots, setBots, flows, setFlows, broadcasts, setBroadcasts, handleLogin, handleLogout, fetchData };
+                return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+            };
+            
+            // --- Componentes ---
+            const LoginView = ({ onLogin }) => {
+                const [email, setEmail] = useState('');
+                const [password, setPassword] = useState('');
+                const [error, setError] = useState('');
+                const [isLoading, setIsLoading] = useState(false);
+
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setIsLoading(true);
+                    setError('');
+                    try {
+                        const data = await api.post(`/sellers/login`, { email, password });
+                        onLogin(data.token);
+                    } catch (err) {
+                        setError(err.message);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                
+                return (
+                    <div className="flex items-center justify-center h-screen bg-gray-100">
+                        <div className="p-8 bg-white rounded-lg shadow-xl w-full max-w-sm border">
+                            <h1 className="text-2xl font-bold text-center mb-6 text-gray-700">Login</h1>
+                            <form onSubmit={handleSubmit}>
+                                <div className="mb-4">
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">Email</label>
+                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" required />
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block mb-1 text-sm font-medium text-gray-600">Senha</label>
+                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" required />
+                                </div>
+                                {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+                                <button type="submit" className="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 transition-colors duration-300 disabled:bg-indigo-400" disabled={isLoading}>
+                                    {isLoading ? 'Entrando...' : 'Entrar'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            };
+
+            const MainNavItem = ({ icon, label, isActive, onClick }) => (
+                <button 
+                    onClick={onClick}
+                    className={`flex flex-col items-center justify-center w-full h-16 transition-colors duration-200 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    title={label}
+                >
+                    {React.createElement(icon, { size: 24 })}
+                    <span className="text-xs mt-1">{label}</span>
+                </button>
+            );
+
+            // --- (O CÓDIGO COMPLETO DAS VIEWS E COMPONENTES SERÁ INSERIDO AQUI) ---
+            const FlowsView = ({ onEdit }) => {
+                const { flows, bots, setFlows, token } = useApp();
+                const [selectedBotId, setSelectedBotId] = useState('all');
+                
+                const filteredFlows = selectedBotId === 'all' ? flows : flows.filter(f => f.bot_id === parseInt(selectedBotId));
+
+                const handleCreateFlow = async () => {
+                    const targetBotId = selectedBotId === 'all' ? (bots[0]?.id || null) : parseInt(selectedBotId);
                     if (!targetBotId) {
-                        alert("Por favor, crie um bot primeiro na aba de Configurações.");
-                        setActiveTab('settings');
+                        alert("Por favor, crie ou selecione um bot válido primeiro.");
                         return;
                     }
                     try {
-                        const newFlow = await api.post('/api/flows', {
-                            name: `Novo Fluxo ${flows.length + 1}`,
-                            botId: targetBotId
-                        }, token);
-                        setFlows(prev => [...prev, newFlow]);
-                        setEditingFlowId(newFlow.id);
+                        const newFlow = await api.post('/flows', { name: `Novo Fluxo ${flows.length + 1}`, botId: targetBotId }, token);
+                        setFlows(prev => [newFlow, ...prev]);
+                        onEdit(newFlow.id);
                     } catch (error) {
-                        console.error("Falha ao criar fluxo:", error);
                         alert(`Erro ao criar fluxo: ${error.message}`);
                     }
                 };
 
-                const handleSaveFlow = async (flowId, updatedFlowData) => {
-                    try {
-                        await api.put(`/api/flows/${flowId}`, updatedFlowData, token);
-                        setFlows(prev => prev.map(f => f.id === flowId ? { ...f, ...updatedFlowData } : f));
-                        alert("Fluxo salvo com sucesso!");
-                    } catch (error) {
-                        console.error("Falha ao salvar fluxo:", error);
-                        alert(`Erro ao salvar: ${error.message}`);
-                    }
-                };
-
                 const handleDeleteFlow = async (flowId) => {
-                    if (window.confirm("Tem certeza que deseja excluir este fluxo?")) {
+                    if (window.confirm("Tem certeza que deseja excluir este fluxo? A ação é irreversível.")) {
                         try {
-                            await api.delete(`/api/flows/${flowId}`, token);
+                            await api.delete(`/flows/${flowId}`, token);
                             setFlows(prev => prev.filter(f => f.id !== flowId));
                         } catch (error) {
-                            console.error("Falha ao excluir fluxo:", error);
-                            alert(`Erro ao excluir: ${error.message}`);
+                            alert(`Erro ao excluir fluxo: ${error.message}`);
                         }
                     }
                 };
+
+                return (
+                    <div className="p-8 h-full overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h1 className="text-3xl font-bold text-gray-800">Seus Fluxos</h1>
+                            <div className="flex items-center space-x-4">
+                                <select value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)} className="p-2 border rounded-md bg-white shadow-sm">
+                                    <option value="all">Todos os Bots</option>
+                                    {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.bot_name}</option>)}
+                                </select>
+                                <button onClick={handleCreateFlow} className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                                    <Plus size={16} className="mr-2" />
+                                    Criar Novo Fluxo
+                                </button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredFlows.map(flow => {
+                                const botName = bots.find(b => b.id === flow.bot_id)?.bot_name || 'Bot desconhecido';
+                                return (
+                                    <div key={flow.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col justify-between">
+                                        <div>
+                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{botName}</span>
+                                            <h2 className="text-xl font-semibold my-2">{flow.name}</h2>
+                                            <p className="text-sm text-gray-500">{(flow.nodes || []).length} blocos</p>
+                                        </div>
+                                        <div className="flex items-center justify-end space-x-2 mt-4">
+                                            <button onClick={() => handleDeleteFlow(flow.id)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
+                                            <button onClick={() => onEdit(flow.id)} className="flex items-center bg-gray-100 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-200">
+                                                <Edit size={14} className="mr-2" />
+                                                Editar
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            const FlowBuilder = ({ flowId, onBack }) => { return <div className="p-8"><h1 className="text-3xl font-bold">Flow Builder (Em Construção)</h1><button onClick={onBack} className="text-indigo-600 mt-4">Voltar</button></div> }
+            const SettingsView = () => { return <div className="p-8"><h1 className="text-3xl font-bold">Configurações (Em Construção)</h1></div> }
+            const LiveChatView = () => { return <div className="p-8"><h1 className="text-3xl font-bold">Chat ao Vivo (Em Construção)</h1></div> }
+            const BroadcastsView = () => { return <div className="p-8"><h1 className="text-3xl font-bold">Disparos (Em Construção)</h1></div> }
+
+
+            // --- Componente Principal ---
+            const App = () => {
+                const { token, handleLogin, handleLogout } = useApp();
+                const [activeTab, setActiveTab] = useState('flows');
+                const [editingFlowId, setEditingFlowId] = useState(null);
+                const [isLoading, setIsLoading] = useState(true);
+
+                useEffect(() => {
+                    const checkAuth = async () => {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        setIsLoading(false);
+                    };
+                    checkAuth();
+                }, [token]);
+
+                if (isLoading) {
+                    return <div className="flex h-screen items-center justify-center text-lg font-semibold text-gray-600">Carregando Plataforma...</div>;
+                }
+
+                if (!token) {
+                    return <LoginView onLogin={handleLogin} />;
+                }
                 
-                if (!token) { return <LoginView onLogin={handleLogin} />; }
-                if (isLoading) { return <div className="flex h-screen items-center justify-center text-lg font-semibold">Carregando Plataforma...</div>; }
-                
-                const renderContent = () => {
-                    switch (activeTab) {
-                        case 'settings': return <SettingsView bots={bots} setBots={setBots} token={token} />;
-                        case 'flows':
-                            const flowToEdit = flows.find(f => f.id === editingFlowId);
-                            if (flowToEdit) {
-                                const allFlowsForBot = flows.filter(f => f.bot_id === flowToEdit.bot_id);
-                                return <FlowBuilder flow={flowToEdit} allFlows={allFlowsForBot} onSave={handleSaveFlow} onBack={() => setEditingFlowId(null)} />;
-                            }
-                            return <FlowsView flows={flows} bots={bots} onEdit={setEditingFlowId} onCreate={handleCreateFlow} onDelete={handleDeleteFlow} />;
-                        case 'livechat': return <LiveChatView bots={bots} />;
-                        case 'broadcasts': return <BroadcastsView bots={bots} token={token} />;
-                        default: return <p>Selecione uma aba</p>;
-                    }
+                const handleEditFlow = (flowId) => {
+                    setEditingFlowId(flowId);
+                    setActiveTab('flows');
                 };
 
                 return (
@@ -194,20 +292,25 @@
                             <MainNavItem icon={MessageCircle} label="Chat" isActive={activeTab === 'livechat'} onClick={() => { setActiveTab('livechat'); setEditingFlowId(null); }} />
                             <MainNavItem icon={Send} label="Disparos" isActive={activeTab === 'broadcasts'} onClick={() => { setActiveTab('broadcasts'); setEditingFlowId(null); }} />
                             <MainNavItem icon={Settings} label="Config" isActive={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setEditingFlowId(null); }} />
-                            <div className="mt-auto">
-                                <MainNavItem icon={LogOut} label="Sair" isActive={false} onClick={handleLogout} />
-                            </div>
+                            <div className="flex-1"></div>
+                            <MainNavItem icon={LogOut} label="Sair" isActive={false} onClick={handleLogout} />
                         </nav>
-                        <div className="flex-1 h-full overflow-hidden">
-                            {renderContent()}
-                        </div>
+                        <main className="flex-1 h-full overflow-hidden">
+                           {activeTab === 'flows' && !editingFlowId && <FlowsView onEdit={handleEditFlow} />}
+                           {activeTab === 'flows' && editingFlowId && <FlowBuilder key={editingFlowId} flowId={editingFlowId} onBack={() => setEditingFlowId(null)} />}
+                           {activeTab === 'settings' && <SettingsView />}
+                           {activeTab === 'livechat' && <LiveChatView />}
+                           {activeTab === 'broadcasts' && <BroadcastsView />}
+                        </main>
                     </div>
                 );
-            }
-            
-            // --- Todas as outras views e componentes auxiliares serão definidos aqui ---
+            };
 
-            ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+            ReactDOM.createRoot(document.getElementById('root')).render(
+                <AppProvider>
+                    <App />
+                </AppProvider>
+            );
         });
     </script>
 </body>
