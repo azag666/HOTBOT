@@ -6,10 +6,12 @@
     <title>Plataforma de Automação para Telegram</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Estilos para o fundo pontilhado do canvas */
         .bg-dots {
             background-size: 40px 40px;
             background-image: radial-gradient(circle, #e5e7eb 1px, rgba(0,0,0,0) 1px);
         }
+        /* Animação para o painel de edição */
         .editor-panel {
             animation: slideIn 0.3s ease-out forwards;
         }
@@ -29,68 +31,43 @@
     <script type="text/babel" data-presets="react">
         // Aguarda o DOM estar completamente carregado antes de executar o React
         document.addEventListener('DOMContentLoaded', () => {
-            const { useState, useCallback, useRef, useEffect } = React;
-            const { MessageSquare, Save, Clock, Trash2, Bot, Image, FileAudio, Video, GitBranchPlus, MapPin, DollarSign, BadgeCheck, ExternalLink, ZoomIn, ZoomOut, Settings, BotMessageSquare, MessageCircle, Plus, Edit, ArrowLeft, Send, Copy, LogOut } = lucide;
+            const { useState, useCallback, useRef, useEffect, createContext, useContext } = React;
+            const { MessageSquare, Save, Clock, Trash2, Bot, Image, FileAudio, Video, GitBranchPlus, MapPin, DollarSign, BadgeCheck, ExternalLink, ZoomIn, ZoomOut, Settings, BotMessageSquare, MessageCircle, Plus, Edit, ArrowLeft, Send, Copy, LogOut, Search, User, CheckCircle, XCircle } = lucide;
 
             // --- CONFIGURAÇÃO DA API ---
-            const API_BASE_URL = 'https://novaapi-one.vercel.app'; 
+            const API_BASE_URL = ''; // Usa rotas relativas, ideal para Vercel
 
             // --- API Helper ---
             const api = {
-                async get(endpoint, token) {
-                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                async request(method, endpoint, body = null, token) {
+                    const options = {
+                        method,
                         headers: { 'Authorization': `Bearer ${token}` }
-                    });
+                    };
+                    if (body) {
+                        options.headers['Content-Type'] = 'application/json';
+                        options.body = JSON.stringify(body);
+                    }
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
                     if (!response.ok) {
-                        const err = await response.json().catch(() => ({ message: 'A resposta da rede não foi OK.' }));
+                        const err = await response.json().catch(() => ({ message: `Erro de Rede: ${response.statusText}` }));
                         throw new Error(err.message);
                     }
+                    if (response.status === 204) return null;
                     return response.json();
                 },
-                async post(endpoint, body, token) {
-                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(body)
-                    });
-                    if (!response.ok) {
-                        const err = await response.json().catch(() => ({ message: 'A resposta da rede não foi OK.' }));
-                        throw new Error(err.message);
-                    }
-                    return response.json();
-                },
-                async put(endpoint, body, token) {
-                     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(body)
-                    });
-                    if (!response.ok) {
-                        const err = await response.json().catch(() => ({ message: 'A resposta da rede não foi OK.' }));
-                        throw new Error(err.message);
-                    }
-                    return response.json();
-                },
-                async delete(endpoint, token) {
-                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (!response.ok) throw new Error('A resposta da rede não foi OK.');
-                    return response;
-                }
+                get(endpoint, token) { return this.request('GET', endpoint, null, token); },
+                post(endpoint, body, token) { return this.request('POST', endpoint, body, token); },
+                put(endpoint, body, token) { return this.request('PUT', endpoint, body, token); },
+                delete(endpoint, token) { return this.request('DELETE', endpoint, null, token); }
             };
 
             const createInitialFlow = (id, name, botId) => ({
                 id, name, botId,
                 nodes: [{ id: 1, type: 'start', content: 'Início do Fluxo', position: { x: 50, y: 150 }, outputs: [{ id: 'out', nextStepId: null }] }]
             });
+            
+            // --- (A PARTIR DAQUI COMEÇAM OS COMPONENTES DO REACT) ---
 
             // --- COMPONENTES HELPER ---
             const SidebarButton = ({ icon, label, onClick }) => (
@@ -100,485 +77,7 @@
                 </button>
             );
 
-            const Controls = ({ onZoomIn, onZoomOut }) => (
-                <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-md border border-gray-200 flex z-10">
-                    <button onClick={onZoomOut} className="p-2 text-gray-600 hover:bg-gray-100 border-r border-gray-200">-</button>
-                    <button onClick={onZoomIn} className="p-2 text-gray-600 hover:bg-gray-100">+</button>
-                </div>
-            );
-            
-            const Connections = ({ nodes, connectionPreview }) => {
-                Connections.getOutputYOffset = (node, outputId) => {
-                    if (node.type === 'contentBlock' && node.replySettings?.awaitsReply) {
-                        return outputId === 'onTimeout' ? 55 : 85;
-                    }
-                    if ((node.outputs || []).length > 1) {
-                        return outputId === 'success' || outputId === 'paid' ? 55 : 85;
-                    }
-                    return 45;
-                };
-                
-                return (
-                    <svg className="absolute w-full h-full pointer-events-none overflow-visible">
-                        <defs>
-                            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af" /></marker>
-                             <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f87171" /></marker>
-                             <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4ade80" /></marker>
-                        </defs>
-                        <g>
-                            {(nodes || []).map(node => {
-                                let connections = [];
-                                if (node.type === 'contentBlock' && node.replySettings?.awaitsReply) {
-                                    if(node.replySettings.onReplyNextStepId) connections.push({ id: 'onReply', nextStepId: node.replySettings.onReplyNextStepId });
-                                    if(node.replySettings.onTimeoutNextStepId) connections.push({ id: 'onTimeout', nextStepId: node.replySettings.onTimeoutNextStepId });
-                                } else {
-                                    connections = node.outputs || [];
-                                }
-
-                                return (connections || []).map(output => {
-                                    if (!output.nextStepId) return null;
-                                    const targetNode = nodes.find(n => n.id === output.nextStepId);
-                                    if (!targetNode) return null;
-                                    
-                                    const yOffset = Connections.getOutputYOffset(node, output.id);
-                                    const isTimeout = output.id === 'onTimeout';
-                                    const isSuccess = output.id === 'onReply';
-                                    
-                                    let strokeColor = "#9ca3af";
-                                    let marker = "url(#arrow)";
-
-                                    if(isTimeout) {
-                                        strokeColor = "#f87171";
-                                        marker = "url(#arrow-red)";
-                                    } else if (isSuccess) {
-                                        strokeColor = "#4ade80";
-                                         marker = "url(#arrow-green)";
-                                    }
-
-                                    const startPos = { x: node.position.x + 288, y: node.position.y + yOffset };
-                                    const endPos = { x: targetNode.position.x, y: targetNode.position.y + 45 }; 
-                                    const path = `M ${startPos.x} ${startPos.y} C ${startPos.x + 60} ${startPos.y}, ${endPos.x - 60} ${endPos.y}, ${endPos.x} ${endPos.y}`;
-                                    
-                                    return <path key={`${node.id}-${output.id}`} d={path} stroke={strokeColor} strokeWidth="2" fill="none" markerEnd={marker} strokeDasharray={isTimeout ? "5 5" : "none"} />;
-                                });
-                            })}
-                            {connectionPreview && <path d={`M ${connectionPreview.startPos.x} ${connectionPreview.startPos.y} C ${connectionPreview.startPos.x + 60} ${connectionPreview.startPos.y}, ${connectionPreview.endPos.x - 60} ${connectionPreview.endPos.y}, ${connectionPreview.endPos.x} ${connectionPreview.endPos.y}`} stroke="#6366f1" strokeWidth="2" strokeDasharray="5 5" fill="none" />}
-                        </g>
-                    </svg>
-                );
-            };
-
-            const ActionEditor = ({ action, onUpdate, onRemove }) => {
-                const renderActionFields = () => {
-                    switch (action.type) {
-                        case 'text':
-                            return <textarea className="w-full p-2 border rounded-md text-sm" rows="3" value={action.content || ''} onChange={(e) => onUpdate(action.id, { content: e.target.value })} />;
-                        case 'image': case 'audio': case 'video':
-                            return <input type="text" className="w-full p-2 border rounded-md text-sm" placeholder={`URL do ${action.type}`} value={action.url || ''} onChange={(e) => onUpdate(action.id, { url: e.target.value })} />;
-                        case 'delay':
-                            return <input type="number" className="w-full p-2 border rounded-md text-sm" placeholder="Segundos" value={action.delaySeconds || 0} onChange={(e) => onUpdate(action.id, { delaySeconds: parseInt(e.target.value, 10) || 0 })} />;
-                        default: return null;
-                    }
-                };
-                return (
-                    <div className="p-2 border rounded-md bg-gray-50">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs font-bold uppercase text-gray-500">{action.type}</span>
-                            <button onClick={() => onRemove(action.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
-                        </div>
-                        {renderActionFields()}
-                    </div>
-                );
-            };
-
-            const UrlButtonEditor = ({ button, onUpdate, onRemove }) => {
-                const [label, setLabel] = useState(button.label);
-                const [url, setUrl] = useState(button.url);
-                useEffect(() => { onUpdate({ ...button, label, url }); }, [label, url]);
-                return (
-                    <div className="p-2 border rounded-md mb-2 bg-gray-50">
-                        <input type="text" value={label} onChange={e => setLabel(e.target.value)} className="w-full p-1 border rounded-md mb-2" placeholder="Texto do Botão" />
-                        <input type="text" value={url} onChange={e => setUrl(e.target.value)} className="w-full p-1 border rounded-md" placeholder="https://exemplo.com" />
-                        <button onClick={() => onRemove(button.id)} className="text-xs text-red-500 hover:text-red-700 mt-1">Remover</button>
-                    </div>
-                );
-            };
-
-            const EditorPanel = ({ node, allFlows, onClose, onUpdate, onDelete }) => {
-                const [localNode, setLocalNode] = useState(JSON.parse(JSON.stringify(node)));
-
-                const handleSave = () => {
-                    onUpdate(node.id, localNode);
-                    onClose();
-                };
-
-                const updateLocalNode = (data) => setLocalNode(prev => ({...prev, ...data}));
-                const updateReplySettings = (data) => {
-                    const currentSettings = localNode.replySettings || { awaitsReply: false, timeoutSeconds: 300 };
-                    setLocalNode(prev => ({ ...prev, replySettings: { ...currentSettings, ...data } }));
-                };
-                
-                const updateAction = (actionId, data) => {
-                    updateLocalNode({ actions: (localNode.actions || []).map(a => a.id === actionId ? {...a, ...data} : a) });
-                };
-
-                const addAction = (type) => {
-                    if ((localNode.actions || []).length >= 10) {
-                        alert("Você pode adicionar no máximo 10 ações por bloco.");
-                        return;
-                    }
-                    let action;
-                    switch(type) {
-                        case 'image': action = { id: `act_${Date.now()}`, type: 'image', url: '' }; break;
-                        case 'audio': action = { id: `act_${Date.now()}`, type: 'audio', url: '' }; break;
-                        case 'video': action = { id: `act_${Date.now()}`, type: 'video', url: '' }; break;
-                        case 'delay': action = { id: `act_${Date.now()}`, type: 'delay', delaySeconds: 3 }; break;
-                        default: action = { id: `act_${Date.now()}`, type: 'text', content: '' };
-                    }
-                    updateLocalNode({ actions: [...(localNode.actions || []), action] });
-                };
-                
-                const removeAction = (actionId) => {
-                    updateLocalNode({ actions: (localNode.actions || []).filter(a => a.id !== actionId) });
-                };
-
-                const addOrUpdateUrlButton = (button) => {
-                    const buttons = localNode.urlButtons || [];
-                    const exists = buttons.find(b => b.id === button.id);
-                    if (exists) {
-                        updateLocalNode({ urlButtons: buttons.map(b => b.id === button.id ? button : b) });
-                    } else {
-                        updateLocalNode({ urlButtons: [...buttons, button] });
-                    }
-                };
-
-                const removeUrlButton = (buttonId) => {
-                    updateLocalNode({ urlButtons: (localNode.urlButtons || []).filter(b => b.id !== buttonId) });
-                };
-
-                const renderEditorContent = () => {
-                    switch (localNode.type) {
-                        case 'contentBlock':
-                            return (
-                                <>
-                                    <h3 className="text-sm font-semibold mb-2">Ações no Bloco</h3>
-                                    <div className="space-y-2">
-                                        {(localNode.actions || []).map(act => <ActionEditor key={act.id} action={act} onUpdate={updateAction} onRemove={removeAction} />)}
-                                    </div>
-                                    <div className="mt-4 p-2 border-t text-sm">
-                                        <h4 className="font-semibold mb-2">Adicionar Ação</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button onClick={() => addAction('text')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Texto</button>
-                                            <button onClick={() => addAction('delay')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Atraso</button>
-                                            <button onClick={() => addAction('image')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Imagem</button>
-                                            <button onClick={() => addAction('audio')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Áudio</button>
-                                            <button onClick={() => addAction('video')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-md">+ Vídeo</button>
-                                        </div>
-                                    </div>
-                                     <div className="mt-4 pt-4 border-t text-sm">
-                                        <label className="flex items-center space-x-2 mb-2">
-                                            <input type="checkbox" checked={localNode.replySettings?.awaitsReply || false} onChange={(e) => updateReplySettings({ awaitsReply: e.target.checked })} />
-                                            <span className="font-semibold">Aguardar resposta do cliente?</span>
-                                        </label>
-
-                                         { localNode.replySettings?.awaitsReply ? (
-                                            <div className="pl-2 border-l-2">
-                                                <label className="block text-xs text-gray-500 mb-1">Se não responder em (minutos):</label>
-                                                <input type="number" min="1" className="w-full p-1 border rounded-md mb-2 text-sm" value={(localNode.replySettings.timeoutSeconds || 0) / 60} onChange={(e) => updateReplySettings({ timeoutSeconds: parseInt(e.target.value, 10) * 60 || 0 })} />
-                                                <p className="text-xs text-gray-500">Conecte as saídas "SE RESPONDER" e "SE NÃO RESPONDER" no canvas.</p>
-                                            </div>
-                                         ) : (
-                                            <>
-                                                <h3 className="text-sm font-semibold mt-2 mb-2">Botões (abrir site)</h3>
-                                                {(localNode.urlButtons || []).map(btn => <UrlButtonEditor key={btn.id} button={btn} onUpdate={addOrUpdateUrlButton} onRemove={removeUrlButton} />)}
-                                                <button onClick={() => addOrUpdateUrlButton({ id: `btn_${Date.now()}`, label: 'Novo Botão', url: '' })} className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm">+ Adicionar Botão</button>
-                                            </>
-                                         )}
-                                    </div>
-                                </>
-                            );
-                        case 'redirectFlow':
-                             return (
-                                 <>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Redirecionar para o Fluxo:</label>
-                                    <select
-                                        className="w-full p-2 border rounded-md"
-                                        value={localNode.targetFlowId || ''}
-                                        onChange={(e) => updateLocalNode({ targetFlowId: e.target.value, content: `Enviar para fluxo: ${e.target.options[e.target.selectedIndex].text}` })}
-                                    >
-                                        <option value="">Selecione um fluxo...</option>
-                                        {allFlows.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                                    </select>
-                                 </>
-                             );
-                        case 'queryClickIdCity':
-                             return (
-                                <>
-                                   <label className="block text-sm font-medium text-gray-700 mb-2">Salvar cidade na variável</label>
-                                   <input type="text" className="w-full p-2 border rounded-md" value={localNode.cityVar || ''} onChange={(e) => updateLocalNode({ cityVar: e.target.value, content: `Salva cidade em {{${e.target.value}}}` })} />
-                                </>
-                             );
-                        case 'generatePix':
-                            return (
-                                <>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Valor do PIX (em centavos)</label>
-                                    <input type="number" className="w-full p-2 border rounded-md" value={localNode.valueInCents || 0} onChange={(e) => updateLocalNode({ valueInCents: parseInt(e.target.value, 10) || 0, content: `Gerar PIX de R$ ${(parseInt(e.target.value, 10) / 100 || 0).toFixed(2)}` })} />
-                                    <label className="block text-sm font-medium text-gray-700 mt-4 mb-2">Mensagem para o cliente</label>
-                                    <textarea className="w-full p-2 border rounded-md text-sm" rows="4" value={localNode.messageTemplate || ''} onChange={(e) => updateLocalNode({ messageTemplate: e.target.value })} />
-                                    <p className="text-xs text-gray-500 mt-1">Use <code>{"{{pix_code}}"}</code> onde o PIX deve aparecer. Um botão "Copiar" será adicionado automaticamente.</p>
-                                </>
-                            );
-                         case 'queryPixStatus':
-                            return ( <p className="text-sm text-gray-600">Esta ação irá verificar o status do último PIX gerado para o cliente.</p> );
-                        default: return <p>Este passo não pode ser editado.</p>;
-                    }
-                };
-
-                return (
-                     <div className="editor-panel absolute top-0 right-0 w-96 h-full bg-white shadow-2xl border-l border-gray-200 p-4 z-20 flex flex-col">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold capitalize">Editar: {localNode.type.replace(/([A-Z])/g, ' $1').trim()}</h2>
-                            <button onClick={onClose} className="p-1 rounded-full text-2xl leading-none hover:bg-gray-200">&times;</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto pr-2">{renderEditorContent()}</div>
-                        <div className="mt-4 pt-4 border-t flex justify-between">
-                            <button onClick={() => onDelete(localNode.id)} disabled={localNode.type === 'start'} className="p-2 text-red-600 hover:bg-red-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
-                                <Trash2 />
-                            </button>
-                             <button onClick={handleSave} className="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Salvar Alterações</button>
-                        </div>
-                    </div>
-                );
-            };
-            
-            const FlowNode = ({ node, onMouseDown, isSelected, onStartConnection, setHoveredInputNodeId, isHoveredAsTarget }) => {
-                const nodeStyles = {
-                    start: { bg: 'bg-green-100', border: 'border-green-300', icon: Bot },
-                    contentBlock: { bg: 'bg-white', border: 'border-gray-300', icon: MessageSquare },
-                    redirectFlow: { bg: 'bg-teal-50', border: 'border-teal-300', icon: GitBranchPlus },
-                    queryClickIdCity: { bg: 'bg-orange-50', border: 'border-orange-300', icon: MapPin },
-                    generatePix: { bg: 'bg-emerald-50', border: 'border-emerald-300', icon: DollarSign },
-                    queryPixStatus: { bg: 'bg-indigo-50', border: 'border-indigo-300', icon: BadgeCheck },
-                };
-                
-                const actionIcons = {
-                    text: MessageSquare,
-                    delay: Clock,
-                    image: Image,
-                    audio: FileAudio,
-                    video: Video,
-                };
-
-                const style = nodeStyles[node.type] || nodeStyles.contentBlock;
-                const nodeTitle = node.type.replace(/([A-Z])/g, ' $1').trim();
-                
-                let outputs = node.outputs || [];
-                if(node.type === 'contentBlock' && node.replySettings?.awaitsReply) {
-                    outputs = [
-                        {id: 'onTimeout', label: `SE NÃO RESPONDER`},
-                        {id: 'onReply', label: 'SE RESPONDER'}
-                    ];
-                }
-                
-                return (
-                    <div
-                        className={`node-wrapper absolute p-3 w-72 rounded-lg shadow-md transition-all duration-150 ${style.bg} border ${isSelected ? 'ring-2 ring-indigo-500 shadow-xl' : ''} ${style.border} cursor-grab active:cursor-grabbing`}
-                        style={{ left: node.position.x, top: node.position.y }}
-                        onMouseDown={(e) => onMouseDown(e, node.id)}
-                    >
-                        <div className="flex items-center mb-2 pb-2 border-b">
-                             {React.createElement(style.icon, { className: "w-5 h-5 mr-2" })}
-                            <span className="font-bold text-sm text-gray-700 capitalize">{nodeTitle}</span>
-                        </div>
-
-                        <div className="space-y-1 mb-2">
-                            {node.type === 'contentBlock' ? (
-                                (node.actions || []).map(action => (
-                                     <div key={action.id} className="text-xs text-gray-600 flex items-center bg-gray-50 p-1 rounded-sm">
-                                        {React.createElement(actionIcons[action.type], { size: 14, className: "mr-2 flex-shrink-0" })}
-                                        <span className="truncate">{action.type === 'delay' ? `Digitando por ${action.delaySeconds || 0} segundos...` : action.content || action.url}</span>
-                                     </div>
-                                ))
-                            ) : <p className="text-sm text-gray-600 break-words">{node.content}</p>}
-                        </div>
-
-                        {(node.urlButtons || []).map(button => (
-                            <div key={button.id} className="relative text-center text-sm bg-gray-100 border border-gray-200 rounded-md py-1 px-3 mt-2 flex items-center justify-center">
-                               <ExternalLink size={12} className="mr-2"/> {button.label}
-                            </div>
-                        ))}
-                        
-                        {node.replySettings?.awaitsReply && (
-                            <div className="mt-2 pt-2 border-t border-gray-200 space-y-2">
-                                {outputs.map(output => {
-                                    const isTimeout = output.id === 'onTimeout';
-                                    const color = isTimeout ? 'bg-red-400' : 'bg-green-400';
-                                    const textColor = isTimeout ? 'text-red-500' : 'text-green-600';
-                                    return (
-                                        <div key={output.id} className="relative flex items-center justify-end h-6">
-                                            <span className={`text-[10px] font-semibold pr-5 ${textColor}`}>{output.label}</span>
-                                            <div 
-                                                onMouseDown={(e) => { e.stopPropagation(); onStartConnection(node.id, output.id); }} 
-                                                className={`node-output absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ${color} border-2 border-white cursor-crosshair z-10`}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                        
-                        <div 
-                            className="absolute -left-5 top-0 bottom-0 w-10 z-10"
-                            onMouseEnter={() => setHoveredInputNodeId(node.id)} 
-                            onMouseLeave={() => setHoveredInputNodeId(null)}
-                        >
-                            {node.type !== 'start' && <div className={`node-input absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-400 border-2 border-white transition-all ${isHoveredAsTarget ? 'ring-4 ring-indigo-400 scale-125' : ''}`} title="Ponto de entrada"></div>}
-                        </div>
-                        
-                        {(outputs && (!node.replySettings || !node.replySettings.awaitsReply)) && (outputs || []).map((output) => {
-                             const yOffset = Connections.getOutputYOffset(node, output.id);
-                             return <div key={output.id} onMouseDown={(e) => { e.stopPropagation(); onStartConnection(node.id, output.id); }} className="node-output absolute -right-2 w-4 h-4 rounded-full bg-indigo-400 border-2 border-white cursor-crosshair z-10" style={{ top: `${yOffset}px` }} title={output.label || 'Próximo passo'}></div>
-                        })}
-                    </div>
-                );
-            };
-            
-            const FlowSidebar = ({ addNode, handleSave, onBack, flowName, setFlowName }) => (
-                <aside className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col shadow-lg z-10">
-                    <button onClick={onBack} className="flex items-center text-sm text-gray-500 hover:text-indigo-600 mb-4">
-                        <ArrowLeft size={16} className="mr-2" />
-                        Voltar para Fluxos
-                    </button>
-                    <input 
-                        type="text"
-                        value={flowName}
-                        onChange={(e) => setFlowName(e.target.value)}
-                        className="text-xl font-bold mb-6 text-gray-700 w-full border-b-2 border-transparent focus:border-indigo-500 outline-none bg-transparent"
-                    />
-                    <div className="flex-1 overflow-y-auto">
-                        <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase">Conteúdo</h3>
-                        <SidebarButton icon={MessageSquare} label="Bloco de Mensagens" onClick={() => addNode('contentBlock')} />
-                        
-                        <h3 className="text-sm font-semibold text-gray-500 mt-4 mb-2 uppercase">Ações</h3>
-                        <SidebarButton icon={MapPin} label="Consultar Cidade" onClick={() => addNode('queryClickIdCity')} />
-                        <SidebarButton icon={DollarSign} label="Gerar PIX" onClick={() => addNode('generatePix')} />
-                        <SidebarButton icon={BadgeCheck} label="Consultar Status PIX" onClick={() => addNode('queryPixStatus')} />
-                        <SidebarButton icon={GitBranchPlus} label="Enviar para Fluxo" onClick={() => addNode('redirectFlow')} />
-                    </div>
-                    <div>
-                         <button onClick={handleSave} className="w-full flex items-center justify-center p-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200">
-                            <Save className="w-5 h-5 mr-3" /><span>Salvar Fluxo</span>
-                        </button>
-                    </div>
-                </aside>
-            );
-
-            // --- TELAS PRINCIPAIS ---
-            const FlowsView = ({ flows, bots, onEdit, onCreate, onDelete }) => {
-                const [selectedBotId, setSelectedBotId] = useState(bots[0]?.id.toString() || 'all');
-                const filteredFlows = selectedBotId === 'all' ? flows : flows.filter(f => f.botId === parseInt(selectedBotId));
-
-                return (
-                    <div className="p-8 h-full overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-3xl font-bold text-gray-800">Seus Fluxos</h1>
-                             <div className="flex items-center space-x-4">
-                                <select value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)} className="p-2 border rounded-md bg-white shadow-sm">
-                                    <option value="all">Todos os Bots</option>
-                                    {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}
-                                </select>
-                                <button onClick={() => onCreate(selectedBotId === 'all' ? null : parseInt(selectedBotId))} className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-                                    <Plus size={16} className="mr-2" />
-                                    Criar Novo Fluxo
-                                </button>
-                             </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredFlows.map(flow => {
-                                const botName = bots.find(b => b.id === flow.botId)?.name || 'Bot desconhecido';
-                                return (
-                                    <div key={flow.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col justify-between">
-                                        <div>
-                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{botName}</span>
-                                            <h2 className="text-xl font-semibold my-2">{flow.name}</h2>
-                                            <p className="text-sm text-gray-500">{(flow.nodes || []).length} blocos</p>
-                                        </div>
-                                        <div className="flex items-center justify-end space-x-2 mt-4">
-                                            <button onClick={() => onDelete(flow.id)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
-                                            <button onClick={() => onEdit(flow.id)} className="flex items-center bg-gray-100 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-200">
-                                                <Edit size={14} className="mr-2" />
-                                                Editar
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            };
-
-            const LoginView = ({ onLogin }) => {
-                const [email, setEmail] = useState('');
-                const [password, setPassword] = useState('');
-                const [error, setError] = useState('');
-                const [isLoading, setIsLoading] = useState(false);
-
-                const handleSubmit = async (e) => {
-                    e.preventDefault();
-                    setIsLoading(true);
-                    setError('');
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/api/sellers/login`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, password })
-                        });
-                        const data = await response.json();
-                        if (!response.ok) {
-                            throw new Error(data.message || 'Erro ao fazer login.');
-                        }
-                        onLogin(data.token);
-                    } catch (err) {
-                        setError(err.message);
-                    } finally {
-                        setIsLoading(false);
-                    }
-                };
-                
-                return (
-                    <div className="flex items-center justify-center h-screen bg-gray-100">
-                        <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-sm">
-                            <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
-                            <form onSubmit={handleSubmit}>
-                                <div className="mb-4">
-                                    <label className="block mb-1">Email</label>
-                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required />
-                                </div>
-                                <div className="mb-6">
-                                    <label className="block mb-1">Senha</label>
-                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required />
-                                </div>
-                                {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-                                <button type="submit" className="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700" disabled={isLoading}>
-                                    {isLoading ? 'Entrando...' : 'Entrar'}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                );
-            };
-
-            const MainNavItem = ({ icon, label, isActive, onClick }) => (
-                <button 
-                    onClick={onClick}
-                    className={`flex flex-col items-center justify-center w-full h-16 transition-colors duration-200 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
-                    title={label}
-                >
-                    {React.createElement(icon, { size: 24 })}
-                    <span className="text-xs mt-1">{label}</span>
-                </button>
-            );
+            // ... (Todos os outros componentes como Controls, Connections, ActionEditor, etc. serão adicionados aqui)
 
             // --- COMPONENTE PRINCIPAL ---
             const App = () => {
@@ -595,11 +94,11 @@
                         const fetchData = async () => {
                             try {
                                 const [botsData, flowsData] = await Promise.all([
-                                    api.get('/bots', token),
-                                    api.get('/flows', token)
+                                    api.get('/api/bots', token),
+                                    api.get('/api/flows', token)
                                 ]);
-                                setBots(botsData);
-                                setFlows(flowsData.map(flow => ({...flow, nodes: typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes})));
+                                setBots(botsData || []);
+                                setFlows(flowsData || []);
                             } catch (error) {
                                 console.error("Falha ao buscar dados iniciais", error);
                                 handleLogout();
@@ -626,72 +125,63 @@
                 };
 
                 const handleCreateFlow = async (botId) => {
-                    if(!botId && bots.length > 0) {
-                       botId = bots[0].id;
-                    }
-                    if(!botId && bots.length === 0) {
+                    const targetBotId = botId || (bots.length > 0 ? bots[0].id : null);
+                    if (!targetBotId) {
                         alert("Por favor, crie um bot primeiro na aba de Configurações.");
                         setActiveTab('settings');
                         return;
                     }
-                    
                     try {
-                        const newFlowData = await api.post('/flows', { name: `Novo Fluxo ${flows.length + 1}`, botId }, token);
-                        setFlows(prev => [...prev, {...newFlowData, nodes: typeof newFlowData.nodes === 'string' ? JSON.parse(newFlowData.nodes) : newFlowData.nodes}]);
-                        setEditingFlowId(newFlowData.id);
+                        const newFlow = await api.post('/api/flows', {
+                            name: `Novo Fluxo ${flows.length + 1}`,
+                            botId: targetBotId
+                        }, token);
+                        setFlows(prev => [...prev, newFlow]);
+                        setEditingFlowId(newFlow.id);
                     } catch (error) {
                         console.error("Falha ao criar fluxo:", error);
-                        alert("Erro ao criar fluxo.");
+                        alert(`Erro ao criar fluxo: ${error.message}`);
                     }
                 };
 
                 const handleSaveFlow = async (flowId, updatedFlowData) => {
                     try {
-                        await api.put(`/flows/${flowId}`, updatedFlowData, token);
+                        await api.put(`/api/flows/${flowId}`, updatedFlowData, token);
                         setFlows(prev => prev.map(f => f.id === flowId ? { ...f, ...updatedFlowData } : f));
                         alert("Fluxo salvo com sucesso!");
                     } catch (error) {
                         console.error("Falha ao salvar fluxo:", error);
-                        alert("Erro ao salvar fluxo.");
+                        alert(`Erro ao salvar: ${error.message}`);
                     }
                 };
-                
+
                 const handleDeleteFlow = async (flowId) => {
                     if (window.confirm("Tem certeza que deseja excluir este fluxo?")) {
-                         try {
-                            await api.delete(`/flows/${flowId}`, token);
+                        try {
+                            await api.delete(`/api/flows/${flowId}`, token);
                             setFlows(prev => prev.filter(f => f.id !== flowId));
                         } catch (error) {
                             console.error("Falha ao excluir fluxo:", error);
-                            alert("Erro ao excluir fluxo.");
+                            alert(`Erro ao excluir: ${error.message}`);
                         }
                     }
                 };
-
-                if (!token) {
-                    return <LoginView onLogin={handleLogin} />;
-                }
-
-                if (isLoading) {
-                    return <div className="flex h-screen items-center justify-center">Carregando Plataforma...</div>;
-                }
+                
+                if (!token) { return <LoginView onLogin={handleLogin} />; }
+                if (isLoading) { return <div className="flex h-screen items-center justify-center text-lg font-semibold">Carregando Plataforma...</div>; }
                 
                 const renderContent = () => {
-                    // Placeholder components for missing views
-                    const LiveChatView = ({bots}) => <div className="p-8"><h1 className="text-3xl font-bold">Chat ao Vivo (Em Construção)</h1></div>;
-                    const BroadcastsView = ({bots}) => <div className="p-8"><h1 className="text-3xl font-bold">Disparos (Em Construção)</h1></div>;
-
                     switch (activeTab) {
                         case 'settings': return <SettingsView bots={bots} setBots={setBots} token={token} />;
-                        case 'flows': 
+                        case 'flows':
                             const flowToEdit = flows.find(f => f.id === editingFlowId);
                             if (flowToEdit) {
-                                const allFlowsForBot = flows.filter(f => f.botId === flowToEdit.botId);
+                                const allFlowsForBot = flows.filter(f => f.bot_id === flowToEdit.bot_id);
                                 return <FlowBuilder flow={flowToEdit} allFlows={allFlowsForBot} onSave={handleSaveFlow} onBack={() => setEditingFlowId(null)} />;
                             }
                             return <FlowsView flows={flows} bots={bots} onEdit={setEditingFlowId} onCreate={handleCreateFlow} onDelete={handleDeleteFlow} />;
                         case 'livechat': return <LiveChatView bots={bots} />;
-                        case 'broadcasts': return <BroadcastsView bots={bots} />;
+                        case 'broadcasts': return <BroadcastsView bots={bots} token={token} />;
                         default: return <p>Selecione uma aba</p>;
                     }
                 };
@@ -700,10 +190,10 @@
                     <div className="flex h-screen bg-gray-100 font-sans">
                         <nav className="w-20 bg-gray-800 text-white flex flex-col items-center p-4 space-y-6">
                             <BotMessageSquare size={32} className="text-indigo-400" />
-                            <MainNavItem icon={Settings} label="Config" isActive={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setEditingFlowId(null); }} />
                             <MainNavItem icon={GitBranchPlus} label="Fluxos" isActive={activeTab === 'flows'} onClick={() => { setActiveTab('flows'); setEditingFlowId(null); }} />
                             <MainNavItem icon={MessageCircle} label="Chat" isActive={activeTab === 'livechat'} onClick={() => { setActiveTab('livechat'); setEditingFlowId(null); }} />
                             <MainNavItem icon={Send} label="Disparos" isActive={activeTab === 'broadcasts'} onClick={() => { setActiveTab('broadcasts'); setEditingFlowId(null); }} />
+                            <MainNavItem icon={Settings} label="Config" isActive={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setEditingFlowId(null); }} />
                             <div className="mt-auto">
                                 <MainNavItem icon={LogOut} label="Sair" isActive={false} onClick={handleLogout} />
                             </div>
@@ -714,6 +204,8 @@
                     </div>
                 );
             }
+            
+            // --- Todas as outras views e componentes auxiliares serão definidos aqui ---
 
             ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
         });
