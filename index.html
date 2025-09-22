@@ -4,111 +4,58 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gerenciador de Bots</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    
     <style>
-        /* --- Estilos Globais e Reset --- */
         :root {
-            --bg-dark: #1A202C;
-            --bg-medium: #2D3748;
-            --bg-light: #4A5568;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0AEC0;
-            --accent-blue: #3182CE;
-            --accent-green: #38A169;
-            --accent-red: #E53E3E;
+            --bg-dark: #1A202C; --bg-medium: #2D3748; --bg-light: #4A5568;
+            --text-primary: #FFFFFF; --text-secondary: #A0AEC0; --accent-blue: #3182CE;
+            --accent-green: #38A169; --accent-red: #E53E3E;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
+            background-color: var(--bg-dark); color: var(--text-primary);
         }
         #root { display: flex; flex-direction: column; min-height: 100vh; }
-
-        /* --- Componentes --- */
         .button {
-            display: inline-block;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.2s;
+            display: inline-block; padding: 10px 18px; border: none; border-radius: 6px; font-size: 16px;
+            font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s;
         }
         .button-blue { background-color: var(--accent-blue); color: white; }
         .button-blue:hover { background-color: #2b6cb0; }
         .button-red { background-color: var(--accent-red); color: white; }
         .button-red:hover { background-color: #c53030; }
-        .button-ghost { background-color: transparent; border: 1px solid var(--bg-light); color: white; }
-        .button-ghost:hover { background-color: var(--bg-medium); }
         .button-link { background: none; border: none; color: var(--accent-blue); cursor: pointer; text-decoration: underline; }
-
         .input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid var(--bg-light);
-            background-color: var(--bg-medium);
-            color: var(--text-primary);
-            font-size: 16px;
+            width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--bg-light);
+            background-color: var(--bg-medium); color: var(--text-primary); font-size: 16px;
         }
         .input:focus { outline: none; border-color: var(--accent-blue); }
-
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid var(--text-primary);
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid var(--text-primary);
+            width: 40px; height: 40px; animation: spin 1s linear infinite; margin: auto;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* --- Layout --- */
         .layout-container { display: flex; width: 100%; min-height: 100vh; }
-        .sidebar { width: 250px; background-color: #171923; padding: 24px 16px; display: flex; flex-direction: column; border-right: 1px solid var(--bg-medium); }
+        .sidebar {
+            width: 250px; background-color: #171923; padding: 24px 16px; display: flex;
+            flex-direction: column; border-right: 1px solid var(--bg-medium);
+        }
         .sidebar-heading { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 32px; }
         .sidebar-link {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-bottom: 8px;
+            display: flex; align-items: center; padding: 12px 16px; border-radius: 6px; text-decoration: none;
+            color: var(--text-secondary); font-weight: 500; margin-bottom: 8px;
         }
         .sidebar-link:hover, .sidebar-link.active { background-color: var(--bg-medium); color: var(--text-primary); }
-        .sidebar-link svg { margin-right: 12px; }
         .sidebar-footer { margin-top: auto; }
-
         .main-content { flex: 1; padding: 32px; overflow-y: auto; }
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .page-title { font-size: 28px; font-weight: bold; }
-        
-        /* --- Páginas Específicas --- */
         .login-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100vh; }
         .login-box { background-color: var(--bg-medium); padding: 32px; border-radius: 8px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
-        
         .bot-card { background-color: var(--bg-medium); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        
         .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: var(--bg-medium);
-            padding: 15px 20px;
-            border-radius: 6px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            color: white;
-            z-index: 1000;
+            position: fixed; top: 20px; right: 20px; background-color: var(--bg-medium); padding: 15px 20px;
+            border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: white; z-index: 1000;
             border-left: 4px solid;
         }
         .toast-success { border-color: var(--accent-green); }
@@ -116,20 +63,28 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="text/babel">
         const { HashRouter, Routes, Route, Link, useNavigate, useParams, Navigate, useLocation } = ReactRouterDOM;
         const { useState, useEffect, useCallback, createContext, useContext } = React;
 
-        // --- Contexto de Autenticação (Gerencia o Login) ---
+        // --- Contexto de Autenticação ---
         const AuthContext = createContext(null);
-
         const AuthProvider = ({ children }) => {
             const [token, setToken] = useState(localStorage.getItem('authToken'));
             const [loading, setLoading] = useState(true);
-
-            axios.defaults.baseURL = 'http://localhost:3001/api'; // <<< MUDE AQUI SE NECESSÁRIO
+            axios.defaults.baseURL = 'https://lead-tracker-api.vercel.app/api'; // URL de exemplo, troque pela sua
 
             useEffect(() => {
                 if (token) {
@@ -146,42 +101,28 @@
                 const response = await axios.post('/sellers/login', { email, password });
                 setToken(response.data.token);
             };
-
             const register = async (name, email, password) => {
                 await axios.post('/sellers/register', { name, email, password });
                 await login(email, password);
             };
-
             const logout = () => setToken(null);
 
-            const value = { token, login, register, logout };
-            return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+            if (loading) return <div className="spinner"></div>;
+            return <AuthContext.Provider value={{ token, login, register, logout }}>{children}</AuthContext.Provider>;
         };
-
         const useAuth = () => useContext(AuthContext);
 
-        // --- Rotas Protegidas ---
-        const ProtectedRoute = ({ children }) => {
-            const { token } = useAuth();
-            return token ? children : <Navigate to="/login" replace />;
-        };
-
-        const AuthRoute = ({ children }) => {
-            const { token } = useAuth();
-            return token ? <Navigate to="/" replace /> : children;
-        };
+        // --- Rotas e Notificações ---
+        const ProtectedRoute = ({ children }) => <>{useAuth().token ? children : <Navigate to="/login" replace />}</>;
+        const AuthRoute = ({ children }) => <>{useAuth().token ? <Navigate to="/" replace /> : children}</>;
         
-        // --- Hook para Notificações (Toast) ---
         const ToastContext = createContext();
-        
         const ToastProvider = ({ children }) => {
             const [toast, setToast] = useState(null);
-
             const showToast = (message, status = 'success') => {
                 setToast({ message, status });
                 setTimeout(() => setToast(null), 4000);
             };
-            
             return (
                 <ToastContext.Provider value={{ showToast }}>
                     {children}
@@ -189,45 +130,32 @@
                 </ToastContext.Provider>
             );
         };
-        
         const useToast = () => useContext(ToastContext);
 
-        // --- Componentes de UI ---
+        // --- Componentes ---
         const Sidebar = () => {
             const { logout } = useAuth();
             const navigate = useNavigate();
             const location = useLocation();
-
-            const handleLogout = () => {
-                logout();
-                navigate('/login');
-            };
-            
             const links = [
-                { to: '/', label: 'Dashboard' },
-                { to: '/bots', label: 'Bots' },
-                { to: '/flows', label: 'Fluxos' },
-                { to: '/dispatches', label: 'Disparos' },
+                { to: '/', label: 'Dashboard' }, { to: '/bots', label: 'Bots' },
+                { to: '/flows', label: 'Fluxos' }, { to: '/dispatches', label: 'Disparos' },
                 { to: '/live-chat', label: 'Chat ao Vivo' },
             ];
-
             return (
                 <div className="sidebar">
                     <div>
                         <h1 className="sidebar-heading">BotManager</h1>
                         {links.map(link => (
-                            <Link key={link.to} to={link.to} className={`sidebar-link ${location.pathname === link.to ? 'active' : ''}`}>
-                                {link.label}
-                            </Link>
+                            <Link key={link.to} to={link.to} className={`sidebar-link ${location.pathname === link.to ? 'active' : ''}`}>{link.label}</Link>
                         ))}
                     </div>
                     <div className="sidebar-footer">
-                        <button className="button button-red" style={{width: '100%'}} onClick={handleLogout}>Sair</button>
+                        <button className="button button-red" style={{width: '100%'}} onClick={() => { logout(); navigate('/login'); }}>Sair</button>
                     </div>
                 </div>
             );
         };
-
         const MainLayout = ({ children }) => (
             <div className="layout-container">
                 <Sidebar />
@@ -250,11 +178,7 @@
                 e.preventDefault();
                 setLoading(true);
                 try {
-                    if (isLogin) {
-                        await login(email, password);
-                    } else {
-                        await register(name, email, password);
-                    }
+                    isLogin ? await login(email, password) : await register(name, email, password);
                     navigate('/');
                 } catch (error) {
                     showToast(error.response?.data?.message || "Erro de conexão", 'error');
@@ -270,18 +194,12 @@
                         {!isLogin && <input className="input" placeholder="Seu Nome" value={name} onChange={e => setName(e.target.value)} required />}
                         <input className="input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
                         <input className="input" type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button className="button button-blue" type="submit" disabled={loading}>
-                            {loading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')}
-                        </button>
-                        <button type="button" className="button-link" onClick={() => setIsLogin(!isLogin)}>
-                            {isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Faça login"}
-                        </button>
+                        <button className="button button-blue" type="submit" disabled={loading}>{loading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')}</button>
+                        <button type="button" className="button-link" onClick={() => setIsLogin(!isLogin)}>{isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Faça login"}</button>
                     </form>
                 </div>
             );
         };
-
-        const DashboardPage = () => <h1 className="page-title">Dashboard</h1>;
         
         const BotsPage = () => {
             const [bots, setBots] = useState([]);
@@ -290,7 +208,7 @@
             
             const fetchBots = useCallback(async () => {
                 try {
-                    const response = await axios.get('/dashboard/data');
+                    const response = await axios.get('/dashboard/data'); // O endpoint que retorna os bots
                     setBots(response.data.bots);
                 } catch (err) {
                     showToast("Erro ao carregar os bots.", "error");
@@ -301,32 +219,31 @@
 
             useEffect(() => { fetchBots() }, [fetchBots]);
             
-            if (loading) return <div className="spinner" />;
-
             return (
                 <div>
                     <div className="page-header">
                         <h1 className="page-title">Meus Bots</h1>
                         <button className="button button-blue">Adicionar Bot</button>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {bots.length > 0 ? bots.map(bot => (
-                            <div key={bot.id} className="bot-card">
-                                <span>{bot.bot_name}</span>
-                                <button className="button button-ghost">Gerenciar</button>
-                            </div>
-                        )) : <p>Nenhum bot encontrado.</p>}
-                    </div>
+                    {loading ? <div className="spinner" /> : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {bots.length > 0 ? bots.map(bot => (
+                                <div key={bot.id} className="bot-card">
+                                    <span>{bot.bot_name}</span>
+                                    <button className="button button-link">Gerenciar</button>
+                                </div>
+                            )) : <p>Nenhum bot encontrado.</p>}
+                        </div>
+                    )}
                 </div>
             );
         }
-
+        
         const PlaceholderPage = ({ title }) => <h1 className="page-title">{title}</h1>;
         
         // --- Aplicação Principal ---
-        const App = () => {
-            return (
-              <ToastProvider>
+        const App = () => (
+            <ToastProvider>
                 <HashRouter>
                     <AuthProvider>
                         <Routes>
@@ -335,7 +252,7 @@
                                 <ProtectedRoute>
                                     <MainLayout>
                                         <Routes>
-                                            <Route index element={<DashboardPage />} />
+                                            <Route index element={<PlaceholderPage title="Dashboard" />} />
                                             <Route path="bots" element={<BotsPage />} />
                                             <Route path="flows" element={<PlaceholderPage title="Fluxos" />} />
                                             <Route path="dispatches" element={<PlaceholderPage title="Disparos" />} />
@@ -348,11 +265,12 @@
                         </Routes>
                     </AuthProvider>
                 </HashRouter>
-              </ToastProvider>
-            );
-        }
+            </ToastProvider>
+        );
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
     </script>
 </body>
 </html>
