@@ -18,16 +18,15 @@
             to { transform: translateX(0); }
         }
     </style>
-</head>
-<body class="bg-gray-100">
-    <div id="root"></div>
-
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-presets="react">
         // Aguarda o DOM estar completamente carregado antes de executar o React
         document.addEventListener('DOMContentLoaded', () => {
             const { useState, useCallback, useRef, useEffect } = React;
@@ -39,14 +38,17 @@
             // --- API Helper ---
             const api = {
                 async get(endpoint, token) {
-                    const response = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                    if (!response.ok) throw new Error('A resposta da rede não foi OK.');
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({ message: 'A resposta da rede não foi OK.' }));
+                        throw new Error(err.message);
+                    }
                     return response.json();
                 },
                 async post(endpoint, body, token) {
-                    const response = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -55,13 +57,13 @@
                         body: JSON.stringify(body)
                     });
                     if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.message || 'A resposta da rede não foi OK.');
+                        const err = await response.json().catch(() => ({ message: 'A resposta da rede não foi OK.' }));
+                        throw new Error(err.message);
                     }
                     return response.json();
                 },
                 async put(endpoint, body, token) {
-                     const response = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+                     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -69,11 +71,14 @@
                         },
                         body: JSON.stringify(body)
                     });
-                    if (!response.ok) throw new Error('A resposta da rede não foi OK.');
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({ message: 'A resposta da rede não foi OK.' }));
+                        throw new Error(err.message);
+                    }
                     return response.json();
                 },
                 async delete(endpoint, token) {
-                    const response = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -83,14 +88,8 @@
             };
 
             const createInitialFlow = (id, name, botId) => ({
-                id,
-                name,
-                botId,
-                nodes: [{ 
-                    id: 1, type: 'start', content: 'Início do Fluxo', 
-                    position: { x: 50, y: 150 }, 
-                    outputs: [{ id: 'out', nextStepId: null }] 
-                }]
+                id, name, botId,
+                nodes: [{ id: 1, type: 'start', content: 'Início do Fluxo', position: { x: 50, y: 150 }, outputs: [{ id: 'out', nextStepId: null }] }]
             });
 
             // --- COMPONENTES HELPER ---
@@ -107,7 +106,7 @@
                     <button onClick={onZoomIn} className="p-2 text-gray-600 hover:bg-gray-100">+</button>
                 </div>
             );
-
+            
             const Connections = ({ nodes, connectionPreview }) => {
                 Connections.getOutputYOffset = (node, outputId) => {
                     if (node.type === 'contentBlock' && node.replySettings?.awaitsReply) {
@@ -122,15 +121,9 @@
                 return (
                     <svg className="absolute w-full h-full pointer-events-none overflow-visible">
                         <defs>
-                            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af" />
-                            </marker>
-                             <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#f87171" />
-                            </marker>
-                             <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#4ade80" />
-                            </marker>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af" /></marker>
+                             <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f87171" /></marker>
+                             <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4ade80" /></marker>
                         </defs>
                         <g>
                             {(nodes || []).map(node => {
@@ -169,15 +162,7 @@
                                     return <path key={`${node.id}-${output.id}`} d={path} stroke={strokeColor} strokeWidth="2" fill="none" markerEnd={marker} strokeDasharray={isTimeout ? "5 5" : "none"} />;
                                 });
                             })}
-                            {connectionPreview && (
-                                <path 
-                                    d={`M ${connectionPreview.startPos.x} ${connectionPreview.startPos.y} C ${connectionPreview.startPos.x + 60} ${connectionPreview.startPos.y}, ${connectionPreview.endPos.x - 60} ${connectionPreview.endPos.y}, ${connectionPreview.endPos.x} ${connectionPreview.endPos.y}`}
-                                    stroke="#6366f1" 
-                                    strokeWidth="2"
-                                    strokeDasharray="5 5"
-                                    fill="none" 
-                                />
-                            )}
+                            {connectionPreview && <path d={`M ${connectionPreview.startPos.x} ${connectionPreview.startPos.y} C ${connectionPreview.startPos.x + 60} ${connectionPreview.startPos.y}, ${connectionPreview.endPos.x - 60} ${connectionPreview.endPos.y}, ${connectionPreview.endPos.x} ${connectionPreview.endPos.y}`} stroke="#6366f1" strokeWidth="2" strokeDasharray="5 5" fill="none" />}
                         </g>
                     </svg>
                 );
@@ -209,11 +194,7 @@
             const UrlButtonEditor = ({ button, onUpdate, onRemove }) => {
                 const [label, setLabel] = useState(button.label);
                 const [url, setUrl] = useState(button.url);
-
-                useEffect(() => {
-                    onUpdate({ ...button, label, url });
-                }, [label, url]);
-
+                useEffect(() => { onUpdate({ ...button, label, url }); }, [label, url]);
                 return (
                     <div className="p-2 border rounded-md mb-2 bg-gray-50">
                         <input type="text" value={label} onChange={e => setLabel(e.target.value)} className="w-full p-1 border rounded-md mb-2" placeholder="Texto do Botão" />
@@ -696,6 +677,10 @@
                 }
                 
                 const renderContent = () => {
+                    // Placeholder components for missing views
+                    const LiveChatView = ({bots}) => <div className="p-8"><h1 className="text-3xl font-bold">Chat ao Vivo (Em Construção)</h1></div>;
+                    const BroadcastsView = ({bots}) => <div className="p-8"><h1 className="text-3xl font-bold">Disparos (Em Construção)</h1></div>;
+
                     switch (activeTab) {
                         case 'settings': return <SettingsView bots={bots} setBots={setBots} token={token} />;
                         case 'flows': 
@@ -705,8 +690,8 @@
                                 return <FlowBuilder flow={flowToEdit} allFlows={allFlowsForBot} onSave={handleSaveFlow} onBack={() => setEditingFlowId(null)} />;
                             }
                             return <FlowsView flows={flows} bots={bots} onEdit={setEditingFlowId} onCreate={handleCreateFlow} onDelete={handleDeleteFlow} />;
-                        case 'livechat': return <p>Chat ao Vivo (em construção)</p>;
-                        case 'broadcasts': return <p>Disparos (em construção)</p>;
+                        case 'livechat': return <LiveChatView bots={bots} />;
+                        case 'broadcasts': return <BroadcastsView bots={bots} />;
                         default: return <p>Selecione uma aba</p>;
                     }
                 };
