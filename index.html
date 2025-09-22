@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gerenciador de Bots</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
+    <script src="https://unpkg.com/reactflow@11.10.1/dist/umd/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/reactflow@11.10.1/dist/style.css" />
+    
     <style>
+        /* --- Estilos Globais e Reset --- */
         :root {
             --bg-dark: #1A202C; --bg-medium: #2D3748; --bg-light: #4A5568;
             --text-primary: #FFFFFF; --text-secondary: #A0AEC0; --accent-blue: #3182CE;
@@ -60,6 +71,26 @@
         }
         .toast-success { border-color: var(--accent-green); }
         .toast-error { border-color: var(--accent-red); }
+        /* Estilos do ReactFlow */
+        .react-flow__handle { opacity: 0.5; }
+        .react-flow__handle:hover { opacity: 1; }
+        .react-flow__node {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--bg-light);
+            background-color: var(--bg-medium);
+            color: white;
+        }
+        .react-flow__node.selected {
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
+        .react-flow__edge-path {
+            stroke-width: 2;
+        }
+        .react-flow__edge.is-timeout .react-flow__edge-path {
+            stroke: var(--accent-red);
+            stroke-dasharray: 5, 5;
+        }
     </style>
 </head>
 <body>
@@ -73,11 +104,13 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/reactflow@11.10.1/dist/umd/index.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="text/babel">
         const { HashRouter, Routes, Route, Link, useNavigate, useParams, Navigate, useLocation } = ReactRouterDOM;
         const { useState, useEffect, useCallback, createContext, useContext } = React;
+        const { ReactFlowProvider, useNodesState, useEdgesState, addEdge, Background, Controls, MiniMap, Handle, Position } = ReactFlow;
 
         // --- Contexto de Autenticação ---
         const AuthContext = createContext(null);
@@ -107,14 +140,14 @@
             };
             const logout = () => setToken(null);
 
-            if (loading) return <div className="spinner"></div>;
-            return <AuthContext.Provider value={{ token, login, register, logout }}>{children}</AuthContext.Provider>;
+            if (loading) return React.createElement('div', { className: 'spinner' });
+            return React.createElement(AuthContext.Provider, { value: { token, login, register, logout } }, children);
         };
         const useAuth = () => useContext(AuthContext);
 
         // --- Rotas e Notificações ---
-        const ProtectedRoute = ({ children }) => <>{useAuth().token ? children : <Navigate to="/login" replace />}</>;
-        const AuthRoute = ({ children }) => <>{useAuth().token ? <Navigate to="/" replace /> : children}</>;
+        const ProtectedRoute = ({ children }) => useAuth().token ? children : React.createElement(Navigate, { to: "/login", replace: true });
+        const AuthRoute = ({ children }) => useAuth().token ? React.createElement(Navigate, { to: "/", replace: true }) : children;
         
         const ToastContext = createContext();
         const ToastProvider = ({ children }) => {
@@ -124,10 +157,10 @@
                 setTimeout(() => setToast(null), 4000);
             };
             return (
-                <ToastContext.Provider value={{ showToast }}>
-                    {children}
-                    {toast && <div className={`toast toast-${toast.status}`}>{toast.message}</div>}
-                </ToastContext.Provider>
+                React.createElement(ToastContext.Provider, { value: { showToast } },
+                    children,
+                    toast && React.createElement('div', { className: `toast toast-${toast.status}` }, toast.message)
+                )
             );
         };
         const useToast = () => useContext(ToastContext);
@@ -143,24 +176,24 @@
                 { to: '/live-chat', label: 'Chat ao Vivo' },
             ];
             return (
-                <div className="sidebar">
-                    <div>
-                        <h1 className="sidebar-heading">BotManager</h1>
-                        {links.map(link => (
-                            <Link key={link.to} to={link.to} className={`sidebar-link ${location.pathname === link.to ? 'active' : ''}`}>{link.label}</Link>
-                        ))}
-                    </div>
-                    <div className="sidebar-footer">
-                        <button className="button button-red" style={{width: '100%'}} onClick={() => { logout(); navigate('/login'); }}>Sair</button>
-                    </div>
-                </div>
+                React.createElement('div', { className: 'sidebar' },
+                    React.createElement('div', null,
+                        React.createElement('h1', { className: 'sidebar-heading' }, 'BotManager'),
+                        links.map(link => (
+                            React.createElement(Link, { key: link.to, to: link.to, className: `sidebar-link ${location.pathname === link.to ? 'active' : ''}` }, link.label)
+                        ))
+                    ),
+                    React.createElement('div', { className: 'sidebar-footer' },
+                        React.createElement('button', { className: 'button button-red', style: { width: '100%' }, onClick: () => { logout(); navigate('/login'); } }, 'Sair')
+                    )
+                )
             );
         };
         const MainLayout = ({ children }) => (
-            <div className="layout-container">
-                <Sidebar />
-                <main className="main-content">{children}</main>
-            </div>
+            React.createElement('div', { className: 'layout-container' },
+                React.createElement(Sidebar),
+                React.createElement('main', { className: 'main-content' }, children)
+            )
         );
 
         // --- Páginas ---
@@ -188,16 +221,16 @@
             };
 
             return (
-                <div className="login-container">
-                    <form className="login-box" onSubmit={handleSubmit}>
-                        <h2>{isLogin ? "Acessar Plataforma" : "Criar Conta"}</h2>
-                        {!isLogin && <input className="input" placeholder="Seu Nome" value={name} onChange={e => setName(e.target.value)} required />}
-                        <input className="input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input className="input" type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button className="button button-blue" type="submit" disabled={loading}>{loading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')}</button>
-                        <button type="button" className="button-link" onClick={() => setIsLogin(!isLogin)}>{isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Faça login"}</button>
-                    </form>
-                </div>
+                React.createElement('div', { className: 'login-container' },
+                    React.createElement('form', { className: 'login-box', onSubmit: handleSubmit },
+                        React.createElement('h2', null, isLogin ? "Acessar Plataforma" : "Criar Conta"),
+                        !isLogin && React.createElement('input', { className: 'input', placeholder: "Seu Nome", value: name, onChange: e => setName(e.target.value), required: true }),
+                        React.createElement('input', { className: 'input', type: 'email', placeholder: "Email", value: email, onChange: e => setEmail(e.target.value), required: true }),
+                        React.createElement('input', { className: 'input', type: 'password', placeholder: "Senha", value: password, onChange: e => setPassword(e.target.value), required: true }),
+                        React.createElement('button', { className: 'button button-blue', type: 'submit', disabled: loading }, loading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')),
+                        React.createElement('button', { type: 'button', className: 'button-link', onClick: () => setIsLogin(!isLogin) }, isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Faça login")
+                    )
+                )
             );
         };
         
@@ -208,7 +241,7 @@
             
             const fetchBots = useCallback(async () => {
                 try {
-                    const response = await axios.get('/dashboard/data'); // O endpoint que retorna os bots
+                    const response = await axios.get('/dashboard/data');
                     setBots(response.data.bots);
                 } catch (err) {
                     showToast("Erro ao carregar os bots.", "error");
@@ -220,57 +253,122 @@
             useEffect(() => { fetchBots() }, [fetchBots]);
             
             return (
-                <div>
-                    <div className="page-header">
-                        <h1 className="page-title">Meus Bots</h1>
-                        <button className="button button-blue">Adicionar Bot</button>
-                    </div>
-                    {loading ? <div className="spinner" /> : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {bots.length > 0 ? bots.map(bot => (
-                                <div key={bot.id} className="bot-card">
-                                    <span>{bot.bot_name}</span>
-                                    <button className="button button-link">Gerenciar</button>
-                                </div>
-                            )) : <p>Nenhum bot encontrado.</p>}
-                        </div>
-                    )}
-                </div>
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'page-header' },
+                        React.createElement('h1', { className: 'page-title' }, 'Meus Bots'),
+                        React.createElement('button', { className: 'button button-blue' }, 'Adicionar Bot')
+                    ),
+                    loading ? React.createElement('div', { className: 'spinner' }) : (
+                        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '16px' } },
+                            bots.length > 0 ? bots.map(bot => (
+                                React.createElement('div', { key: bot.id, className: 'bot-card' },
+                                    React.createElement('span', null, bot.bot_name),
+                                    React.createElement('button', { className: 'button button-link' }, 'Gerenciar')
+                                )
+                            )) : React.createElement('p', null, 'Nenhum bot encontrado.')
+                        )
+                    )
+                )
             );
-        }
+        };
         
-        const PlaceholderPage = ({ title }) => <h1 className="page-title">{title}</h1>;
+        const PlaceholderPage = ({ title }) => React.createElement('h1', { className: 'page-title' }, title);
+
+        // ===== CÓDIGO DO CONSTRUTOR DE FLUXOS (Flow Builder) =====
+        
+        // Definição dos tipos de nós (blocos)
+        const nodeTypes = {
+            messageNode: ({ data, id }) => (
+                React.createElement('div', { className: 'react-flow__node' },
+                    React.createElement(Handle, { type: 'target', position: 'top' }),
+                    React.createElement('div', { style: { padding: '16px' } },
+                        React.createElement('h3', { style: { fontSize: '18px', fontWeight: 'bold' } }, data.label),
+                        React.createElement('p', { style: { marginTop: '8px' } }, data.message),
+                    ),
+                    React.createElement(Handle, { type: 'source', position: 'bottom' })
+                )
+            ),
+        };
+
+        const FlowBuilderPage = () => {
+            const { flowId } = useParams();
+            const [nodes, setNodes, onNodesChange] = useNodesState([]);
+            const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+            const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+            
+            const addNode = (type) => {
+                const newNode = {
+                    id: `${Date.now()}`,
+                    type,
+                    position: { x: 50, y: 50 },
+                    data: { label: 'Novo Bloco de Mensagem', message: 'Clique duas vezes para editar.' }
+                };
+                setNodes((nds) => nds.concat(newNode));
+            };
+
+            const addTextNode = () => addNode('messageNode');
+            
+            return (
+                React.createElement('div', { style: { width: '100%', height: 'calc(100vh - 64px)', border: '1px solid var(--bg-light)', borderRadius: '8px' } },
+                    React.createElement(ReactFlow, {
+                        nodes: nodes,
+                        edges: edges,
+                        onNodesChange: onNodesChange,
+                        onEdgesChange: onEdgesChange,
+                        onConnect: onConnect,
+                        nodeTypes: nodeTypes,
+                        fitView: true
+                    },
+                        React.createElement(Background),
+                        React.createElement(Controls),
+                        React.createElement(MiniMap),
+                    ),
+                    React.createElement('div', {
+                        style: {
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            zIndex: 10,
+                            display: 'flex',
+                            gap: '10px'
+                        }
+                    },
+                        React.createElement('button', { className: 'button button-blue', onClick: addTextNode }, 'Adicionar Bloco de Mensagem'),
+                    )
+                )
+            );
+        };
         
         // --- Aplicação Principal ---
         const App = () => (
-            <ToastProvider>
-                <HashRouter>
-                    <AuthProvider>
-                        <Routes>
-                            <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
-                            <Route path="/*" element={
-                                <ProtectedRoute>
-                                    <MainLayout>
-                                        <Routes>
-                                            <Route index element={<PlaceholderPage title="Dashboard" />} />
-                                            <Route path="bots" element={<BotsPage />} />
-                                            <Route path="flows" element={<PlaceholderPage title="Fluxos" />} />
-                                            <Route path="dispatches" element={<PlaceholderPage title="Disparos" />} />
-                                            <Route path="live-chat" element={<PlaceholderPage title="Chat ao Vivo" />} />
-                                            <Route path="*" element={<Navigate to="/" />} />
-                                        </Routes>
-                                    </MainLayout>
-                                </ProtectedRoute>
-                            }/>
-                        </Routes>
-                    </AuthProvider>
-                </HashRouter>
-            </ToastProvider>
+            React.createElement(ToastProvider, null,
+                React.createElement(HashRouter, null,
+                    React.createElement(AuthProvider, null,
+                        React.createElement(Routes, null,
+                            React.createElement(Route, { path: "/login", element: React.createElement(AuthRoute, null, React.createElement(LoginPage)) }),
+                            React.createElement(Route, { path: "/*", element:
+                                React.createElement(ProtectedRoute, null,
+                                    React.createElement(MainLayout, null,
+                                        React.createElement(Routes, null,
+                                            React.createElement(Route, { index: true, element: React.createElement(PlaceholderPage, { title: "Dashboard" }) }),
+                                            React.createElement(Route, { path: "bots", element: React.createElement(BotsPage) }),
+                                            React.createElement(Route, { path: "flows", element: React.createElement(PlaceholderPage, { title: "Fluxos" }) }),
+                                            React.createElement(Route, { path: "flows/:flowId", element: React.createElement(ReactFlowProvider, null, React.createElement(FlowBuilderPage)) }),
+                                            React.createElement(Route, { path: "dispatches", element: React.createElement(PlaceholderPage, { title: "Disparos" }) }),
+                                            React.createElement(Route, { path: "live-chat", element: React.createElement(PlaceholderPage, { title: "Chat ao Vivo" }) }),
+                                            React.createElement(Route, { path: "*", element: React.createElement(Navigate, { to: "/" }) })
+                                        )
+                                    )
+                                )
+                            })
+                        )
+                    )
+                )
+            )
         );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-
+        root.render(React.createElement(App, null));
     </script>
 </body>
 </html>
