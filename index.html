@@ -1,652 +1,149 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chatbot Flow Builder — Single File</title>
-
-  <!-- React + ReactDOM + Babel + React Flow (UMD) via CDN -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
-  <link href="https://unpkg.com/reactflow@11/dist/style.css" rel="stylesheet">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Plataforma de Automação para Telegram</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Basic reset + layout */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html,body,#root { height: 100%; }
-    body { font-family: Inter, Roboto, system-ui, -apple-system, 'Segoe UI', Arial; background:#0f172a; color:#0f172a; }
-
-    .app {
-      display: flex;
-      height: 100vh;
-      width: 100%;
-      overflow: hidden;
+    .bg-dots {
+      background-size: 40px 40px;
+      background-image: radial-gradient(circle,#e5e7eb 1px,rgba(0,0,0,0) 1px);
     }
-
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      min-width: 200px;
-      background: linear-gradient(180deg,#0b1220,#0f172a);
-      color: #fff;
-      padding: 18px;
-      display:flex;
-      flex-direction: column;
-      gap:12px;
-      border-right: 1px solid rgba(255,255,255,0.04);
-    }
-    .sidebar h1 { font-size:16px; margin-bottom:6px; }
-    .sb-section { font-size:12px; color:rgba(255,255,255,0.7); margin-top:6px; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.6px; }
-
-    .node-button {
-      display:flex; align-items:center; gap:10px;
-      background: rgba(255,255,255,0.04);
-      border:1px solid rgba(255,255,255,0.03);
-      padding:10px; border-radius:10px; cursor:pointer; color:#fff;
-    }
-    .node-button:hover { transform: translateY(-2px); }
-
-    .sidebar .bottom-controls { margin-top:auto; display:flex; gap:8px; flex-direction:column; }
-
-    /* Main area */
-    .main {
-      flex:1; display:flex; flex-direction:column; min-width:0;
-    }
-    .header {
-      padding:12px 16px; background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent); color: #fff; border-bottom:1px solid rgba(255,255,255,0.03);
-      display:flex; align-items:center; justify-content:space-between;
-    }
-    .header h2 { font-size:16px; }
-    .controls-row { display:flex; gap:8px; align-items:center; }
-
-    /* React Flow wrapper must have calculable width & height */
-    .flow-wrapper { flex:1; min-height:0; position:relative; padding:12px; }
-    .reactflow-container { height:100%; width:100%; border-radius:8px; overflow:hidden; background:linear-gradient(180deg,#071022,#071A2B); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02); }
-
-    /* Custom node styles (we use React Flow custom nodes) */
-    .custom-node {
-      min-width: 200px;
-      padding:10px;
-      border-radius:8px;
-      box-shadow:0 6px 18px rgba(0,0,0,0.4);
-      background: linear-gradient(180deg,#ffffff,#f8fafc);
-      border:1px solid #e6e9ee;
-      font-size:13px;
-    }
-    .custom-node .title { font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; align-items:center; }
-    .custom-node .small { font-size:12px; color:#374151; opacity:0.9; }
-
-    /* Colour variants */
-    .node-msg { background: linear-gradient(180deg,#ecfccb,#ddf7d6); border-color:#86efac; }
-    .node-q { background: linear-gradient(180deg,#ffedd5,#fff1e0); border-color:#fdba74; }
-    .node-condition { background: linear-gradient(180deg,#fee2e2,#fff2f2); border-color:#fca5a5; }
-    .node-action { background: linear-gradient(180deg,#dbeafe,#e6f0ff); border-color:#93c5fd; }
-    .node-pix { background: linear-gradient(180deg,#ecfccb,#d9f7e0); border-color:#4ade80; }
-    .node-status { background: linear-gradient(180deg,#eef2ff,#f0f7ff); border-color:#a78bfa; }
-    .node-click { background: linear-gradient(180deg,#fff7ed,#fff8e6); border-color:#f59e0b; }
-    .node-live { background: linear-gradient(180deg,#f0f9ff,#ecfeff); border-color:#60a5fa; }
-
-    /* Editor panel */
     .editor-panel {
-      position:absolute; right:12px; top:72px; width:360px; bottom:12px; background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.4); padding:12px; overflow:auto;
-      z-index:50;
+      animation: slideIn 0.3s ease-out forwards;
     }
-
-    /* Chat modal */
-    .chat-modal {
-      position:fixed; right:20px; bottom:20px; width:360px; height:420px; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.45); z-index:60; display:flex; flex-direction:column; overflow:hidden;
-    }
-    .chat-body { flex:1; padding:12px; overflow:auto; background:#f7fafc; }
-    .chat-input-row { display:flex; gap:8px; padding:12px; border-top:1px solid #eee; }
-
-    /* small helpers */
-    .btn { padding:8px 10px; border-radius:8px; cursor:pointer; border:1px solid rgba(0,0,0,0.08); background:#fff; }
-    .btn.primary { background:#4f46e5; color:#fff; border-color:transparent; }
-    .btn.ghost { background:transparent; color:#fff; border:1px dashed rgba(255,255,255,0.06); }
-    .badge { padding:6px 8px; border-radius:8px; background:rgba(15,23,42,0.6); color:#fff; font-size:12px; }
-
-    /* small responsive */
-    @media (max-width:900px){
-      .sidebar { display:none; }
-    }
+    @keyframes slideIn { from {transform: translateX(100%);} to {transform: translateX(0);} }
+    html,body,#root { height:100%; margin:0; }
   </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="bg-gray-100 h-full">
+  <div id="root" class="h-full"></div>
 
-  <!-- App code in JSX (Babel) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
   <script type="text/babel">
-  const { useState, useRef, useCallback, useEffect } = React;
-  const RF = window.ReactFlow;
+    const { useState,useEffect } = React;
+    const { BotMessageSquare,GitBranchPlus,MessageCircle,Send,LogOut,Settings } = lucide;
 
-  /* ---------------------------
-     Helper utilities (mock services)
-     --------------------------- */
-  function generatePixMock(valueInCents) {
-    // Mock PIX: timestamp + random digits
-    const ts = Date.now().toString().slice(-6);
-    const rnd = Math.floor(Math.random() * 9000) + 1000;
-    const code = `PIX-${ts}-${rnd}`;
-    return code;
-  }
-
-  /* Simple global "bank" state to simulate PIX status & clickId storage */
-  const GlobalStore = {
-    lastPixCode: null,
-    lastPixStatus: 'pending', // 'pending' | 'paid'
-    clickIds: {},
-    setPix(code) { this.lastPixCode = code; this.lastPixStatus = 'pending'; },
-    setPixPaid() { if (this.lastPixCode) this.lastPixStatus = 'paid'; },
-    setClickId(key, value) { this.clickIds[key] = value; },
-    getPixStatus() { return { code: this.lastPixCode, status: this.lastPixStatus }; }
-  };
-
-  /* ---------------------------
-     Initial nodes (example)
-     --------------------------- */
-  const initialNodes = [
-    { id: 'start', type: 'message', position: { x: 50, y: 50 }, data: { label:'Início', text: 'Bem-vindo ao fluxo' } },
-    { id: 'msg1', type: 'message', position: { x: 300, y: 40 }, data: { label:'Mensagem', text: 'Mensagem normal' } },
-    { id: 'pix1', type: 'generatePix', position: { x: 300, y: 180 }, data: { label:'Gerar PIX', valueInCents: 1990, messageTemplate: '✅ Seu acesso foi liberado! Copie: {{pix_code}}' } },
-    { id: 'status1', type: 'queryPixStatus', position: { x: 650, y: 180 }, data: { label:'Consultar PIX', sourceNodeId: 'pix1' } },
-    { id: 'click1', type: 'saveClickId', position: { x: 300, y: 320 }, data: { label:'Salvar Click ID', variableName: 'click_id' } },
-    { id: 'live1', type: 'chatLive', position: { x: 650, y: 320 }, data: { label:'Chat ao Vivo', operator: 'Atendente' } },
-  ];
-
-  const initialEdges = [
-    { id:'e1', source:'start', target:'msg1', type:'smoothstep', animated:true },
-    { id:'e2', source:'msg1', target:'pix1', type:'smoothstep', animated:true },
-    { id:'e3', source:'pix1', target:'status1', type:'smoothstep', animated:true },
-  ];
-
-  /* ---------------------------
-     Custom Node Components
-     --------------------------- */
-
-  const BaseNode = ({ data, selected, children, variantClass }) => {
-    return (
-      <div className={`custom-node ${variantClass}`}>
-        <div className="title">
-          <div style={{display:'flex',flexDirection:'column'}}>
-            <span style={{fontSize:13,fontWeight:700}}>{data.label || 'Node'}</span>
-            <span className="small">{data.subtitle || ''}</span>
-          </div>
-          {selected && <div style={{fontSize:12,opacity:0.7}}>Selecionado</div>}
-        </div>
-        <div>{children}</div>
-      </div>
-    );
-  };
-
-  function MessageNode({ id, data, selected }) {
-    const onChange = (e) => {
-      data.onChange?.(id, { text: e.target.value });
-    };
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-msg">
-        <RF.Handle type="target" position="top" />
-        <input className="node-input" value={data.text||''} onChange={onChange} placeholder="Texto..." />
-        <RF.Handle type="source" position="bottom" />
-      </BaseNode>
-    );
-  }
-
-  function QuestionNode({ id, data, selected }) {
-    const onChange = (e) => data.onChange?.(id, { question: e.target.value });
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-q">
-        <RF.Handle type="target" position="top" />
-        <input className="node-input" value={data.question||''} onChange={onChange} placeholder="Pergunta..." />
-        <div style={{display:'flex',justifyContent:'space-between',marginTop:8}}>
-          <RF.Handle type="source" position="bottom" id="yes" style={{left:'30%'}} />
-          <div className="small">Sim / Não</div>
-          <RF.Handle type="source" position="bottom" id="no" style={{left:'70%'}} />
-        </div>
-      </BaseNode>
-    );
-  }
-
-  function ConditionNode({ id, data, selected }) {
-    const onChange = (e) => data.onChange?.(id, { condition: e.target.value });
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-condition">
-        <RF.Handle type="target" position="top" />
-        <input className="node-input" value={data.condition||''} onChange={onChange} placeholder="Condição (ex: {{var}} == 'x')" />
-        <div style={{display:'flex',justifyContent:'space-between',marginTop:8}}>
-          <RF.Handle type="source" position="bottom" id="true" style={{left:'30%'}} />
-          <div className="small">Verdadeiro / Falso</div>
-          <RF.Handle type="source" position="bottom" id="false" style={{left:'70%'}} />
-        </div>
-      </BaseNode>
-    );
-  }
-
-  function ActionNode({ id, data, selected }) {
-    const onChange = (e) => data.onChange?.(id, { action: e.target.value });
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-action">
-        <RF.Handle type="target" position="top" />
-        <input className="node-input" value={data.action||''} onChange={onChange} placeholder="Ação..." />
-        <RF.Handle type="source" position="bottom" />
-      </BaseNode>
-    );
-  }
-
-  /* --- PIX generation node --- */
-  function GeneratePixNode({ id, data, selected }) {
-    const [localValue, setLocalValue] = useState(data.valueInCents || 0);
-    const [copied, setCopied] = useState(false);
-    const [pixCode, setPixCode] = useState(data.lastPixCode || null);
-
-    useEffect(() => {
-      setPixCode(data.lastPixCode || GlobalStore.getPixStatus().code);
-    }, [data.lastPixCode]);
-
-    const handleGenerate = () => {
-      const code = generatePixMock(localValue);
-      GlobalStore.setPix(code);
-      setPixCode(code);
-      data.onChange?.(id, { lastPixCode: code, valueInCents: localValue });
-      setCopied(false);
-      alert('PIX gerado: ' + code + '\n(Estado mock: PENDENTE)');
-    };
-
-    const handleCopy = async () => {
-      if (!pixCode) return;
-      try {
-        await navigator.clipboard.writeText(pixCode);
-        setCopied(true);
-        alert('PIX copiado para a área de transferência: ' + pixCode);
-      } catch (err) {
-        alert('Não foi possível copiar. Código: ' + pixCode);
+    const API_BASE_URL = 'https://novaapi-one.vercel.app';
+    const api = {
+      async get(endpoint, token) {
+        const res = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {headers:{Authorization:`Bearer ${token}`}});
+        if(!res.ok) throw new Error('Erro GET');
+        return res.json();
+      },
+      async post(endpoint, body, token) {
+        const res = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify(body)
+        });
+        if(!res.ok) throw new Error('Erro POST');
+        return res.json();
+      },
+      async put(endpoint, body, token) {
+        const res = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+          method:'PUT',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify(body)
+        });
+        if(!res.ok) throw new Error('Erro PUT');
+        return res.json();
+      },
+      async delete(endpoint, token) {
+        const res = await fetch(`${API_BASE_URL}/api/platform${endpoint}`, {
+          method:'DELETE',
+          headers:{Authorization:`Bearer ${token}`}
+        });
+        if(!res.ok) throw new Error('Erro DELETE');
+        return res;
       }
     };
 
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-pix">
-        <RF.Handle type="target" position="top" />
-        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
-          <input className="node-input" type="number" value={localValue} onChange={(e)=>setLocalValue(parseInt(e.target.value||0,10))} placeholder="Valor em centavos" />
-          <button className="btn" onClick={handleGenerate}>Gerar</button>
+    const LoginView = ({onLogin}) => {
+      const [email,setEmail] = useState(''), [password,setPassword] = useState('');
+      const handleSubmit = async e => {
+        e.preventDefault();
+        const res = await fetch(`${API_BASE_URL}/api/sellers/login`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({email,password})
+        });
+        const data = await res.json();
+        if(res.ok){ onLogin(data.token); } else { alert(data.message||'Erro login'); }
+      };
+      return (
+        <div className="flex items-center justify-center h-full bg-gray-100">
+          <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow w-80">
+            <h1 className="text-xl mb-4 font-bold">Login</h1>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" className="w-full border mb-2 p-2"/>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Senha" className="w-full border mb-4 p-2"/>
+            <button className="w-full bg-indigo-600 text-white p-2 rounded">Entrar</button>
+          </form>
         </div>
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <div className="small" style={{flex:1}}>{data.messageTemplate || 'Mensagem padrão: {{pix_code}}'}</div>
-        </div>
-        <div style={{marginTop:8,display:'flex',gap:8,alignItems:'center'}}>
-          <div className="small">Código:</div>
-          <div style={{flex:1, fontWeight:700}}>{pixCode || '—'}</div>
-          <button className="btn" onClick={handleCopy} disabled={!pixCode}>Copiar</button>
-        </div>
-        <RF.Handle type="source" position="bottom" />
-      </BaseNode>
-    );
-  }
-
-  /* --- Query Pix Status node --- */
-  function QueryPixStatusNode({ id, data, selected }) {
-    const [status, setStatus] = useState(() => GlobalStore.getPixStatus());
-    useEffect(()=> {
-      setStatus(GlobalStore.getPixStatus());
-    }, [data]); // when data changes
-
-    const refresh = () => setStatus(GlobalStore.getPixStatus());
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-status">
-        <RF.Handle type="target" position="top" />
-        <div className="small">Último PIX: <strong>{status.code || '—'}</strong></div>
-        <div className="small">Status: <strong>{status.status || '—'}</strong></div>
-        <div style={{marginTop:8,display:'flex',gap:8}}>
-          <button className="btn" onClick={refresh}>Atualizar</button>
-          <button className="btn" onClick={()=>{ if(status?.status==='paid') alert('Já marcado como pago'); else { alert('Simulador: ainda pendente. Use "Marcar PIX como pago" no topo para simular pagamento.'); }}}>Checar</button>
-        </div>
-        <RF.Handle type="source" position="bottom" />
-      </BaseNode>
-    );
-  }
-
-  /* --- Save ClickId node --- */
-  function SaveClickIdNode({ id, data, selected }) {
-    const [varName, setVarName] = useState(data.variableName || 'click_id');
-
-    const handleSave = () => {
-      const fakeClick = 'CLICK-' + Math.floor(Math.random()*90000+10000);
-      GlobalStore.setClickId(varName, fakeClick);
-      data.onChange?.(id, { variableName: varName, lastSaved: fakeClick });
-      alert(`Click ID salvo: ${fakeClick} -> variável ${varName}`);
+      );
     };
 
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-click">
-        <RF.Handle type="target" position="top" />
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <input className="node-input" value={varName} onChange={(e)=>setVarName(e.target.value)} />
-          <button className="btn" onClick={handleSave}>Salvar</button>
-        </div>
-        <div style={{marginTop:8}} className="small">Último salvo: {data.lastSaved || '—'}</div>
-        <RF.Handle type="source" position="bottom" />
-      </BaseNode>
+    const MainNavItem = ({icon,label,isActive,onClick}) => (
+      <button onClick={onClick}
+        className={`flex flex-col items-center justify-center w-full h-16 ${isActive?'bg-gray-700 text-white':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+        {React.createElement(icon,{size:22})}
+        <span className="text-xs">{label}</span>
+      </button>
     );
-  }
 
-  /* --- Chat Live node (opens modal) --- */
-  function ChatLiveNode({ id, data, selected }) {
-    return (
-      <BaseNode data={data} selected={selected} variantClass="node-live">
-        <RF.Handle type="target" position="top" />
-        <div className="small">Operador: {data.operator || 'Atendente'}</div>
-        <div style={{marginTop:8, display:'flex', gap:8}}>
-          <button className="btn" onClick={()=>window.__OPEN_CHAT_MODAL?.(data.operator || 'Atendente')}>Abrir Chat</button>
-          <button className="btn" onClick={()=>alert('Simulação: notificar operador para pegar este lead')}>Notificar</button>
-        </div>
-        <RF.Handle type="source" position="bottom" />
-      </BaseNode>
-    );
-  }
+    const App = () => {
+      const [token,setToken] = useState(localStorage.getItem('authToken'));
+      const [activeTab,setActiveTab] = useState('flows');
+      const [bots,setBots] = useState([]), [flows,setFlows] = useState([]);
+      const [isLoading,setIsLoading] = useState(!!token);
 
-  /* Node type mapping */
-  const nodeTypes = {
-    message: MessageNode,
-    question: QuestionNode,
-    condition: ConditionNode,
-    action: ActionNode,
-    generatePix: GeneratePixNode,
-    queryPixStatus: QueryPixStatusNode,
-    saveClickId: SaveClickIdNode,
-    chatLive: ChatLiveNode,
-  };
-
-  /* ---------------------------
-     Main App
-     --------------------------- */
-  function App() {
-    const [nodes, setNodes, onNodesChange] = RF.useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = RF.useEdgesState(initialEdges);
-    const [selectedNode, setSelectedNode] = useState(null);
-    const [nodeCount, setNodeCount] = useState(100);
-    const [showEditor, setShowEditor] = useState(false);
-    const [editorNode, setEditorNode] = useState(null);
-    const [chatOpen, setChatOpen] = useState(false);
-    const [chatMessages, setChatMessages] = useState([]);
-    const [pixSimulatorState, setPixSimulatorState] = useState(GlobalStore.getPixStatus());
-
-    const reactFlowWrapperRef = useRef(null);
-    const rfInstanceRef = useRef(null);
-
-    useEffect(()=> {
-      // expose function for nodes to open chat
-      window.__OPEN_CHAT_MODAL = (operator) => {
-        setChatOpen(true);
-        setChatMessages(prev => [...prev, { from:'system', text: `Conectado ao operador: ${operator}` }]);
-      };
-    }, []);
-
-    useEffect(()=> {
-      // sync simulator
-      const t = setInterval(()=> setPixSimulatorState(GlobalStore.getPixStatus()), 700);
-      return () => clearInterval(t);
-    }, []);
-
-    const onConnect = useCallback((params) => {
-      setEdges((eds) => RF.addEdge({ ...params, type:'smoothstep', animated:true, style:{ stroke:'#60a5fa', strokeWidth:2 } }, eds));
-    }, []);
-
-    const onNodeClick = useCallback((evt, node) => {
-      setSelectedNode(node);
-      setEditorNode(node);
-      setShowEditor(true);
-    }, []);
-
-    const addNode = useCallback((type) => {
-      const id = `n_${Date.now()}_${Math.floor(Math.random()*999)}`;
-      const wrapper = reactFlowWrapperRef.current;
-      const rect = wrapper ? wrapper.getBoundingClientRect() : { width:800, height:600 };
-
-      const newNode = {
-        id,
-        type,
-        position: { x: rect.width/2 + Math.random()*120 - 60, y: rect.height/2 + Math.random()*120 - 60 },
-        data: {
-          label: type === 'generatePix' ? 'Gerar PIX' : type === 'queryPixStatus' ? 'Consultar PIX' : type === 'saveClickId' ? 'Salvar Click ID' : type === 'chatLive' ? 'Chat ao Vivo' : type.charAt(0).toUpperCase()+type.slice(1),
-          onChange: (nodeId, partial) => {
-            setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, ...partial }} : n));
-          }
+      useEffect(()=>{
+        if(token){
+          (async()=>{
+            try {
+              const [botsData,flowsData] = await Promise.all([
+                api.get('/bots',token),
+                api.get('/flows',token)
+              ]);
+              setBots(botsData);
+              setFlows(flowsData.map(f=>({...f,nodes:typeof f.nodes==='string'?JSON.parse(f.nodes):f.nodes})));
+            }catch(e){ console.error(e); handleLogout(); }
+            finally{ setIsLoading(false); }
+          })();
         }
-      };
+      },[token]);
 
-      // default data specifics
-      if (type === 'generatePix') newNode.data = { ...newNode.data, valueInCents: 1990, messageTemplate:'✅ Acesse: {{pix_code}}', onChange: newNode.data.onChange };
-      if (type === 'queryPixStatus') newNode.data = { ...newNode.data, sourceNodeId: null, onChange: newNode.data.onChange };
-      if (type === 'saveClickId') newNode.data = { ...newNode.data, variableName:'click_id', onChange: newNode.data.onChange };
-      if (type === 'chatLive') newNode.data = { ...newNode.data, operator:'Atendente', onChange: newNode.data.onChange };
+      const handleLogin = t => {localStorage.setItem('authToken',t); setToken(t);};
+      const handleLogout = ()=>{localStorage.removeItem('authToken'); setToken(null);};
 
-      setNodes((nds) => nds.concat(newNode));
-      setNodeCount(c => c+1);
-    }, [setNodes]);
+      if(!token) return <LoginView onLogin={handleLogin}/>;
+      if(isLoading) return <div className="flex h-full items-center justify-center">Carregando...</div>;
 
-    const deleteNode = useCallback(() => {
-      if (!selectedNode) return;
-      setNodes((nds) => nds.filter(n => n.id !== selectedNode.id));
-      setEdges((eds) => eds.filter(e => e.source !== selectedNode.id && e.target !== selectedNode.id));
-      setSelectedNode(null); setShowEditor(false);
-    }, [selectedNode, setNodes, setEdges]);
-
-    const clearFlow = useCallback(()=> {
-      setNodes([]); setEdges([]); setSelectedNode(null); setShowEditor(false);
-    }, [setNodes, setEdges]);
-
-    const exportFlow = useCallback(()=> {
-      const flow = { nodes, edges, global: { pix: GlobalStore.getPixStatus(), clicks: GlobalStore.clickIds } };
-      console.log('Flow exportado (JSON):', flow);
-      alert('Flow exportado no console (F12).');
-    }, [nodes, edges]);
-
-    const onLoad = useCallback((rfi) => { rfInstanceRef.current = rfi; }, []);
-
-    const simulateMarkPixPaid = () => {
-      GlobalStore.setPixPaid();
-      setPixSimulatorState(GlobalStore.getPixStatus());
-      alert('PIX marcado como PAGO no simulador (GlobalStore). Acesse o nó "Consultar PIX" e atualize para ver o status.');
-    };
-
-    // Editor save updates node data
-    const saveNodeEdits = (nodeId, newData) => {
-      setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n));
-      setShowEditor(false);
-    };
-
-    // Chat send
-    const sendChatMessage = (text) => {
-      if (!text) return;
-      setChatMessages(prev => [...prev, { from:'you', text }]);
-      // simulated operator reply
-      setTimeout(()=> setChatMessages(prev => [...prev, { from:'op', text: 'Resposta automática do operador: Recebido — ' + text }]), 800);
-    };
-
-    return (
-      <div className="app">
-        <div className="sidebar">
-          <h1>Chatbot Flow Builder</h1>
-          <div className="sb-section">Conteúdos</div>
-          <div style={{display:'grid',gap:8}}>
-            <div className="node-button" onClick={()=>addNode('message')}>💬 Mensagem</div>
-            <div className="node-button" onClick={()=>addNode('question')}>❓ Pergunta</div>
-            <div className="node-button" onClick={()=>addNode('condition')}>🔀 Condição</div>
-            <div className="node-button" onClick={()=>addNode('action')}>⚡ Ação</div>
-            <div className="node-button" onClick={()=>addNode('generatePix')}>💳 Gerar PIX</div>
-            <div className="node-button" onClick={()=>addNode('queryPixStatus')}>🔎 Consultar Status PIX</div>
-            <div className="node-button" onClick={()=>addNode('saveClickId')}>📌 Salvar Click ID</div>
-            <div className="node-button" onClick={()=>addNode('chatLive')}>🗨️ Chat ao Vivo</div>
-            <div style={{height:8}}></div>
-          </div>
-
-          <div className="sb-section">Ações</div>
-          <div style={{display:'flex',gap:8,flexDirection:'column'}}>
-            <button className="btn" onClick={exportFlow}>💾 Salvar Fluxo (console)</button>
-            <button className="btn" onClick={clearFlow}>🔄 Limpar Fluxo</button>
-            <button className="btn" onClick={()=>{ setNodes(initialNodes); setEdges(initialEdges); }}>↩️ Restaurar Exemplo</button>
-            <button className="btn" onClick={simulateMarkPixPaid}>✅ Marcar último PIX como PAGO (sim)</button>
-            <div style={{marginTop:8}} className="small">Simulador PIX: {pixSimulatorState.code || '—'} — {pixSimulatorState.status}</div>
-          </div>
-
-          <div className="bottom-controls">
-            <div style={{display:'flex',gap:8,marginTop:12}}>
-              <div className="badge">Local</div>
-              <div style={{flex:1}} />
-            </div>
-            <div className="small" style={{marginTop:8}}>Tudo roda localmente — para integrações reais (MercadoPago, Webhook, WhatsApp) você precisará conectar APIs no backend.</div>
+      return (
+        <div className="flex h-full">
+          <nav className="w-20 bg-gray-800 text-white flex flex-col items-center">
+            <BotMessageSquare size={28} className="text-indigo-400 mt-4"/>
+            <MainNavItem icon={Settings} label="Config" isActive={activeTab==='settings'} onClick={()=>setActiveTab('settings')}/>
+            <MainNavItem icon={GitBranchPlus} label="Fluxos" isActive={activeTab==='flows'} onClick={()=>setActiveTab('flows')}/>
+            <MainNavItem icon={MessageCircle} label="Chat" isActive={activeTab==='livechat'} onClick={()=>setActiveTab('livechat')}/>
+            <MainNavItem icon={Send} label="Disparos" isActive={activeTab==='broadcasts'} onClick={()=>setActiveTab('broadcasts')}/>
+            <div className="mt-auto mb-4"><MainNavItem icon={LogOut} label="Sair" onClick={handleLogout}/></div>
+          </nav>
+          <div className="flex-1 overflow-auto p-6">
+            {activeTab==='settings' && <div>Configurações (em construção)</div>}
+            {activeTab==='flows' && <div>Fluxos (renderize seu builder aqui)</div>}
+            {activeTab==='livechat' && <div>Chat ao vivo (em construção)</div>}
+            {activeTab==='broadcasts' && <div>Disparos (em construção)</div>}
           </div>
         </div>
+      );
+    };
 
-        <div className="main">
-          <div className="header">
-            <h2 style={{color:'#fff'}}>Construtor de Fluxo — Chatbot</h2>
-            <div className="controls-row">
-              <div className="badge">Nós: {nodes.length}</div>
-              <div style={{width:8}}></div>
-              <button className="btn" onClick={()=> exportFlow()}>Exportar</button>
-              <button className="btn" onClick={()=> { alert('Dica: clique num nó para editar suas configurações.'); }}>Ajuda</button>
-            </div>
-          </div>
-
-          <div className="flow-wrapper" ref={reactFlowWrapperRef}>
-            <div className="reactflow-container" ref={reactFlowWrapperRef}>
-              <RF.ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onInit={onLoad}
-                onNodeClick={onNodeClick}
-                nodeTypes={nodeTypes}
-                fitView
-                attributionPosition="bottom-left"
-                style={{ width:'100%', height:'100%' }}
-              >
-                <RF.Background gap={16} color="#94a3b8" />
-                <RF.Controls />
-                <RF.MiniMap nodeColor={(n)=> {
-                  switch(n.type) {
-                    case 'message': return '#10b981';
-                    case 'question': return '#f59e0b';
-                    case 'condition': return '#ef4444';
-                    case 'action': return '#3b82f6';
-                    case 'generatePix': return '#16a34a';
-                    default: return '#888';
-                  }
-                }} />
-              </RF.ReactFlow>
-            </div>
-          </div>
-        </div>
-
-        {/* Editor panel */}
-        { showEditor && editorNode && (
-          <div className="editor-panel">
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-              <div>
-                <div style={{fontWeight:800}}>{editorNode.data.label}</div>
-                <div style={{fontSize:12,color:'#6b7280'}}>{editorNode.type} — ID: {editorNode.id}</div>
-              </div>
-              <div style={{display:'flex',gap:8}}>
-                <button className="btn" onClick={()=>{ setShowEditor(false); setEditorNode(null); }}>Fechar</button>
-                <button className="btn" onClick={deleteNode}>Deletar</button>
-              </div>
-            </div>
-
-            <div>
-              {/* generic fields */}
-              <div style={{marginBottom:8}}>
-                <label className="small">Rótulo</label>
-                <input className="node-input" value={editorNode.data.label || ''} onChange={(e)=> setEditorNode({...editorNode, data:{...editorNode.data, label:e.target.value}})} />
-              </div>
-
-              {/* per-type editors */}
-              { editorNode.type === 'generatePix' && (
-                <>
-                  <div style={{marginBottom:8}}>
-                    <label className="small">Valor (centavos)</label>
-                    <input className="node-input" type="number" value={editorNode.data.valueInCents||0} onChange={(e)=> setEditorNode({...editorNode, data:{...editorNode.data, valueInCents: parseInt(e.target.value||0,10)}})} />
-                  </div>
-                  <div style={{marginBottom:8}}>
-                    <label className="small">Template da Mensagem</label>
-                    <input className="node-input" value={editorNode.data.messageTemplate || ''} onChange={(e)=> setEditorNode({...editorNode, data:{...editorNode.data, messageTemplate:e.target.value}})} />
-                  </div>
-                </>
-              )}
-
-              { editorNode.type === 'saveClickId' && (
-                <div style={{marginBottom:8}}>
-                  <label className="small">Nome da variável</label>
-                  <input className="node-input" value={editorNode.data.variableName || ''} onChange={(e)=> setEditorNode({...editorNode, data:{...editorNode.data, variableName:e.target.value}})} />
-                </div>
-              )}
-
-              { editorNode.type === 'chatLive' && (
-                <div style={{marginBottom:8}}>
-                  <label className="small">Operador</label>
-                  <input className="node-input" value={editorNode.data.operator || ''} onChange={(e)=> setEditorNode({...editorNode, data:{...editorNode.data, operator:e.target.value}})} />
-                </div>
-              )}
-
-              { editorNode.type === 'queryPixStatus' && (
-                <div style={{marginBottom:8}}>
-                  <label className="small">Node de origem (opcional)</label>
-                  <input className="node-input" value={editorNode.data.sourceNodeId || ''} onChange={(e)=> setEditorNode({...editorNode, data:{...editorNode.data, sourceNodeId:e.target.value}})} placeholder="ex: pix1" />
-                  <div style={{marginTop:8}} className="small">Se vazio, lê o último PIX global (simulador).</div>
-                </div>
-              )}
-
-              <div style={{display:'flex',gap:8,marginTop:12}}>
-                <button className="btn primary" onClick={()=> saveNodeEdits(editorNode.id, editorNode.data)}>Salvar</button>
-                <button className="btn" onClick={()=> { setShowEditor(false); }}>Cancelar</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Chat modal */}
-        { chatOpen && (
-          <div className="chat-modal" role="dialog">
-            <div style={{padding:12,borderBottom:'1px solid #eee',fontWeight:700}}>Chat ao Vivo</div>
-            <div className="chat-body">
-              {chatMessages.map((m,i)=>(
-                <div key={i} style={{marginBottom:8, display:'flex', flexDirection: m.from === 'you' ? 'row-reverse' : 'row', alignItems:'flex-start' }}>
-                  <div style={{maxWidth:'75%', background: m.from==='you' ? '#4f46e5' : '#e6f0ff', color: m.from==='you' ? '#fff' : '#0b1220', padding:8, borderRadius:8}}>
-                    <div style={{fontSize:12}}>{m.text}</div>
-                    <div style={{fontSize:10, opacity:0.6, marginTop:6}}>{m.from}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="chat-input-row">
-              <input id="chat-input" className="node-input" placeholder="Digite sua mensagem..." />
-              <button className="btn primary" onClick={()=>{
-                const el = document.getElementById('chat-input');
-                const txt = el.value.trim();
-                if (!txt) return;
-                sendChatMessage(txt);
-                el.value = '';
-              }}>Enviar</button>
-              <button className="btn" onClick={()=> { setChatOpen(false); setChatMessages([]); }}>Fechar</button>
-            </div>
-          </div>
-        )}
-
-      </div>
-    );
-  }
-
-  // Render app
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(
-    <RF.ReactFlowProvider>
-      <App />
-    </RF.ReactFlowProvider>
-  );
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   </script>
 </body>
 </html>
