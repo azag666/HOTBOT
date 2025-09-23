@@ -73,7 +73,7 @@
 
   <script type="text/babel">
     const { useState, useCallback, useEffect, useRef, memo } = React;
-    const { ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position } = window.ReactFlow;
+    const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position } = window.ReactFlow;
     const API_BASE_URL = 'https://novaapi-one.vercel.app/api';
 
     const api = axios.create({ baseURL: API_BASE_URL });
@@ -109,7 +109,7 @@
       return (
         <div className="app-container">
           {currentPage !== 'flow-editor' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />}
-          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2rem', height: '100vh'}}>
+          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2rem', height: '100vh', width: '100%'}}>
             {currentPage === 'bots' && <BotsPage />}
             {currentPage === 'flows' && <FlowsListPage onEditFlow={navigateToFlowEditor} />}
             {currentPage === 'chat' && <LiveChatPage />}
@@ -120,7 +120,7 @@
       );
     }
     
-    // --- Components for Each Page ---
+    // --- Components for Each Page (Full Code) ---
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         const pages = { bots: '🤖 Bots', flows: '🌊 Fluxos', chat: '💬 Chat ao Vivo', disparos: '🚀 Disparos' };
         return (
@@ -483,14 +483,15 @@
         );
     }
     
-    // --- Flow Editor Component ---
-    const initialNodes = [{ id: '1', type: 'message', position: { x: 100, y: 100 }, data: { label: 'Início', text: 'Bem-vindo!' } }];
+    // --- Flow Editor Components (CORRECTED STRUCTURE) ---
+    
+    const initialNodes = [{ id: '1', type: 'message', position: { x: 100, y: 100 }, data: { label: 'Início', text: 'Bem-vindo ao fluxo!' } }];
     const nodeTypes = {
         message: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💬 Mensagem</strong></div>
-                <p>{data.text || 'Clique para editar'}</p>
+                <p style={{color: '#333'}}>{data.text || 'Clique para editar'}</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -498,31 +499,22 @@
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>❓ Pergunta</strong></div>
-                <p>{data.text || 'Clique para editar'}</p>
-                <Handle type="source" id="yes" position={Position.Bottom} style={{ left: '25%', top: 'auto' }}><small style={{position: 'absolute', top: 0, left: -10}}>Sim</small></Handle>
-                <Handle type="source" id="no" position={Position.Bottom} style={{ left: '75%', top: 'auto' }}><small style={{position: 'absolute', top: 0, left: -5}}>Não</small></Handle>
-            </>
-        )),
-        condition: memo(({ data }) => (
-            <>
-                <Handle type="target" position={Position.Top} />
-                <div><strong>🔀 Condição</strong></div>
-                <p>{data.condition || 'Clique para editar'}</p>
-                <Handle type="source" id="true" position={Position.Bottom} style={{ left: '25%', top: 'auto' }}><small style={{position: 'absolute', top: 0, left: -5}}>✓</small></Handle>
-                <Handle type="source" id="false" position={Position.Bottom} style={{ left: '75%', top: 'auto' }}><small style={{position: 'absolute', top: 0, left: -5}}>x</small></Handle>
+                <p style={{color: '#333'}}>{data.text || 'Clique para editar'}</p>
+                <Handle type="source" id="yes" position={Position.Bottom} style={{ left: '25%' }}><small style={{position: 'absolute', top: 5, left: -10}}>Sim</small></Handle>
+                <Handle type="source" id="no" position={Position.Bottom} style={{ left: '75%' }}><small style={{position: 'absolute', top: 5, left: -5}}>Não</small></Handle>
             </>
         )),
         pix: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💳 Gerar PIX</strong></div>
-                <p>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
+                <p style={{color: '#333'}}>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
     };
     
-    function FlowEditorPage({ flow, onBack }) {
+    function FlowCanvas({ flow }) {
       const reactFlowWrapper = useRef(null);
       const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
       const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -559,7 +551,7 @@
               id: `${type}-${Date.now()}`,
               type,
               position,
-              data: { label: type },
+              data: { label: type, text: `Novo(a) ${type}` },
           };
           setNodes((nds) => nds.concat(newNode));
       }, [reactFlowInstance]);
@@ -571,23 +563,12 @@
           } catch(error) { alert("Erro ao salvar o fluxo."); }
       };
 
-      if (!flow) return <div>Carregando fluxo...</div>;
-
       return (
-        <div className="flow-editor-container">
-          <div className="flow-sidebar">
-            <h3>Nós</h3>
-            <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'message')} draggable>💬 Mensagem</div>
-            <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'question')} draggable>❓ Pergunta</div>
-            <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'condition')} draggable>🔀 Condição</div>
-            <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'pix')} draggable>💳 Gerar PIX</div>
-          </div>
-          <ReactFlowProvider>
           <div className="flow-editor-page">
             <div className="flow-header">
               <h3>Editando: {flow.name}</h3>
               <div>
-                <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={onBack}>Voltar</button>
+                <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={flow.onBack}>Voltar</button>
                 <button className="btn btn-primary" onClick={handleSave}>Salvar Fluxo</button>
               </div>
             </div>
@@ -599,9 +580,24 @@
                 {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} />}
             </div>
           </div>
-          </ReactFlowProvider>
-        </div>
       );
+    }
+    
+    function FlowEditorPage({ flow, onBack }) {
+        if (!flow) return <div>Carregando fluxo...</div>;
+        return (
+            <div className="flow-editor-container">
+                <div className="flow-sidebar">
+                    <h3>Nós</h3>
+                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'message')} draggable>💬 Mensagem</div>
+                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'question')} draggable>❓ Pergunta</div>
+                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'pix')} draggable>💳 Gerar PIX</div>
+                </div>
+                <ReactFlowProvider>
+                    <FlowCanvas flow={{...flow, onBack: onBack}} />
+                </ReactFlowProvider>
+            </div>
+        );
     }
 
     function EditorPanel({ selectedNode, setNodes, setSelectedNode }) {
@@ -626,23 +622,10 @@
                     <label>Rótulo (para sua referência)</label>
                     <input name="label" className="form-input" value={nodeData.label || ''} onChange={handleChange} />
                 </div>
-
-                {selectedNode.type === 'message' && (
+                {(selectedNode.type === 'message' || selectedNode.type === 'question') && (
                     <div className="form-group">
-                        <label>Texto da Mensagem</label>
+                        <label>Texto</label>
                         <textarea name="text" className="form-textarea" value={nodeData.text || ''} onChange={handleChange} />
-                    </div>
-                )}
-                {selectedNode.type === 'question' && (
-                    <div className="form-group">
-                        <label>Texto da Pergunta</label>
-                        <textarea name="text" className="form-textarea" value={nodeData.text || ''} onChange={handleChange} />
-                    </div>
-                )}
-                {selectedNode.type === 'condition' && (
-                    <div className="form-group">
-                        <label>Condição (ex: `{"{variable}"}` == "valor")</label>
-                        <input name="condition" className="form-input" value={nodeData.condition || ''} onChange={handleChange} />
                     </div>
                 )}
                 {selectedNode.type === 'pix' && (
@@ -651,11 +634,10 @@
                         <input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} />
                     </div>
                 )}
-                
                 <button className="btn btn-primary" onClick={onSave}>Salvar</button>
                 <button className="btn btn-secondary" style={{marginLeft: '0.5rem'}} onClick={() => setSelectedNode(null)}>Fechar</button>
             </div>
-        )
+        );
     }
     
     function LoginScreen({ onLogin }) {
@@ -690,7 +672,7 @@
 
     // --- Render App ---
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<React.StrictMode><App /></React.StrictMode>);
+    root.render(<App />);
   </script>
 </body>
 </html>
