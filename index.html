@@ -43,9 +43,9 @@
     .chat-layout { display: flex; height: calc(100vh - 8rem); }
     .user-list { width: 300px; border-right: 1px solid var(--border-color); overflow-y: auto; }
     .chat-window { flex: 1; display: flex; flex-direction: column; }
-    .message-list { flex: 1; padding: 1rem; overflow-y: auto; }
+    .message-list { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column;}
     .message { background: var(--bg-light); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.5rem; max-width: 80%; }
-    .message.user { align-self: flex-end; background: var(--primary); }
+    .message.operator { align-self: flex-end; background: var(--primary); }
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
     .login-box { background: var(--bg-light); padding: 2rem; border-radius: 0.5rem; width: 360px; }
     /* Flow Editor Styles */
@@ -273,6 +273,7 @@
                 <div className="form-group">
                     <label htmlFor="botSelect">Selecione um Bot</label>
                     <select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
+                         <option value="">-- Selecione --</option>
                         {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
                     </select>
                 </div>
@@ -359,7 +360,13 @@
         const [users, setUsers] = useState([]);
         const [selectedChatId, setSelectedChatId] = useState('');
         const [messages, setMessages] = useState([]);
+        const [newMessage, setNewMessage] = useState('');
+        const messagesEndRef = useRef(null);
 
+        useEffect(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, [messages]);
+        
         useEffect(() => {
             const fetchBots = async () => {
                 const { data } = await api.get('/dashboard/data');
@@ -372,24 +379,44 @@
         useEffect(() => {
             const fetchUsers = async () => {
                 if (!selectedBotId) return;
+                setUsers([]);
+                setMessages([]);
+                setSelectedChatId('');
                 try {
                     const { data } = await api.get(`/chats/${selectedBotId}`);
                     setUsers(data);
-                } catch (error) { console.error("Erro ao buscar usuários", error); setUsers([]); }
+                } catch (error) { console.error("Erro ao buscar usuários", error); }
             };
             fetchUsers();
         }, [selectedBotId]);
 
+        const fetchMessages = useCallback(async () => {
+            if (!selectedBotId || !selectedChatId) return;
+            try {
+                const { data } = await api.get(`/chats/${selectedBotId}/${selectedChatId}`);
+                setMessages(data);
+            } catch (error) { console.error("Erro ao buscar mensagens", error); setMessages([]); }
+        }, [selectedBotId, selectedChatId]);
+
         useEffect(() => {
-            const fetchMessages = async () => {
-                if (!selectedBotId || !selectedChatId) return;
-                try {
-                    const { data } = await api.get(`/chats/${selectedBotId}/${selectedChatId}`);
-                    setMessages(data);
-                } catch (error) { console.error("Erro ao buscar mensagens", error); setMessages([]); }
-            };
             fetchMessages();
-        }, [selectedChatId, selectedBotId]);
+        }, [fetchMessages]);
+        
+        const handleSendMessage = async (e) => {
+            e.preventDefault();
+            if (!newMessage.trim() || !selectedChatId || !selectedBotId) return;
+            
+            try {
+                await api.post(`/chats/${selectedBotId}/send-message`, {
+                    chatId: selectedChatId,
+                    text: newMessage
+                });
+                setNewMessage('');
+                fetchMessages();
+            } catch (error) {
+                alert('Erro ao enviar mensagem.');
+            }
+        };
 
         return (
             <>
@@ -397,6 +424,7 @@
                 <div className="form-group">
                     <label htmlFor="botSelectChat">Selecione um Bot</label>
                     <select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
+                        <option value="">-- Selecione --</option>
                         {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
                     </select>
                 </div>
@@ -411,13 +439,20 @@
                     <div className="chat-window">
                         <div className="message-list">
                             {messages.map((msg, index) => (
-                                <div key={index} className="message">
-                                    <strong>{msg.first_name}: </strong>
+                                <div key={index} className={`message ${msg.sender_type === 'operator' ? 'operator' : ''}`} style={{ alignSelf: msg.sender_type === 'operator' ? 'flex-end' : 'flex-start' }}>
+                                    <strong>{msg.first_name} {msg.last_name}: </strong>
                                     {msg.message_text}
                                     <div style={{fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem'}}>{new Date(msg.created_at).toLocaleString()}</div>
                                 </div>
                             ))}
+                            <div ref={messagesEndRef} />
                         </div>
+                        {selectedChatId && (
+                             <form onSubmit={handleSendMessage} style={{display: 'flex', padding: '1rem', borderTop: '1px solid var(--border-color)'}}>
+                                <input className="form-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite sua resposta..." />
+                                <button className="btn btn-primary" type="submit" style={{marginLeft: '0.5rem'}}>Enviar</button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </>
