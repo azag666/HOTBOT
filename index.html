@@ -14,14 +14,14 @@
 
   <style>
     :root { 
-        --bg-dark: #111827; 
-        --bg-light: #1f2937; 
-        --border-color: #374151; 
-        --text-light: #f9fafb; 
-        --text-dark: #9ca3af; 
-        --primary: #3b82f6; 
+        --bg-dark: #111111; 
+        --bg-light: #1d1d1d; 
+        --border-color: #2f2f2f; 
+        --text-light: #e5e5e5; 
+        --text-dark: #888888; 
+        --primary: #00f5a0;
+        --primary-dark: #00a86b;
         --danger: #ef4444; 
-        --success: #22c55e;
         --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
     * { 
@@ -32,9 +32,22 @@
     html,body,#root { 
         height: 100%; 
         font-family: var(--font-sans);
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) var(--bg-dark);
+    }
+    *::-webkit-scrollbar {
+        width: 8px;
+    }
+    *::-webkit-scrollbar-track {
+        background: var(--bg-dark);
+    }
+    *::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 10px;
+        border: 2px solid var(--bg-dark);
     }
     body { 
-        background: linear-gradient(135deg, var(--bg-dark) 0%, #1c2536 100%);
+        background: var(--bg-dark);
         color: var(--text-light); 
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -45,64 +58,65 @@
     }
     .sidebar { 
         width: 240px; 
-        background: var(--bg-light); 
+        background: var(--bg-dark); 
         border-right: 1px solid var(--border-color); 
         padding: 1.5rem; 
         display: flex; 
         flex-direction: column; 
-        transition: width 0.3s ease;
     }
     .sidebar h1 { 
         font-size: 1.5rem; 
         margin-bottom: 2.5rem; 
-        color: var(--primary);
+        color: var(--text-light);
         font-weight: 700;
         text-align: center;
+        letter-spacing: 1px;
+    }
+    .sidebar h1 span {
+        color: var(--primary);
     }
     .nav-menu { 
         display: flex; 
         flex-direction: column; 
-        gap: 0.75rem; 
+        gap: 0.5rem; 
     }
     .nav-item { 
         padding: 0.85rem 1rem; 
-        border-radius: 0.5rem; 
+        border-radius: 0.375rem; 
         cursor: pointer; 
         font-weight: 500; 
         transition: all 0.2s ease-in-out;
-        border: 1px solid transparent;
+        border-left: 3px solid transparent;
+        color: var(--text-dark);
     }
     .nav-item:hover { 
-        background: var(--border-color);
-        color: white;
+        background: var(--bg-light);
+        color: var(--text-light);
     }
     .nav-item.active { 
-        background: var(--primary); 
-        color: white; 
+        background: var(--bg-light); 
+        color: var(--primary); 
         font-weight: 600;
-        box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
+        border-left: 3px solid var(--primary);
     }
     .sidebar .logout-btn { 
         margin-top: auto;
     }
     .main-content { 
         flex: 1; 
-        padding: 2rem; 
+        padding: 2.5rem; 
         overflow-y: auto; 
     }
     .page-header { 
         font-size: 1.75rem; 
         font-weight: bold; 
-        margin-bottom: 1.5rem; 
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 2rem; 
     }
     .card { 
         background: var(--bg-light); 
         padding: 1.5rem; 
-        border-radius: 0.75rem; 
+        border-radius: 0.5rem; 
         border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     .form-group { 
         margin-bottom: 1.25rem; 
@@ -116,7 +130,7 @@
     .form-input, .form-select, .form-textarea { 
         width: 100%; 
         padding: 0.75rem 1rem; 
-        border-radius: 0.5rem; 
+        border-radius: 0.375rem; 
         border: 1px solid var(--border-color); 
         background: var(--bg-dark); 
         color: var(--text-light); 
@@ -126,26 +140,29 @@
     .form-input:focus, .form-select:focus, .form-textarea:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 0 0 3px rgba(0, 245, 160, 0.2);
     }
     .btn { 
         padding: 0.75rem 1.5rem; 
-        border-radius: 0.5rem; 
+        border-radius: 0.375rem; 
         border: none; 
         cursor: pointer; 
         font-weight: bold;
         transition: all 0.2s ease-in-out;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
     }
     .btn-primary { 
         background: var(--primary); 
-        color: white; 
+        color: #000; 
+        box-shadow: 0 0 15px rgba(0, 245, 160, 0.3);
+    }
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        box-shadow: 0 0 25px rgba(0, 245, 160, 0.5);
     }
     .btn-danger { 
         background: var(--danger); 
@@ -157,6 +174,7 @@
     }
     .btn-sm { 
         padding: 0.5rem 1rem; 
+        font-size: 0.875rem;
     }
     .grid { 
         display: grid; 
@@ -168,11 +186,12 @@
         flex-direction: column; 
         justify-content: space-between; 
         height: 150px; 
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s, border-color 0.2s;
+        border-top: 3px solid var(--border-color);
     }
     .flow-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+        border-color: var(--primary);
     }
     .flow-card h3 { 
         font-size: 1.2rem; 
@@ -192,6 +211,7 @@
     }
     .user-item-name { 
         font-weight: bold; 
+        color: var(--text-light);
     }
     .user-item-id { 
         font-size: 0.8rem; 
@@ -199,8 +219,8 @@
     }
     .chat-layout { 
         display: flex; 
-        height: calc(100vh - 10rem);
-        border-radius: 0.75rem;
+        height: calc(100vh - 12rem);
+        border-radius: 0.5rem;
         overflow: hidden;
     }
     .user-list { 
@@ -220,18 +240,18 @@
         overflow-y: auto; 
         display: flex; 
         flex-direction: column;
+        gap: 0.75rem;
     }
     .message { 
-        background: var(--bg-light); 
+        background: var(--border-color); 
         padding: 0.75rem 1rem; 
         border-radius: 1rem; 
-        margin-bottom: 0.5rem; 
         max-width: 75%; 
         line-height: 1.4;
     }
     .message.operator { 
         background: var(--primary); 
-        color: white;
+        color: #000;
     }
     .login-overlay { 
         position: fixed; 
@@ -239,7 +259,7 @@
         left: 0; 
         right: 0; 
         bottom: 0; 
-        background: rgba(17, 24, 39, 0.8);
+        background: rgba(0, 0, 0, 0.7);
         display: flex; 
         align-items: center; 
         justify-content: center; 
@@ -249,22 +269,25 @@
     .login-box { 
         background: var(--bg-light); 
         padding: 2.5rem; 
-        border-radius: 0.75rem; 
+        border-radius: 0.5rem; 
         width: 380px;
         border: 1px solid var(--border-color);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
-    /* Estilos do Editor de Fluxo - mantidos simples para evitar bugs */
+    
+    /* --- Flow Editor Styles --- */
+    /* Minimal changes to prevent bugs, as requested */
     .flow-editor-container { display: flex; height: 100%; width: 100%; }
     .flow-editor-page { display: flex; flex-direction: column; flex-grow: 1; height: 100%; }
     .flow-header { padding: 0.75rem 1rem; background: var(--bg-light); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
-    .reactflow-wrapper { flex-grow: 1; position: relative; }
+    .reactflow-wrapper { flex-grow: 1; position: relative; background: var(--bg-dark); }
     .flow-sidebar { width: 250px; background: var(--bg-light); border-right: 1px solid var(--border-color); padding: 1rem; }
     .flow-sidebar h3 { margin-bottom: 1rem; }
-    .node-button { padding: 0.75rem; border-radius: 0.5rem; border: 1px dashed var(--border-color); text-align: center; cursor: grab; margin-bottom: 0.5rem; transition: background-color 0.2s, border-color 0.2s; }
-    .node-button:hover { background-color: var(--border-color); border-color: var(--primary); }
+    .node-button { padding: 0.75rem; border-radius: 0.375rem; border: 1px dashed var(--border-color); text-align: center; cursor: grab; margin-bottom: 0.5rem; transition: all 0.2s; }
+    .node-button:hover { border-color: var(--primary); color: var(--primary); background: rgba(0, 245, 160, 0.1); }
     .editor-panel { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: var(--bg-light); z-index: 10; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    
+    /* Original ReactFlow nodes preserved */
+    .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; }
     .react-flow__node-trigger { background: #dbeafe; border-color: #60a5fa; cursor: default !important; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
     .react-flow__node-action_pix { background: #fef9c3; border-color: #facc15; }
@@ -312,7 +335,7 @@
       return (
         <div className="app-container">
           {currentPage !== 'flow-editor' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />}
-          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2rem', height: '100vh', width: '100%'}}>
+          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2.5rem', height: '100vh', width: '100%'}}>
             {currentPage === 'bots' && <BotsPage />}
             {currentPage === 'flows' && <FlowsListPage onEditFlow={navigateToFlowEditor} />}
             {currentPage === 'chat' && <LiveChatPage />}
@@ -327,7 +350,7 @@
         const pages = { bots: '🤖 Bots', flows: '🌊 Fluxos', chat: '💬 Chat ao Vivo', disparos: '🚀 Disparos' };
         return (
             <aside className="sidebar">
-                <h1>Hotbot</h1>
+                <h1>Hot<span>bot</span></h1>
                 <nav className="nav-menu">
                     {Object.entries(pages).map(([key, value]) => (
                         <div key={key} className={`nav-item ${currentPage === key ? 'active' : ''}`} onClick={() => setCurrentPage(key)}>
@@ -483,19 +506,19 @@
         return (
             <>
                 <h2 className="page-header">Fluxos de Conversa</h2>
-                <div className="form-group">
+                <div className="form-group" style={{maxWidth: '400px'}}>
                     <label htmlFor="botSelect">Selecione um Bot</label>
                     <select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
                          <option value="">-- Selecione --</option>
                         {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
                     </select>
                 </div>
-                <button className="btn btn-primary" style={{marginBottom: '1rem'}} onClick={handleCreateFlow} disabled={!selectedBotId}>+ Novo Fluxo</button>
+                <button className="btn btn-primary" style={{marginBottom: '1.5rem'}} onClick={handleCreateFlow} disabled={!selectedBotId}>+ Novo Fluxo</button>
                 <div className="grid">
                     {flows.map(flow => (
                         <div key={flow.id} className="card flow-card">
                             <h3>{flow.name}</h3>
-                            <div style={{display: 'flex', gap: '0.5rem'}}>
+                            <div style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
                                 <button className="btn btn-primary btn-sm" onClick={() => onEditFlow(flow)}>Abrir Editor</button>
                                 <button className="btn btn-danger btn-sm" onClick={() => handleDeleteFlow(flow.id)}>Excluir</button>
                             </div>
@@ -646,7 +669,7 @@
                 try {
                     await api.delete(`/chats/${selectedBotId}/${chatIdToDelete}`);
                     alert('Conversa excluída com sucesso!');
-                    fetchUsers(); // Re-busca a lista de usuários
+                    fetchUsers();
                     if (selectedChatId === chatIdToDelete) {
                         setSelectedChatId('');
                         setMessages([]);
@@ -660,7 +683,7 @@
         return (
             <>
                 <h2 className="page-header">Chat ao Vivo</h2>
-                <div className="form-group">
+                <div className="form-group" style={{maxWidth: '400px'}}>
                     <label htmlFor="botSelectChat">Selecione um Bot</label>
                     <select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
                         <option value="">-- Selecione --</option>
@@ -670,7 +693,7 @@
                 <div className="card chat-layout">
                     <div className="user-list">
                         {users.map(user => (
-                            <div key={user.chat_id} className="user-item" onClick={() => setSelectedChatId(user.chat_id)} style={{cursor:'pointer', background: selectedChatId === user.chat_id ? 'var(--primary)' : 'none'}}>
+                            <div key={user.chat_id} className="user-item" onClick={() => setSelectedChatId(user.chat_id)} style={{cursor:'pointer', background: selectedChatId === user.chat_id ? 'var(--bg-light)' : 'none', borderLeft: selectedChatId === user.chat_id ? '3px solid var(--primary)' : '3px solid transparent'}}>
                                 <div className="user-item-info">
                                     <span className="user-item-name">{user.click_id || `${user.first_name} ${user.last_name || ''}`}</span>
                                     <span className="user-item-id">ID: {user.chat_id}</span>
@@ -685,7 +708,7 @@
                                 <div key={msg.message_id || index} className={`message ${msg.sender_type === 'operator' ? 'operator' : ''}`} style={{ alignSelf: msg.sender_type === 'operator' ? 'flex-end' : 'flex-start' }}>
                                     <strong>{msg.first_name} {msg.sender_type === 'operator' ? '' : msg.last_name || ''}: </strong>
                                     {msg.message_text}
-                                    <div style={{fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem'}}>{new Date(msg.created_at).toLocaleString()}</div>
+                                    <div style={{fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right'}}>{new Date(msg.created_at).toLocaleString()}</div>
                                 </div>
                             ))}
                             <div ref={messagesEndRef} />
@@ -816,7 +839,7 @@
             </div>
             <div className="reactflow-wrapper" ref={reactFlowWrapper} onDrop={onDrop} onDragOver={onDragOver}>
                 <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChangeFiltered} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onInit={setReactFlowInstance} nodeTypes={nodeTypes} fitView>
-                    <Background />
+                    <Background color="#555" gap={24}/>
                     <Controls />
                 </ReactFlow>
                 {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} />}
