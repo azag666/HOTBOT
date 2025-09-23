@@ -404,17 +404,30 @@
         
         const handleSendMessage = async (e) => {
             e.preventDefault();
-            if (!newMessage.trim() || !selectedChatId || !selectedBotId) return;
-            
+            const textToSend = newMessage.trim();
+            if (!textToSend || !selectedChatId || !selectedBotId) return;
+
+            const optimisticMessage = {
+                message_id: Date.now(),
+                first_name: "Você",
+                last_name: "(Operador)",
+                message_text: textToSend,
+                sender_type: 'operator',
+                created_at: new Date().toISOString(),
+            };
+            setMessages(prevMessages => [...prevMessages, optimisticMessage]);
+            setNewMessage('');
+
             try {
                 await api.post(`/chats/${selectedBotId}/send-message`, {
                     chatId: selectedChatId,
-                    text: newMessage
+                    text: textToSend
                 });
-                setNewMessage('');
                 fetchMessages();
             } catch (error) {
-                alert('Erro ao enviar mensagem.');
+                console.error("Erro ao enviar mensagem:", error);
+                alert('Ocorreu um erro real ao enviar a mensagem.');
+                setMessages(prevMessages => prevMessages.filter(m => m.message_id !== optimisticMessage.message_id));
             }
         };
 
@@ -439,8 +452,8 @@
                     <div className="chat-window">
                         <div className="message-list">
                             {messages.map((msg, index) => (
-                                <div key={index} className={`message ${msg.sender_type === 'operator' ? 'operator' : ''}`} style={{ alignSelf: msg.sender_type === 'operator' ? 'flex-end' : 'flex-start' }}>
-                                    <strong>{msg.first_name} {msg.last_name}: </strong>
+                                <div key={msg.message_id || index} className={`message ${msg.sender_type === 'operator' ? 'operator' : ''}`} style={{ alignSelf: msg.sender_type === 'operator' ? 'flex-end' : 'flex-start' }}>
+                                    <strong>{msg.first_name} {msg.last_name || ''}: </strong>
                                     {msg.message_text}
                                     <div style={{fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem'}}>{new Date(msg.created_at).toLocaleString()}</div>
                                 </div>
