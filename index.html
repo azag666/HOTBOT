@@ -439,6 +439,7 @@
             if (confirm(`Tem certeza que deseja excluir toda a conversa deste lead?`)) {
                 try {
                     await api.delete(`/chats/${selectedBotId}/${chatIdToDelete}`);
+                    alert('Conversa excluída com sucesso!');
                     fetchUsers(); // Re-busca a lista de usuários
                     if (selectedChatId === chatIdToDelete) {
                         setSelectedChatId('');
