@@ -40,6 +40,9 @@
     .flow-card { display: flex; flex-direction: column; justify-content: space-between; height: 150px; }
     .flow-card h3 { font-size: 1.1rem; }
     .bot-item, .user-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color); }
+    .user-item-info { display: flex; flex-direction: column; }
+    .user-item-name { font-weight: bold; }
+    .user-item-id { font-size: 0.8rem; color: var(--text-dark); }
     .chat-layout { display: flex; height: calc(100vh - 8rem); }
     .user-list { width: 300px; border-right: 1px solid var(--border-color); overflow-y: auto; }
     .chat-window { flex: 1; display: flex; flex-direction: column; }
@@ -48,8 +51,6 @@
     .message.operator { align-self: flex-end; background: var(--primary); }
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
     .login-box { background: var(--bg-light); padding: 2rem; border-radius: 0.5rem; width: 360px; }
-    
-    /* --- Flow Editor Styles --- */
     .flow-editor-container { display: flex; height: 100%; width: 100%; }
     .flow-editor-page { display: flex; flex-direction: column; flex-grow: 1; height: 100%; }
     .flow-header { padding: 0.75rem; background: var(--bg-light); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
@@ -58,12 +59,9 @@
     .flow-sidebar h3 { margin-bottom: 1rem; }
     .node-button { padding: 0.75rem; border-radius: 0.5rem; border: 1px dashed var(--border-color); text-align: center; cursor: grab; margin-bottom: 0.5rem; }
     .editor-panel { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: var(--bg-light); z-index: 10; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    
-    /* Custom Node Styles */
     .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
     .react-flow__node-question { background: #ffedd5; border-color: #fb923c; }
-    .react-flow__node-condition { background: #dbeafe; border-color: #60a5fa; }
     .react-flow__node-pix { background: #fef9c3; border-color: #facc15; }
     .react-flow__handle { width: 10px; height: 10px; }
   </style>
@@ -83,7 +81,6 @@
       return config;
     });
 
-    // --- Main App Component (Router) ---
     function App() {
       const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('authToken'));
       const [currentPage, setCurrentPage] = useState('bots');
@@ -120,7 +117,6 @@
       );
     }
     
-    // --- Components for Each Page (Full Code) ---
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         const pages = { bots: '🤖 Bots', flows: '🌊 Fluxos', chat: '💬 Chat ao Vivo', disparos: '🚀 Disparos' };
         return (
@@ -387,19 +383,18 @@
             fetchBots();
         }, []);
 
-        useEffect(() => {
-            const fetchUsers = async () => {
-                if (!selectedBotId) return;
-                setUsers([]);
-                setMessages([]);
-                setSelectedChatId('');
-                try {
-                    const { data } = await api.get(`/chats/${selectedBotId}`);
-                    setUsers(data);
-                } catch (error) { console.error("Erro ao buscar usuários", error); }
-            };
-            fetchUsers();
+        const fetchUsers = useCallback(async () => {
+            if (!selectedBotId) return;
+            setUsers([]);
+            setMessages([]);
+            setSelectedChatId('');
+            try {
+                const { data } = await api.get(`/chats/${selectedBotId}`);
+                setUsers(data);
+            } catch (error) { console.error("Erro ao buscar usuários", error); }
         }, [selectedBotId]);
+        
+        useEffect(() => { fetchUsers() }, [fetchUsers]);
 
         const fetchMessages = useCallback(async () => {
             if (!selectedBotId || !selectedChatId) return;
@@ -409,9 +404,7 @@
             } catch (error) { console.error("Erro ao buscar mensagens", error); setMessages([]); }
         }, [selectedBotId, selectedChatId]);
 
-        useEffect(() => {
-            fetchMessages();
-        }, [fetchMessages]);
+        useEffect(() => { fetchMessages(); }, [fetchMessages]);
         
         const handleSendMessage = async (e) => {
             e.preventDefault();
@@ -441,6 +434,21 @@
                 setMessages(prevMessages => prevMessages.filter(m => m.message_id !== optimisticMessage.message_id));
             }
         };
+        
+        const handleDeleteConversation = async (chatIdToDelete) => {
+            if (confirm(`Tem certeza que deseja excluir toda a conversa deste lead?`)) {
+                try {
+                    await api.delete(`/chats/${selectedBotId}/${chatIdToDelete}`);
+                    fetchUsers(); // Re-busca a lista de usuários
+                    if (selectedChatId === chatIdToDelete) {
+                        setSelectedChatId('');
+                        setMessages([]);
+                    }
+                } catch (error) {
+                    alert('Erro ao excluir a conversa.');
+                }
+            }
+        };
 
         return (
             <>
@@ -456,7 +464,11 @@
                     <div className="user-list">
                         {users.map(user => (
                             <div key={user.chat_id} className="user-item" onClick={() => setSelectedChatId(user.chat_id)} style={{cursor:'pointer', background: selectedChatId === user.chat_id ? 'var(--primary)' : 'none'}}>
-                                {user.first_name} {user.last_name || ''}
+                                <div className="user-item-info">
+                                    <span className="user-item-name">{user.click_id || `${user.first_name} ${user.last_name || ''}`}</span>
+                                    <span className="user-item-id">ID: {user.chat_id}</span>
+                                </div>
+                                <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteConversation(user.chat_id); }}>X</button>
                             </div>
                         ))}
                     </div>
@@ -483,15 +495,14 @@
         );
     }
     
-    // --- Flow Editor Components (CORRECTED STRUCTURE) ---
-    
-    const initialNodes = [{ id: '1', type: 'message', position: { x: 100, y: 100 }, data: { label: 'Início', text: 'Bem-vindo ao fluxo!' } }];
+    // --- Flow Editor Components ---
+    const initialNodes = [{ id: 'start', type: 'message', position: { x: 100, y: 100 }, data: { label: 'Início', text: 'Gatilho: Novo Contato' } }];
     const nodeTypes = {
         message: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💬 Mensagem</strong></div>
-                <p style={{color: '#333'}}>{data.text || 'Clique para editar'}</p>
+                <p>{data.text || 'Clique para editar'}</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -499,22 +510,22 @@
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>❓ Pergunta</strong></div>
-                <p style={{color: '#333'}}>{data.text || 'Clique para editar'}</p>
-                <Handle type="source" id="yes" position={Position.Bottom} style={{ left: '25%' }}><small style={{position: 'absolute', top: 5, left: -10}}>Sim</small></Handle>
-                <Handle type="source" id="no" position={Position.Bottom} style={{ left: '75%' }}><small style={{position: 'absolute', top: 5, left: -5}}>Não</small></Handle>
+                <p>{data.text || 'Clique para editar'}</p>
+                <Handle type="source" id="yes" position={Position.Bottom} style={{ left: '25%', top: 'auto' }}><small style={{position: 'absolute', top: 5, left: -10}}>Sim</small></Handle>
+                <Handle type="source" id="no" position={Position.Bottom} style={{ left: '75%', top: 'auto' }}><small style={{position: 'absolute', top: 5, left: -5}}>Não</small></Handle>
             </>
         )),
         pix: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💳 Gerar PIX</strong></div>
-                <p style={{color: '#333'}}>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
+                <p>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
     };
     
-    function FlowCanvas({ flow }) {
+    function FlowCanvas({ flow, onBack }) {
       const reactFlowWrapper = useRef(null);
       const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
       const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -568,7 +579,7 @@
             <div className="flow-header">
               <h3>Editando: {flow.name}</h3>
               <div>
-                <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={flow.onBack}>Voltar</button>
+                <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={onBack}>Voltar</button>
                 <button className="btn btn-primary" onClick={handleSave}>Salvar Fluxo</button>
               </div>
             </div>
@@ -594,7 +605,7 @@
                     <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'pix')} draggable>💳 Gerar PIX</div>
                 </div>
                 <ReactFlowProvider>
-                    <FlowCanvas flow={{...flow, onBack: onBack}} />
+                    <FlowCanvas flow={flow} onBack={onBack} />
                 </ReactFlowProvider>
             </div>
         );
@@ -612,6 +623,11 @@
 
         const onSave = () => {
             setNodes(nds => nds.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n));
+            setSelectedNode(null);
+        };
+        
+        const onDelete = () => {
+            setNodes(nds => nds.filter(n => n.id !== selectedNode.id));
             setSelectedNode(null);
         };
 
@@ -636,6 +652,7 @@
                 )}
                 <button className="btn btn-primary" onClick={onSave}>Salvar</button>
                 <button className="btn btn-secondary" style={{marginLeft: '0.5rem'}} onClick={() => setSelectedNode(null)}>Fechar</button>
+                { selectedNode.data.label !== 'Início' && <button className="btn btn-danger" style={{marginTop: '1rem', width: '100%'}} onClick={onDelete}>Excluir Nó</button> }
             </div>
         );
     }
