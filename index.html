@@ -3,11 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <title>Chatbot Flow Builder</title>
+
+  <!-- React + ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel para rodar JSX direto no browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ReactFlow UMD -->
   <script src="https://unpkg.com/reactflow@11.10.4/dist/react-flow-renderer.umd.js"></script>
+
   <style>
     body { margin: 0; font-family: sans-serif; background: #0f172a; color: #fff; }
     #root { width: 100vw; height: 100vh; }
@@ -18,7 +27,8 @@
 
   <script type="text/babel">
     const { useState, useEffect } = React;
-    const { ReactFlow, MiniMap, Controls, Background } = window.ReactFlow;
+    // ⚠️ Correção: ReactFlow vem de window.ReactFlowRenderer
+    const { ReactFlow, MiniMap, Controls, Background } = window.ReactFlowRenderer;
 
     const API_BASE = "https://novaapi-one.vercel.app/api";
 
@@ -37,7 +47,7 @@
             body: JSON.stringify({ email, password })
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.message);
+          if (!res.ok) throw new Error(data.message || "Erro ao logar");
           localStorage.setItem("token", data.token);
           onLogin(data.token);
         } catch (err) {
@@ -49,10 +59,23 @@
         <div className="flex h-screen items-center justify-center">
           <form onSubmit={handleLogin} className="bg-white text-black p-6 rounded shadow-md w-80">
             <h1 className="text-xl font-bold mb-4 text-center">Login</h1>
-            <input className="border p-2 mb-3 w-full" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
-            <input type="password" className="border p-2 mb-3 w-full" placeholder="Senha" value={password} onChange={e=>setPassword(e.target.value)} />
+            <input
+              className="border p-2 mb-3 w-full"
+              placeholder="Email"
+              value={email}
+              onChange={e=>setEmail(e.target.value)}
+            />
+            <input
+              type="password"
+              className="border p-2 mb-3 w-full"
+              placeholder="Senha"
+              value={password}
+              onChange={e=>setPassword(e.target.value)}
+            />
             {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded w-full">Entrar</button>
+            <button className="bg-indigo-600 text-white px-4 py-2 rounded w-full">
+              Entrar
+            </button>
           </form>
         </div>
       );
@@ -69,8 +92,12 @@
 
       async function fetchData() {
         try {
-          const resBots = await fetch(API_BASE + "/platform/bots", { headers: { Authorization: "Bearer " + token }});
-          const resFlows = await fetch(API_BASE + "/platform/flows", { headers: { Authorization: "Bearer " + token }});
+          const resBots = await fetch(API_BASE + "/platform/bots", {
+            headers: { Authorization: "Bearer " + token }
+          });
+          const resFlows = await fetch(API_BASE + "/platform/flows", {
+            headers: { Authorization: "Bearer " + token }
+          });
           setBots(await resBots.json());
           setFlows(await resFlows.json());
         } catch (e) {
@@ -82,11 +109,15 @@
         try {
           const res = await fetch(API_BASE + "/platform/flows", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token
+            },
             body: JSON.stringify({ name: "Novo Fluxo", botId: bots[0]?.id })
           });
           const data = await res.json();
           setFlows([...flows, data]);
+          alert("Fluxo criado com sucesso!");
         } catch (e) {
           console.error(e);
         }
@@ -96,11 +127,14 @@
         try {
           const res = await fetch(API_BASE + "/platform/pix", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token
+            },
             body: JSON.stringify({ amount: 1000 })
           });
           const data = await res.json();
-          alert("PIX Gerado: " + data.qrCode);
+          alert("PIX Gerado:\n" + data.qrCode);
         } catch (e) {
           console.error("Erro PIX", e);
         }
@@ -113,8 +147,18 @@
           {/* Sidebar */}
           <div className="w-60 bg-gray-900 p-4">
             <h2 className="font-bold mb-4">Menu</h2>
-            <button onClick={createFlow} className="w-full bg-indigo-600 text-white py-2 mb-2 rounded">Criar Fluxo</button>
-            <button onClick={generatePix} className="w-full bg-green-600 text-white py-2 mb-2 rounded">Gerar PIX</button>
+            <button
+              onClick={createFlow}
+              className="w-full bg-indigo-600 text-white py-2 mb-2 rounded"
+            >
+              Criar Fluxo
+            </button>
+            <button
+              onClick={generatePix}
+              className="w-full bg-green-600 text-white py-2 mb-2 rounded"
+            >
+              Gerar PIX
+            </button>
           </div>
 
           {/* ReactFlow */}
@@ -132,7 +176,6 @@
     // --- APP ---
     function App() {
       const [token, setToken] = useState(localStorage.getItem("token"));
-
       if (!token) return <Login onLogin={setToken} />;
       return <FlowBuilder token={token} />;
     }
