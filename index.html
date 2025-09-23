@@ -176,7 +176,17 @@
               const response = await api.post(`/bots/${botId}/set-webhook`);
               alert(response.data.message);
           } catch (error) {
-              alert('Falha ao configurar Webhook: ' + error.response?.data?.message);
+              console.error("Erro detalhado ao configurar webhook:", error);
+              let errorMessage = "Ocorreu um erro desconhecido.";
+
+              if (error.response) {
+                  errorMessage = error.response.data?.message || `Erro ${error.response.status}: O servidor respondeu, mas sem uma mensagem específica.`;
+              } else if (error.request) {
+                  errorMessage = "Não foi possível conectar ao servidor. Verifique sua conexão de internet.";
+              } else {
+                  errorMessage = error.message;
+              }
+              alert('Falha ao configurar Webhook: ' + errorMessage);
           }
       };
 
