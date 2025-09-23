@@ -142,7 +142,24 @@
 
         useEffect(() => {
             if (currentFlow) {
-                const flowContent = currentFlow.nodes ? JSON.parse(currentFlow.nodes) : createInitialFlow();
+                let flowContent;
+                // VERIFICA SE O DADO É TEXTO OU OBJETO
+                if (typeof currentFlow.nodes === 'string') {
+                    // Se for texto, ele "traduz" (parse)
+                    try {
+                        flowContent = JSON.parse(currentFlow.nodes);
+                    } catch (e) {
+                        console.error("Falha ao analisar o conteúdo do fluxo:", e);
+                        flowContent = createInitialFlow(); // Usa um fluxo padrão em caso de erro
+                    }
+                } else if (typeof currentFlow.nodes === 'object' && currentFlow.nodes !== null) {
+                    // Se já for um objeto, ele usa diretamente
+                    flowContent = currentFlow.nodes;
+                } else {
+                    // Se for nulo ou indefinido, cria um novo
+                    flowContent = createInitialFlow();
+                }
+
                 setNodes(flowContent.nodes || []);
                 setEdges(flowContent.edges || []);
             } else {
