@@ -453,7 +453,7 @@
                         <div className="message-list">
                             {messages.map((msg, index) => (
                                 <div key={msg.message_id || index} className={`message ${msg.sender_type === 'operator' ? 'operator' : ''}`} style={{ alignSelf: msg.sender_type === 'operator' ? 'flex-end' : 'flex-start' }}>
-                                    <strong>{msg.first_name} {msg.last_name || ''}: </strong>
+                                    <strong>{msg.first_name} {msg.sender_type === 'operator' ? '' : msg.last_name || ''}: </strong>
                                     {msg.message_text}
                                     <div style={{fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem'}}>{new Date(msg.created_at).toLocaleString()}</div>
                                 </div>
