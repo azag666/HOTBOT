@@ -481,6 +481,8 @@
     }
     
     // --- Flow Editor Components ---
+    const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {} }];
+    
     const nodeTypes = {
         trigger: memo(({ data }) => (
             <>
@@ -518,7 +520,7 @@
     
     function FlowCanvas({ flow, onBack }) {
       const reactFlowWrapper = useRef(null);
-      const [nodes, setNodes, onNodesChange] = useNodesState([]);
+      const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
       const [edges, setEdges, onEdgesChange] = useEdgesState([]);
       const [selectedNode, setSelectedNode] = useState(null);
       const [reactFlowInstance, setReactFlowInstance] = useState(null);
