@@ -166,9 +166,18 @@
                 alert("Token atualizado com sucesso!");
                 fetchBots();
             } catch (error) {
-                alert('Erro ao atualizar token.');
+                alert('Erro ao atualizar token: ' + error.response?.data?.message);
             }
         }
+      };
+
+      const handleSetWebhook = async (botId) => {
+          try {
+              const response = await api.post(`/bots/${botId}/set-webhook`);
+              alert(response.data.message);
+          } catch (error) {
+              alert('Falha ao configurar Webhook: ' + error.response?.data?.message);
+          }
       };
 
       return (
@@ -190,6 +199,7 @@
               <div key={bot.id} className="bot-item">
                 <span>{bot.bot_name}</span>
                 <div>
+                  <button className="btn btn-secondary btn-sm" style={{marginRight: '0.5rem'}} onClick={() => handleSetWebhook(bot.id)}>Configurar Webhook</button>
                   <button className="btn btn-secondary btn-sm" style={{marginRight: '0.5rem'}} onClick={() => handleUpdateToken(bot.id)}>Editar Token</button>
                   <button className="btn btn-danger btn-sm" onClick={() => handleDeleteBot(bot.id)}>Excluir</button>
                 </div>
@@ -291,12 +301,11 @@
                 return;
             }
             try {
-                // Simplificado para envio de texto simples
                 await api.post('/bots/mass-send', {
                     botIds: selectedBotIds,
                     initialText: message,
-                    ctaButtonText: "Saber mais", // Default
-                    externalLink: "https://google.com" // Default
+                    ctaButtonText: "Saber mais", 
+                    externalLink: "https://google.com"
                 });
                 alert("Disparo agendado com sucesso!");
                 setMessage('');
@@ -406,7 +415,7 @@
     }
     
     // --- Flow Editor Component ---
-    const nodeTypes = { message: ({data}) => <div className="custom-node node-msg">{data.label}</div> };
+    const nodeTypes = { message: ({data}) => <div style={{padding: 10, border: '1px solid black', borderRadius: 5, background: 'white', color: 'black'}}>{data.text || data.label}</div> };
     function FlowEditorPage({ flow, onBack }) {
       const [nodes, setNodes, onNodesChange] = RF.useNodesState([]);
       const [edges, setEdges, onEdgesChange] = RF.useEdgesState([]);
