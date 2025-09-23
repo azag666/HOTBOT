@@ -64,10 +64,12 @@
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
     .login-box { background: var(--bg-light); padding: 2.5rem; border-radius: 0.75rem; width: 380px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
     .flow-editor-page { height: 100vh; }
+    .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; }
     .react-flow__node-trigger { background: #dbeafe; border-color: #60a5fa; cursor: default !important; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
     .react-flow__node-action_pix { background: #fef9c3; border-color: #facc15; }
     .react-flow__node-action_city { background: #cffafe; border-color: #22d3ee; }
+    .react-flow__handle { width: 10px; height: 10px; }
   </style>
 </head>
 <body>
@@ -122,7 +124,7 @@
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-        const pages = { bots: '🤖 Bots', flows: '🌊 Fluxos', chat: '💬 Chat ao Vivo', disparos: '🚀 Disparos' };
+        const pages = { bots: 'robot Bots', flows: 'water Fluxos', chat: 'comments Chat ao Vivo', disparos: 'paper-plane Disparos' };
         return (
             <aside className="sidebar">
                 <h1>Hotbot</h1>
@@ -390,15 +392,22 @@
             if (!selectedBotId || !selectedChatId) return;
             try {
                 const { data } = await api.get(`/chats/${selectedBotId}/${selectedChatId}`);
-                setMessages(data);
+                setMessages(currentMessages => {
+                    if (JSON.stringify(currentMessages) !== JSON.stringify(data)) {
+                        return data;
+                    }
+                    return currentMessages;
+                });
             } catch (error) { console.error("Erro ao buscar mensagens", error); setMessages([]); }
         }, [selectedBotId, selectedChatId]);
         
         useEffect(() => {
-            fetchMessages();
-            const interval = setInterval(fetchMessages, 3000); // <-- ATUALIZAÇÃO AUTOMÁTICA
-            return () => clearInterval(interval);
-        }, [fetchMessages]);
+            if (selectedChatId) {
+                fetchMessages();
+                const interval = setInterval(fetchMessages, 3000);
+                return () => clearInterval(interval);
+            }
+        }, [selectedChatId, fetchMessages]);
         
         const handleSendMessage = async (e) => {
             e.preventDefault();
@@ -454,7 +463,7 @@
                             {messages.map((msg, index) => (
                                 <div key={msg.message_id || index} className={`message ${msg.sender_type === 'operator' ? 'operator' : msg.sender_type === 'bot' ? 'bot' : 'user'}`}>
                                     <strong>{msg.sender_type === 'user' ? (msg.first_name + ' ' + (msg.last_name || '')) : (msg.last_name === '(Fluxo)' ? `🤖 ${msg.first_name}` : `👤 ${msg.first_name} ${msg.last_name || ''}`)}:</strong><br/>
-                                    {msg.message_text}
+                                    <div dangerouslySetInnerHTML={{ __html: msg.message_text.replace(/\n/g, '<br />') }} />
                                 </div>
                             ))}
                             <div ref={messagesEndRef} />
@@ -472,8 +481,6 @@
     }
     
     // --- Flow Editor Components ---
-    const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {} }];
-    
     const nodeTypes = {
         trigger: memo(({ data }) => (
             <>
@@ -511,25 +518,33 @@
     
     function FlowCanvas({ flow, onBack }) {
       const reactFlowWrapper = useRef(null);
-      const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+      const [nodes, setNodes, onNodesChange] = useNodesState([]);
       const [edges, setEdges, onEdgesChange] = useEdgesState([]);
       const [selectedNode, setSelectedNode] = useState(null);
       const [reactFlowInstance, setReactFlowInstance] = useState(null);
       
       useEffect(() => {
-        if(flow && flow.nodes) {
+        if (flow && flow.nodes) {
             const flowContent = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes;
-            setNodes(flowContent.nodes || initialNodes);
+            let loadedNodes = flowContent.nodes || [];
+            
+            const triggerNode = loadedNodes.find(n => n.id === 'start');
+            if (triggerNode) {
+                triggerNode.type = 'trigger';
+                triggerNode.draggable = false;
+            } else {
+                loadedNodes.unshift({ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, draggable: false });
+            }
+
+            setNodes(loadedNodes);
             setEdges(flowContent.edges || []);
         }
-      }, [flow]);
+      }, [flow, setNodes, setEdges]);
 
-      const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), []);
+      const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), [setEdges]);
       
       const onNodeClick = useCallback((_, node) => {
-          if (node.type !== 'trigger') {
-              setSelectedNode(node);
-          }
+          if (node.type !== 'trigger') setSelectedNode(node);
       }, []);
       
       const onNodesChangeFiltered = useCallback((changes) => {
@@ -558,14 +573,9 @@
             x: event.clientX - reactFlowBounds.left,
             y: event.clientY - reactFlowBounds.top,
           });
-          const newNode = {
-              id: `${type}-${Date.now()}`,
-              type,
-              position,
-              data: { label: type },
-          };
+          const newNode = { id: `${type}-${Date.now()}`, type, position, data: { label: type } };
           setNodes((nds) => nds.concat(newNode));
-      }, [reactFlowInstance]);
+      }, [reactFlowInstance, setNodes]);
 
       const handleSave = async () => {
           try {
