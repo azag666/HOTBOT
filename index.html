@@ -60,6 +60,7 @@
     .node-button { padding: 0.75rem; border-radius: 0.5rem; border: 1px dashed var(--border-color); text-align: center; cursor: grab; margin-bottom: 0.5rem; }
     .editor-panel { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: var(--bg-light); z-index: 10; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
     .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; }
+    .react-flow__node-trigger { background: #dbeafe; border-color: #60a5fa; cursor: default !important; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
     .react-flow__node-action_pix { background: #fef9c3; border-color: #facc15; }
     .react-flow__node-action_city { background: #cffafe; border-color: #22d3ee; }
@@ -497,8 +498,16 @@
     }
     
     // --- Flow Editor Components ---
-    const initialNodes = [{ id: 'start', type: 'message', position: { x: 100, y: 100 }, data: { label: 'Início', text: 'Gatilho: Novo Contato' } }];
+    const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {} }];
+    
     const nodeTypes = {
+        trigger: memo(({ data }) => (
+            <>
+                <div><strong>🚀 Gatilho</strong></div>
+                <p style={{fontSize: 12, color: '#555'}}>Novo contato via Telegram</p>
+                <Handle type="source" position={Position.Bottom} />
+            </>
+        )),
         message: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
@@ -512,7 +521,7 @@
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💳 Gerar PIX (Ação)</strong></div>
                 <p>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
-                <small>Usa o Click ID inicial</small>
+                <small style={{fontSize: 12, color: '#555'}}>Usa o Click ID inicial</small>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -520,7 +529,7 @@
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>📍 Consultar Cidade (Ação)</strong></div>
-                <p>Usa o Click ID inicial para buscar a cidade</p>
+                <p style={{fontSize: 12, color: '#555'}}>Usa o Click ID inicial</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -542,7 +551,23 @@
       }, [flow]);
 
       const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), []);
-      const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
+      
+      const onNodeClick = useCallback((_, node) => {
+          if (node.type !== 'trigger') {
+              setSelectedNode(node);
+          }
+      }, []);
+      
+      const onNodesChangeFiltered = useCallback((changes) => {
+          const nextChanges = changes.filter(change => {
+              if (change.type === 'remove') {
+                  const nodeToRemove = nodes.find(n => n.id === change.id);
+                  return nodeToRemove && nodeToRemove.type !== 'trigger';
+              }
+              return true;
+          });
+          onNodesChange(nextChanges);
+      }, [nodes, onNodesChange]);
       
       const onDragOver = useCallback((event) => {
         event.preventDefault();
@@ -563,7 +588,7 @@
               id: `${type}-${Date.now()}`,
               type,
               position,
-              data: { label: type, text: `Novo(a) ${type}` },
+              data: { label: type },
           };
           setNodes((nds) => nds.concat(newNode));
       }, [reactFlowInstance]);
@@ -585,7 +610,7 @@
               </div>
             </div>
             <div className="reactflow-wrapper" ref={reactFlowWrapper} onDrop={onDrop} onDragOver={onDragOver}>
-                <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onInit={setReactFlowInstance} nodeTypes={nodeTypes} fitView>
+                <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChangeFiltered} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onInit={setReactFlowInstance} nodeTypes={nodeTypes} fitView>
                     <Background />
                     <Controls />
                 </ReactFlow>
@@ -654,7 +679,7 @@
                 )}
                 <button className="btn btn-primary" onClick={onSave}>Salvar</button>
                 <button className="btn btn-secondary" style={{marginLeft: '0.5rem'}} onClick={() => setSelectedNode(null)}>Fechar</button>
-                { selectedNode.data.label !== 'Início' && <button className="btn btn-danger" style={{marginTop: '1rem', width: '100%'}} onClick={onDelete}>Excluir Nó</button> }
+                { selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{marginTop: '1rem', width: '100%'}} onClick={onDelete}>Excluir Nó</button> }
             </div>
         );
     }
