@@ -59,10 +59,11 @@
     .flow-sidebar h3 { margin-bottom: 1rem; }
     .node-button { padding: 0.75rem; border-radius: 0.5rem; border: 1px dashed var(--border-color); text-align: center; cursor: grab; margin-bottom: 0.5rem; }
     .editor-panel { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: var(--bg-light); z-index: 10; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; }
+    .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
-    .react-flow__node-question { background: #ffedd5; border-color: #fb923c; }
-    .react-flow__node-pix { background: #fef9c3; border-color: #facc15; }
+    .react-flow__node-collect_input { background: #e0e7ff; border-color: #818cf8; }
+    .react-flow__node-action_pix { background: #fef9c3; border-color: #facc15; }
+    .react-flow__node-action_city { background: #cffafe; border-color: #22d3ee; }
     .react-flow__handle { width: 10px; height: 10px; }
   </style>
 </head>
@@ -503,24 +504,31 @@
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💬 Mensagem</strong></div>
-                <p>{data.text || 'Clique para editar'}</p>
+                <p style={{'white-space': 'pre-wrap'}}>{data.text || 'Clique para editar'}</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
-        question: memo(({ data }) => (
+        collect_input: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
-                <div><strong>❓ Pergunta</strong></div>
-                <p>{data.text || 'Clique para editar'}</p>
-                <Handle type="source" id="yes" position={Position.Bottom} style={{ left: '25%', top: 'auto' }}><small style={{position: 'absolute', top: 5, left: -10}}>Sim</small></Handle>
-                <Handle type="source" id="no" position={Position.Bottom} style={{ left: '75%', top: 'auto' }}><small style={{position: 'absolute', top: 5, left: -5}}>Não</small></Handle>
+                <div><strong>💬 Coletar Resposta</strong></div>
+                <p>Salva a próxima entrada do usuário</p>
+                <Handle type="source" position={Position.Bottom} />
             </>
         )),
-        pix: memo(({ data }) => (
+        action_pix: memo(({ data }) => (
             <>
                 <Handle type="target" position={Position.Top} />
-                <div><strong>💳 Gerar PIX</strong></div>
+                <div><strong>💳 Gerar PIX (Ação)</strong></div>
                 <p>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
+                <Handle type="source" position={Position.Bottom} />
+            </>
+        )),
+        action_city: memo(({ data }) => (
+            <>
+                <Handle type="target" position={Position.Top} />
+                <div><strong>📍 Consultar Cidade (Ação)</strong></div>
+                <p>Usa o Click ID para buscar a cidade</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -600,10 +608,12 @@
         return (
             <div className="flow-editor-container">
                 <div className="flow-sidebar">
-                    <h3>Nós</h3>
+                    <h3>Componentes</h3>
                     <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'message')} draggable>💬 Mensagem</div>
-                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'question')} draggable>❓ Pergunta</div>
-                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'pix')} draggable>💳 Gerar PIX</div>
+                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'collect_input')} draggable>💬 Coletar Resposta</div>
+                    <h3>Ações</h3>
+                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'action_pix')} draggable>💳 Gerar PIX (Ação)</div>
+                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'action_city')} draggable>📍 Consultar Cidade (Ação)</div>
                 </div>
                 <ReactFlowProvider>
                     <FlowCanvas flow={flow} onBack={onBack} />
@@ -639,13 +649,13 @@
                     <label>Rótulo (para sua referência)</label>
                     <input name="label" className="form-input" value={nodeData.label || ''} onChange={handleChange} />
                 </div>
-                {(selectedNode.type === 'message' || selectedNode.type === 'question') && (
+                {selectedNode.type === 'message' && (
                     <div className="form-group">
-                        <label>Texto</label>
-                        <textarea name="text" className="form-textarea" value={nodeData.text || ''} onChange={handleChange} />
+                        <label>Texto da Mensagem</label>
+                        <textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} />
                     </div>
                 )}
-                {selectedNode.type === 'pix' && (
+                {selectedNode.type === 'action_pix' && (
                     <div className="form-group">
                         <label>Valor em Centavos</label>
                         <input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} />
