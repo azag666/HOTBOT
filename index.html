@@ -11,60 +11,63 @@
   <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link href="https://unpkg.com/reactflow@11/dist/style.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
-    :root { --bg-dark: #0f172a; --bg-light: #1e293b; --border-color: #334155; --text-light: #f1f5f9; --text-dark: #94a3b8; --primary: #6366f1; --danger: #ef4444; }
+    :root {
+      --bg-dark: #111827; --bg-light: #1f2937; --bg-lighter: #374151; --border-color: #4b5563;
+      --text-light: #f9fafb; --text-dark: #9ca3af; --primary: #818cf8; --primary-dark: #6366f1;
+      --danger: #f43f5e; --success: #22c55e; --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html,body,#root { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
-    body { background: var(--bg-dark); color: var(--text-light); }
+    html,body,#root { height: 100%; font-family: var(--font-sans); }
+    body { background: var(--bg-dark); color: var(--text-light); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     .app-container { display: flex; height: 100vh; }
-    .sidebar { width: 240px; background: var(--bg-light); border-right: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; }
-    .sidebar h1 { font-size: 1.25rem; margin-bottom: 2rem; }
-    .nav-menu { display: flex; flex-direction: column; gap: 0.5rem; }
-    .nav-item { padding: 0.75rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 500; transition: background 0.2s; }
-    .nav-item:hover { background: var(--border-color); }
-    .nav-item.active { background: var(--primary); color: white; }
+    .sidebar { width: 240px; background: var(--bg-dark); border-right: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; transition: width 0.3s; }
+    .sidebar h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 2.5rem; color: var(--primary); }
+    .nav-menu { display: flex; flex-direction: column; gap: 0.75rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 500; transition: background 0.2s, color 0.2s; }
+    .nav-item:hover { background: var(--bg-light); }
+    .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.5); }
     .sidebar .logout-btn { margin-top: auto; background: var(--danger); }
-    .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
-    .page-header { font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem; }
-    .card { background: var(--bg-light); padding: 1.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
-    .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-    .form-input, .form-select, .form-textarea { width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-dark); color: var(--text-light); font-size: 1rem; }
-    .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: bold; }
-    .btn-primary { background: var(--primary); color: white; }
+    .main-content { flex: 1; padding: 2.5rem; overflow-y: auto; }
+    .page-header { font-size: 1.75rem; font-weight: bold; margin-bottom: 2rem; }
+    .card { background: var(--bg-light); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-dark); }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-dark); color: var(--text-light); font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-dark); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s, transform 0.1s; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(to right, var(--primary), var(--primary-dark)); color: white; }
     .btn-danger { background: var(--danger); color: white; }
-    .btn-secondary { background: var(--border-color); color: white; }
+    .btn-secondary { background: var(--bg-lighter); color: white; }
     .btn-sm { padding: 0.5rem 1rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-    .flow-card { display: flex; flex-direction: column; justify-content: space-between; height: 150px; }
-    .flow-card h3 { font-size: 1.1rem; }
-    .bot-item, .user-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .flow-card { display: flex; flex-direction: column; justify-content: space-between; height: 160px; transition: transform 0.2s, box-shadow 0.2s; }
+    .flow-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+    .flow-card h3 { font-size: 1.2rem; }
+    .bot-item, .user-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s; }
     .user-item-info { display: flex; flex-direction: column; }
     .user-item-name { font-weight: bold; }
     .user-item-id { font-size: 0.8rem; color: var(--text-dark); }
-    .chat-layout { display: flex; height: calc(100vh - 8rem); }
+    .chat-layout { display: flex; height: calc(100vh - 10rem); background: var(--bg-dark); border-radius: 0.75rem; }
     .user-list { width: 300px; border-right: 1px solid var(--border-color); overflow-y: auto; }
+    .user-list .user-item:hover { background-color: var(--bg-light); }
+    .user-list .user-item[data-active='true'] { background-color: var(--primary); color: white; }
     .chat-window { flex: 1; display: flex; flex-direction: column; }
-    .message-list { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column;}
-    .message { background: var(--bg-light); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.5rem; max-width: 80%; }
-    .message.operator { align-self: flex-end; background: var(--primary); }
+    .message-list { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+    .message { padding: 0.75rem 1rem; border-radius: 1rem; max-width: 75%; line-height: 1.5; }
+    .message.user { background: var(--bg-lighter); align-self: flex-start; border-bottom-left-radius: 0.25rem; }
+    .message.operator, .message.bot { background: var(--primary-dark); align-self: flex-end; border-bottom-right-radius: 0.25rem; color: white; }
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
-    .login-box { background: var(--bg-light); padding: 2rem; border-radius: 0.5rem; width: 360px; }
-    .flow-editor-container { display: flex; height: 100%; width: 100%; }
-    .flow-editor-page { display: flex; flex-direction: column; flex-grow: 1; height: 100%; }
-    .flow-header { padding: 0.75rem; background: var(--bg-light); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
-    .reactflow-wrapper { flex-grow: 1; position: relative; }
-    .flow-sidebar { width: 250px; background: var(--bg-light); border-right: 1px solid var(--border-color); padding: 1rem; }
-    .flow-sidebar h3 { margin-bottom: 1rem; }
-    .node-button { padding: 0.75rem; border-radius: 0.5rem; border: 1px dashed var(--border-color); text-align: center; cursor: grab; margin-bottom: 0.5rem; }
-    .editor-panel { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: var(--bg-light); z-index: 10; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; }
+    .login-box { background: var(--bg-light); padding: 2.5rem; border-radius: 0.75rem; width: 380px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    .flow-editor-page { height: 100vh; }
     .react-flow__node-trigger { background: #dbeafe; border-color: #60a5fa; cursor: default !important; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
     .react-flow__node-action_pix { background: #fef9c3; border-color: #facc15; }
     .react-flow__node-action_city { background: #cffafe; border-color: #22d3ee; }
-    .react-flow__handle { width: 10px; height: 10px; }
   </style>
 </head>
 <body>
@@ -107,7 +110,7 @@
       return (
         <div className="app-container">
           {currentPage !== 'flow-editor' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />}
-          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2rem', height: '100vh', width: '100%'}}>
+          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2.5rem', height: '100vh', width: '100%'}}>
             {currentPage === 'bots' && <BotsPage />}
             {currentPage === 'flows' && <FlowsListPage onEditFlow={navigateToFlowEditor} />}
             {currentPage === 'chat' && <LiveChatPage />}
@@ -126,11 +129,12 @@
                 <nav className="nav-menu">
                     {Object.entries(pages).map(([key, value]) => (
                         <div key={key} className={`nav-item ${currentPage === key ? 'active' : ''}`} onClick={() => setCurrentPage(key)}>
-                            {value}
+                            <i className={`fa-solid fa-${value.split(' ')[0]}`}></i>
+                            <span>{value.split(' ').slice(1).join(' ')}</span>
                         </div>
                     ))}
                 </nav>
-                <button className="btn logout-btn" onClick={onLogout}>Sair</button>
+                <button className="btn logout-btn" onClick={onLogout}><i className="fa-solid fa-right-from-bracket"></i> Sair</button>
             </aside>
         );
     }
@@ -159,7 +163,7 @@
       };
 
       const handleDeleteBot = async (botId) => {
-        if (confirm('Tem certeza que deseja excluir este bot? Todos os fluxos associados serão perdidos.')) {
+        if (confirm('Tem certeza que deseja excluir este bot?')) {
           try {
             await api.delete(`/bots/${botId}`);
             fetchBots();
@@ -188,9 +192,9 @@
               console.error("Erro detalhado ao configurar webhook:", error);
               let errorMessage = "Ocorreu um erro desconhecido.";
               if (error.response) {
-                  errorMessage = error.response.data?.message || `Erro ${error.response.status}: O servidor respondeu, mas sem uma mensagem específica.`;
+                  errorMessage = error.response.data?.message || `Erro ${error.response.status}`;
               } else if (error.request) {
-                  errorMessage = "Não foi possível conectar ao servidor. Verifique sua conexão de internet.";
+                  errorMessage = "Não foi possível conectar ao servidor.";
               } else {
                   errorMessage = error.message;
               }
@@ -202,24 +206,24 @@
         <>
           <h2 className="page-header">Gerenciar Bots</h2>
           <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <h3>Adicionar Novo Bot</h3>
+            <h3><i className="fa-solid fa-plus" style={{marginRight: '0.5rem'}}></i>Adicionar Novo Bot</h3>
             <form onSubmit={handleCreateBot}>
               <div className="form-group">
-                <label htmlFor="botName">Nome do Bot</label>
-                <input id="botName" className="form-input" value={newBotName} onChange={(e) => setNewBotName(e.target.value)} placeholder="@meu_bot" />
+                <label htmlFor="botName">Nome de usuário do Bot</label>
+                <input id="botName" className="form-input" value={newBotName} onChange={(e) => setNewBotName(e.target.value)} placeholder="@meu_bot_telegram" />
               </div>
-              <button className="btn btn-primary" type="submit">Criar Bot</button>
+              <button className="btn btn-primary" type="submit"><i className="fa-solid fa-robot"></i> Criar Bot</button>
             </form>
           </div>
           <div className="card">
-            <h3>Bots Existentes</h3>
+            <h3><i className="fa-solid fa-list-check" style={{marginRight: '0.5rem'}}></i>Bots Existentes</h3>
             {bots.map(bot => (
               <div key={bot.id} className="bot-item">
                 <span>{bot.bot_name}</span>
-                <div>
-                  <button className="btn btn-secondary btn-sm" style={{marginRight: '0.5rem'}} onClick={() => handleSetWebhook(bot.id)}>Configurar Webhook</button>
-                  <button className="btn btn-secondary btn-sm" style={{marginRight: '0.5rem'}} onClick={() => handleUpdateToken(bot.id)}>Editar Token</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteBot(bot.id)}>Excluir</button>
+                <div style={{display: 'flex', gap: '0.5rem'}}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}><i className="fa-solid fa-link"></i> Webhook</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}><i className="fa-solid fa-key"></i> Token</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteBot(bot.id)}><i className="fa-solid fa-trash"></i></button>
                 </div>
               </div>
             ))}
@@ -266,11 +270,7 @@
                     await api.delete(`/flows/${flowId}`);
                     fetchFlows();
                 } catch (error) {
-                     if (error.response && error.response.status === 204) {
-                        fetchFlows();
-                    } else {
-                        alert('Erro ao deletar fluxo.');
-                    }
+                     alert('Erro ao deletar fluxo.');
                 }
             }
         };
@@ -278,21 +278,23 @@
         return (
             <>
                 <h2 className="page-header">Fluxos de Conversa</h2>
-                <div className="form-group">
-                    <label htmlFor="botSelect">Selecione um Bot</label>
-                    <select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
-                         <option value="">-- Selecione --</option>
-                        {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
-                    </select>
+                <div className="card" style={{padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                    <div className="form-group" style={{flex: 1, marginBottom: 0}}>
+                        <label htmlFor="botSelect">Selecione um Bot</label>
+                        <select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
+                             <option value="">-- Selecione --</option>
+                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                        </select>
+                    </div>
+                    <button className="btn btn-primary" style={{marginLeft: '1rem'}} onClick={handleCreateFlow} disabled={!selectedBotId}><i className="fa-solid fa-plus"></i> Novo Fluxo</button>
                 </div>
-                <button className="btn btn-primary" style={{marginBottom: '1rem'}} onClick={handleCreateFlow} disabled={!selectedBotId}>+ Novo Fluxo</button>
                 <div className="grid">
                     {flows.map(flow => (
                         <div key={flow.id} className="card flow-card">
                             <h3>{flow.name}</h3>
                             <div style={{display: 'flex', gap: '0.5rem'}}>
-                                <button className="btn btn-primary btn-sm" onClick={() => onEditFlow(flow)}>Abrir Editor</button>
-                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteFlow(flow.id)}>Excluir</button>
+                                <button className="btn btn-primary btn-sm" onClick={() => onEditFlow(flow)}><i className="fa-solid fa-diagram-project"></i> Abrir Editor</button>
+                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteFlow(flow.id)}><i className="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     ))}
@@ -320,23 +322,14 @@
                 return;
             }
             try {
-                await api.post('/bots/mass-send', {
-                    botIds: selectedBotIds,
-                    initialText: message,
-                    ctaButtonText: "Saber mais", 
-                    externalLink: "https://google.com"
-                });
+                await api.post('/bots/mass-send', { botIds, initialText: message, ctaButtonText: "Saber mais", externalLink: "https://google.com" });
                 alert("Disparo agendado com sucesso!");
                 setMessage('');
-            } catch (error) {
-                alert("Erro ao enviar disparo.");
-            }
+            } catch (error) { alert("Erro ao enviar disparo."); }
         };
 
         const handleBotSelection = (botId) => {
-            setSelectedBotIds(prev => 
-                prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]
-            );
+            setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]);
         };
 
         return (
@@ -346,9 +339,9 @@
                     <div className="form-group">
                         <label>Selecione os Bots de Destino</label>
                         {bots.map(bot => (
-                            <div key={bot.id}>
-                                <input type="checkbox" id={`bot-${bot.id}`} checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />
-                                <label htmlFor={`bot-${bot.id}`} style={{marginLeft: '0.5rem'}}>{bot.bot_name}</label>
+                            <div key={bot.id} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem'}}>
+                                <input type="checkbox" id={`bot-${bot.id}`} checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} style={{width: '1rem', height: '1rem'}}/>
+                                <label htmlFor={`bot-${bot.id}`}>{bot.bot_name}</label>
                             </div>
                         ))}
                     </div>
@@ -356,7 +349,7 @@
                         <label htmlFor="message">Mensagem</label>
                         <textarea id="message" className="form-textarea" rows="5" value={message} onChange={e => setMessage(e.target.value)}></textarea>
                     </div>
-                    <button className="btn btn-primary" onClick={handleSend}>Enviar Disparo</button>
+                    <button className="btn btn-primary" onClick={handleSend}><i className="fa-solid fa-paper-plane"></i> Enviar Disparo</button>
                 </div>
             </>
         );
@@ -371,9 +364,7 @@
         const [newMessage, setNewMessage] = useState('');
         const messagesEndRef = useRef(null);
 
-        useEffect(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, [messages]);
+        useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
         
         useEffect(() => {
             const fetchBots = async () => {
@@ -386,9 +377,7 @@
 
         const fetchUsers = useCallback(async () => {
             if (!selectedBotId) return;
-            setUsers([]);
-            setMessages([]);
-            setSelectedChatId('');
+            setUsers([]); setMessages([]); setSelectedChatId('');
             try {
                 const { data } = await api.get(`/chats/${selectedBotId}`);
                 setUsers(data);
@@ -404,35 +393,27 @@
                 setMessages(data);
             } catch (error) { console.error("Erro ao buscar mensagens", error); setMessages([]); }
         }, [selectedBotId, selectedChatId]);
-
-        useEffect(() => { fetchMessages(); }, [fetchMessages]);
+        
+        useEffect(() => {
+            fetchMessages();
+            const interval = setInterval(fetchMessages, 3000); // <-- ATUALIZAÇÃO AUTOMÁTICA
+            return () => clearInterval(interval);
+        }, [fetchMessages]);
         
         const handleSendMessage = async (e) => {
             e.preventDefault();
             const textToSend = newMessage.trim();
             if (!textToSend || !selectedChatId || !selectedBotId) return;
 
-            const optimisticMessage = {
-                message_id: Date.now(),
-                first_name: "Você",
-                last_name: "(Operador)",
-                message_text: textToSend,
-                sender_type: 'operator',
-                created_at: new Date().toISOString(),
-            };
-            setMessages(prevMessages => [...prevMessages, optimisticMessage]);
+            const optimisticMessage = { message_id: Date.now(), first_name: "Você", last_name: "(Operador)", message_text: textToSend, sender_type: 'operator', created_at: new Date().toISOString() };
+            setMessages(prev => [...prev, optimisticMessage]);
             setNewMessage('');
-
             try {
-                await api.post(`/chats/${selectedBotId}/send-message`, {
-                    chatId: selectedChatId,
-                    text: textToSend
-                });
+                await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChatId, text: textToSend });
                 fetchMessages();
             } catch (error) {
                 console.error("Erro ao enviar mensagem:", error);
-                alert('Ocorreu um erro real ao enviar a mensagem.');
-                setMessages(prevMessages => prevMessages.filter(m => m.message_id !== optimisticMessage.message_id));
+                setMessages(prev => prev.filter(m => m.message_id !== optimisticMessage.message_id));
             }
         };
         
@@ -441,14 +422,9 @@
                 try {
                     await api.delete(`/chats/${selectedBotId}/${chatIdToDelete}`);
                     alert('Conversa excluída com sucesso!');
-                    fetchUsers(); // Re-busca a lista de usuários
-                    if (selectedChatId === chatIdToDelete) {
-                        setSelectedChatId('');
-                        setMessages([]);
-                    }
-                } catch (error) {
-                    alert('Erro ao excluir a conversa.');
-                }
+                    fetchUsers();
+                    if (selectedChatId === chatIdToDelete) { setSelectedChatId(''); setMessages([]); }
+                } catch (error) { alert('Erro ao excluir a conversa.'); }
             }
         };
 
@@ -456,31 +432,29 @@
             <>
                 <h2 className="page-header">Chat ao Vivo</h2>
                 <div className="form-group">
-                    <label htmlFor="botSelectChat">Selecione um Bot</label>
-                    <select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
-                        <option value="">-- Selecione --</option>
+                    <select className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
+                        <option value="">-- Selecione um Bot --</option>
                         {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
                     </select>
                 </div>
                 <div className="card chat-layout">
                     <div className="user-list">
                         {users.map(user => (
-                            <div key={user.chat_id} className="user-item" onClick={() => setSelectedChatId(user.chat_id)} style={{cursor:'pointer', background: selectedChatId === user.chat_id ? 'var(--primary)' : 'none'}}>
+                            <div key={user.chat_id} className="user-item" data-active={selectedChatId === user.chat_id} onClick={() => setSelectedChatId(user.chat_id)} style={{cursor:'pointer'}}>
                                 <div className="user-item-info">
                                     <span className="user-item-name">{user.click_id || `${user.first_name} ${user.last_name || ''}`}</span>
                                     <span className="user-item-id">ID: {user.chat_id}</span>
                                 </div>
-                                <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteConversation(user.chat_id); }}>X</button>
+                                <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteConversation(user.chat_id); }}><i className="fa-solid fa-trash"></i></button>
                             </div>
                         ))}
                     </div>
                     <div className="chat-window">
                         <div className="message-list">
                             {messages.map((msg, index) => (
-                                <div key={msg.message_id || index} className={`message ${msg.sender_type === 'operator' ? 'operator' : ''}`} style={{ alignSelf: msg.sender_type === 'operator' ? 'flex-end' : 'flex-start' }}>
-                                    <strong>{msg.first_name} {msg.sender_type === 'operator' ? '' : msg.last_name || ''}: </strong>
+                                <div key={msg.message_id || index} className={`message ${msg.sender_type === 'operator' ? 'operator' : msg.sender_type === 'bot' ? 'bot' : 'user'}`}>
+                                    <strong>{msg.sender_type === 'user' ? (msg.first_name + ' ' + (msg.last_name || '')) : (msg.last_name === '(Fluxo)' ? `🤖 ${msg.first_name}` : `👤 ${msg.first_name} ${msg.last_name || ''}`)}:</strong><br/>
                                     {msg.message_text}
-                                    <div style={{fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem'}}>{new Date(msg.created_at).toLocaleString()}</div>
                                 </div>
                             ))}
                             <div ref={messagesEndRef} />
@@ -488,7 +462,7 @@
                         {selectedChatId && (
                              <form onSubmit={handleSendMessage} style={{display: 'flex', padding: '1rem', borderTop: '1px solid var(--border-color)'}}>
                                 <input className="form-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite sua resposta..." />
-                                <button className="btn btn-primary" type="submit" style={{marginLeft: '0.5rem'}}>Enviar</button>
+                                <button className="btn btn-primary" type="submit" style={{marginLeft: '0.5rem'}}><i className="fa-solid fa-paper-plane"></i> Enviar</button>
                             </form>
                         )}
                     </div>
