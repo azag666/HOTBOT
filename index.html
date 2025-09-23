@@ -61,7 +61,6 @@
     .editor-panel { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: var(--bg-light); z-index: 10; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
     .react-flow__node { border-radius: 8px; font-size: 14px; border: 2px solid; color: #111827; padding: 10px; text-align: center; }
     .react-flow__node-message { background: #dcfce7; border-color: #4ade80; }
-    .react-flow__node-collect_input { background: #e0e7ff; border-color: #818cf8; }
     .react-flow__node-action_pix { background: #fef9c3; border-color: #facc15; }
     .react-flow__node-action_city { background: #cffafe; border-color: #22d3ee; }
     .react-flow__handle { width: 10px; height: 10px; }
@@ -504,15 +503,7 @@
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💬 Mensagem</strong></div>
-                <p style={{'white-space': 'pre-wrap'}}>{data.text || 'Clique para editar'}</p>
-                <Handle type="source" position={Position.Bottom} />
-            </>
-        )),
-        collect_input: memo(({ data }) => (
-            <>
-                <Handle type="target" position={Position.Top} />
-                <div><strong>💬 Coletar Resposta</strong></div>
-                <p>Salva a próxima entrada do usuário</p>
+                <p style={{'whiteSpace': 'pre-wrap'}}>{data.text || 'Clique para editar'}</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -521,6 +512,7 @@
                 <Handle type="target" position={Position.Top} />
                 <div><strong>💳 Gerar PIX (Ação)</strong></div>
                 <p>Valor: R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p>
+                <small>Usa o Click ID inicial</small>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -528,7 +520,7 @@
             <>
                 <Handle type="target" position={Position.Top} />
                 <div><strong>📍 Consultar Cidade (Ação)</strong></div>
-                <p>Usa o Click ID para buscar a cidade</p>
+                <p>Usa o Click ID inicial para buscar a cidade</p>
                 <Handle type="source" position={Position.Bottom} />
             </>
         )),
@@ -610,7 +602,6 @@
                 <div className="flow-sidebar">
                     <h3>Componentes</h3>
                     <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'message')} draggable>💬 Mensagem</div>
-                    <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'collect_input')} draggable>💬 Coletar Resposta</div>
                     <h3>Ações</h3>
                     <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'action_pix')} draggable>💳 Gerar PIX (Ação)</div>
                     <div className="node-button" onDragStart={(e) => e.dataTransfer.setData('application/reactflow', 'action_city')} draggable>📍 Consultar Cidade (Ação)</div>
