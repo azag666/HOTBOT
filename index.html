@@ -13,26 +13,26 @@
   <link href="https://unpkg.com/reactflow@11/dist/style.css" rel="stylesheet">
 
   <style>
-    :root { 
-        --bg-dark: #111111; 
-        --bg-light: #1d1d1d; 
-        --border-color: #2f2f2f; 
-        --text-light: #e5e5e5; 
-        --text-dark: #888888; 
+    :root {
+        --bg-dark: #111111;
+        --bg-light: #1d1d1d;
+        --border-color: #2f2f2f;
+        --text-light: #e5e5e5;
+        --text-dark: #888888;
         --primary: #00f5a0;
         --primary-dark: #00a86b;
-        --danger: #ef4444; 
+        --danger: #ef4444;
         --warning: #facc15;
         --info: #3b82f6;
         --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
-    * { 
-        box-sizing: border-box; 
-        margin: 0; 
-        padding: 0; 
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
     }
-    html,body,#root { 
-        height: 100%; 
+    html,body,#root {
+        height: 100%;
         font-family: var(--font-sans);
         scrollbar-width: thin;
         scrollbar-color: var(--border-color) var(--bg-dark);
@@ -167,8 +167,8 @@
       return (
         <div className="app-container">
           {currentPage !== 'flow-editor' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />}
-          <main 
-            className={currentPage !== 'flow-editor' ? "main-content" : ''} 
+          <main
+            className={currentPage !== 'flow-editor' ? "main-content" : ''}
             style={{padding: currentPage === 'flow-editor' ? 0 : '2.5rem', height: '100vh', width: '100%'}}
           >
             {currentPage === 'bots' && <BotsPage />}
@@ -182,20 +182,20 @@
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-        const pages = { 
-            bots: '🤖 Bots', 
-            flows: '🌊 Fluxos', 
-            chat: '💬 Chat ao Vivo', 
-            disparos: '🚀 Disparos' 
+        const pages = {
+            bots: '🤖 Bots',
+            flows: '🌊 Fluxos',
+            chat: '💬 Chat ao Vivo',
+            disparos: '🚀 Disparos'
         };
         return (
             <aside className="sidebar">
                 <h1>Hot<span>bot</span></h1>
                 <nav className="nav-menu">
                     {Object.entries(pages).map(([key, value]) => (
-                        <div 
-                            key={key} 
-                            className={`nav-item ${currentPage === key ? 'active' : ''}`} 
+                        <div
+                            key={key}
+                            className={`nav-item ${currentPage === key ? 'active' : ''}`}
                             onClick={() => setCurrentPage(key)}
                         >
                             {value}
@@ -212,63 +212,63 @@
       const [bots, setBots] = useState([]);
       const [newBotName, setNewBotName] = useState('');
 
-      const fetchBots = async () => { 
-          try { 
-              const response = await api.get('/dashboard/data'); 
-              setBots(response.data.bots || []); 
-            } catch (error) { 
-                console.error("Erro ao buscar bots:", error); 
-            } 
+      const fetchBots = async () => {
+          try {
+              const response = await api.get('/dashboard/data');
+              setBots(response.data.bots || []);
+            } catch (error) {
+                console.error("Erro ao buscar bots:", error);
+            }
         };
 
-      useEffect(() => { 
-          fetchBots(); 
+      useEffect(() => {
+          fetchBots();
         }, []);
 
-      const handleCreateBot = async (event) => { 
-          event.preventDefault(); 
-          if (!newBotName) return; 
-          try { 
-              await api.post('/bots', { bot_name: newBotName }); 
-              setNewBotName(''); 
-              fetchBots(); 
-            } catch (error) { 
-                alert('Erro ao criar bot: ' + (error.response?.data?.message || 'Erro desconhecido')); 
-            } 
+      const handleCreateBot = async (event) => {
+          event.preventDefault();
+          if (!newBotName) return;
+          try {
+              await api.post('/bots', { bot_name: newBotName });
+              setNewBotName('');
+              fetchBots();
+            } catch (error) {
+                alert('Erro ao criar bot: ' + (error.response?.data?.message || 'Erro desconhecido'));
+            }
         };
 
-      const handleDeleteBot = async (botId) => { 
-          if (confirm('Tem certeza que deseja excluir este bot e todos os seus dados?')) { 
-              try { 
-                  await api.delete(`/bots/${botId}`); 
-                  fetchBots(); 
-                } catch (error) { 
-                    alert('Erro ao excluir bot.'); 
-                } 
-            } 
+      const handleDeleteBot = async (botId) => {
+          if (confirm('Tem certeza que deseja excluir este bot e todos os seus dados?')) {
+              try {
+                  await api.delete(`/bots/${botId}`);
+                  fetchBots();
+                } catch (error) {
+                    alert('Erro ao excluir bot.');
+                }
+            }
         };
 
-      const handleUpdateToken = async (botId) => { 
-          const token = prompt("Digite o novo token do Telegram:"); 
-          if (token) { 
-              try { 
-                  await api.put(`/bots/${botId}`, { bot_token: token }); 
-                  alert("Token atualizado com sucesso!"); 
-                  fetchBots(); 
-                } catch (error) { 
-                    alert('Erro ao atualizar token: ' + (error.response?.data?.message || 'Erro desconhecido')); 
-                } 
-            } 
+      const handleUpdateToken = async (botId) => {
+          const token = prompt("Digite o novo token do Telegram:");
+          if (token) {
+              try {
+                  await api.put(`/bots/${botId}`, { bot_token: token });
+                  alert("Token atualizado com sucesso!");
+                  fetchBots();
+                } catch (error) {
+                    alert('Erro ao atualizar token: ' + (error.response?.data?.message || 'Erro desconhecido'));
+                }
+            }
         };
 
-      const handleSetWebhook = async (botId) => { 
-          try { 
-              const response = await api.post(`/bots/${botId}/set-webhook`); 
-              alert(response.data.message); 
-            } catch (error) { 
-                console.error("Erro ao configurar webhook:", error); 
-                alert('Falha ao configurar Webhook.'); 
-            } 
+      const handleSetWebhook = async (botId) => {
+          try {
+              const response = await api.post(`/bots/${botId}/set-webhook`);
+              alert(response.data.message);
+            } catch (error) {
+                console.error("Erro ao configurar webhook:", error);
+                alert('Falha ao configurar Webhook.');
+            }
         };
 
       return (
@@ -279,12 +279,12 @@
                 <form onSubmit={handleCreateBot}>
                     <div className="form-group">
                         <label htmlFor="botName">Nome do Bot</label>
-                        <input 
-                            id="botName" 
-                            className="form-input" 
-                            value={newBotName} 
-                            onChange={(event) => setNewBotName(event.target.value)} 
-                            placeholder="@meu_bot" 
+                        <input
+                            id="botName"
+                            className="form-input"
+                            value={newBotName}
+                            onChange={(event) => setNewBotName(event.target.value)}
+                            placeholder="@meu_bot"
                         />
                     </div>
                     <button className="btn btn-primary" type="submit">Criar Bot</button>
@@ -420,11 +420,11 @@
                 return;
             }
             try {
-                await api.post('/bots/mass-send', { 
-                    botIds: selectedBotIds, 
-                    initialText: message, 
-                    ctaButtonText: "Saber mais", 
-                    externalLink: "https://google.com" 
+                await api.post('/bots/mass-send', {
+                    botIds: selectedBotIds,
+                    initialText: message,
+                    ctaButtonText: "Saber mais",
+                    externalLink: "https://google.com"
                 });
                 alert("Disparo agendado com sucesso!");
                 setMessage('');
@@ -435,9 +435,9 @@
         };
 
         const handleBotSelection = (botId) => {
-            setSelectedBotIds(previousSelectedIds => 
-                previousSelectedIds.includes(botId) 
-                ? previousSelectedIds.filter(id => id !== botId) 
+            setSelectedBotIds(previousSelectedIds =>
+                previousSelectedIds.includes(botId)
+                ? previousSelectedIds.filter(id => id !== botId)
                 : [...previousSelectedIds, botId]
             );
         };
@@ -453,10 +453,10 @@
                             <div className="bot-selection-list">
                                 {bots.map(bot => (
                                     <label key={bot.id} className="bot-selection-item">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={selectedBotIds.includes(bot.id)} 
-                                            onChange={() => handleBotSelection(bot.id)} 
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBotIds.includes(bot.id)}
+                                            onChange={() => handleBotSelection(bot.id)}
                                             style={{marginRight: '0.75rem'}}
                                         />
                                         {bot.bot_name}
@@ -466,35 +466,35 @@
                         </div>
                         <div className="form-group">
                             <label htmlFor="message">Mensagem</label>
-                            <textarea 
-                                id="message" 
-                                className="form-textarea" 
-                                rows="8" 
-                                value={message} 
+                            <textarea
+                                id="message"
+                                className="form-textarea"
+                                rows="8"
+                                value={message}
                                 onChange={event => setMessage(event.target.value)}
                             ></textarea>
                         </div>
                         <div className="form-group">
                             <label htmlFor="schedule">Agendar para (Opcional)</label>
-                            <input 
-                                type="datetime-local" 
-                                id="schedule" 
-                                className="form-input" 
-                                value={schedule} 
-                                onChange={event => setSchedule(event.target.value)} 
+                            <input
+                                type="datetime-local"
+                                id="schedule"
+                                className="form-input"
+                                value={schedule}
+                                onChange={event => setSchedule(event.target.value)}
                             />
                         </div>
                         <div style={{display: 'flex', gap: '1rem'}}>
-                            <button 
-                                className="btn btn-primary" 
-                                onClick={handleSend} 
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleSend}
                                 disabled={!message || selectedBotIds.length === 0}
                             >
                                 Enviar Agora
                             </button>
-                            <button 
-                                className="btn btn-secondary" 
-                                onClick={() => alert('Funcionalidade de agendamento em desenvolvimento!')} 
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => alert('Funcionalidade de agendamento em desenvolvimento!')}
                                 disabled={!schedule}
                             >
                                 Agendar
@@ -776,7 +776,7 @@
                             </div>
                         )}
                     </div>
-                    <ContactInfoPanel 
+                    <ContactInfoPanel
                         chat={selectedChat}
                         onAddTag={(tag) => alert(`Lógica para adicionar a tag "${tag}" ao usuário ${selectedChat?.chat_id}`)}
                         onStartFlow={() => alert(`Lógica para iniciar um fluxo para o usuário ${selectedChat?.chat_id}`)}
@@ -787,75 +787,74 @@
         );
     }
     
-    // --- Flow Editor Components (INTACTO) ---
     const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {} }];
     
     const nodeTypes = {
         trigger: memo(() => (<> <div><strong>🚀 Gatilho</strong></div> <p style={{fontSize: 12, color: '#555'}}>Inicia na 1ª msg.</p> <Handle type="source" position={Position.Bottom} /> </>)),
-        message: memo(({ data }) => (<> <Handle type="target" position={Position.Top} /> <div><strong>💬 Mensagem</strong></div> {data.typingDelay && <small style={{color: '#555'}}>Delay: {data.typingDelay}s</small>} <p style={{'whiteSpace': 'pre-wrap', 'borderTop': '1px solid #ccc', 'marginTop': '5px', 'paddingTop': '5px'}}>{data.text || '...'}</p> <Handle type="source" position={Position.Bottom} id="a" /> {data.waitForReply && (<> <div className="handle-label" style={{right: '10px'}}>S/ Resp.</div> <Handle type="source" position={Position.Right} id="b" /> </>)} </>)),
+        message: memo(({ data }) => (<> <Handle type="target" position={Position.Top} /> <div><strong>💬 Mensagem</strong></div> {data.typingDelay && <small style={{color: '#555'}}>Delay: {data.typingDelay}s</small>} <p style={{'whiteSpace': 'pre-wrap', 'borderTop': '1px solid #ccc', 'marginTop': '5px', 'paddingTop': '5px'}}>{data.text || '...'}</p> <Handle type="source" position={Position.Bottom} id="a" /> {data.waitForReply && (<> <div className="handle-label" style={{right: '-25px', top: 'calc(50% - 7px)'}}>S/ Resp.</div> <Handle type="source" position={Position.Right} id="b" /> </>)} </>)),
         delay: memo(({ data }) => (<> <Handle type="target" position={Position.Top} /> <div><strong>⏱️ Atraso</strong></div> <p>{data.delayInSeconds || 0}s</p> <Handle type="source" position={Position.Bottom} /> </>)),
         action_pix: memo(({ data }) => (<> <Handle type="target" position={Position.Top} /> <div><strong>💳 Gerar PIX</strong></div> <p>R$ {((data.valueInCents || 0) / 100).toFixed(2)}</p> <Handle type="source" position={Position.Bottom} /> </>)),
-        action_check_pix: memo(() => (<> <Handle type="target" position={Position.Top} /> <div><strong>🔍 Consultar PIX</strong></div> <Handle type="source" position={Position.Bottom} /> </>)),
+        action_check_pix: memo(() => (<> <Handle type="target" position={Position.Top} /> <div><strong>🔍 Consultar PIX</strong></div><div className="handle-label" style={{left: '15px'}}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{left: '25%'}} /><div className="handle-label" style={{right: '15px'}}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{left: '75%'}}/> </>)),
         action_city: memo(() => (<> <Handle type="target" position={Position.Top} /> <div><strong>📍 Consultar Cidade</strong></div> <Handle type="source" position={Position.Bottom} /> </>)),
         forward_flow: memo(({ data }) => (<> <Handle type="target" position={Position.Top} /> <div><strong>↪️ Encaminhar p/ Fluxo</strong></div> <p>{data.targetFlowName || 'Nenhum selecionado'}</p> </>)),
     };
     function FlowCanvas({ flow, onBack, availableFlows }) {
       const reactFlowWrapper = useRef(null);
-      const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes); 
-      const [edges, setEdges, onEdgesChange] = useEdgesState([]); 
-      const [selectedNode, setSelectedNode] = useState(null); 
+      const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+      const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+      const [selectedNode, setSelectedNode] = useState(null);
       const [reactFlowInstance, setReactFlowInstance] = useState(null);
       
-      useEffect(() => { 
-          if(flow?.nodes) { 
-              const content = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; 
-              setNodes(content.nodes || initialNodes); 
-              setEdges(content.edges || []); 
-            } 
+      useEffect(() => {
+          if(flow?.nodes) {
+              const content = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes;
+              setNodes(content.nodes || initialNodes);
+              setEdges(content.edges || []);
+            }
         }, [flow]);
         
       const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), []);
       const onNodeClick = useCallback((_, node) => { if (node.type !== 'trigger') setSelectedNode(node); }, []);
-      const onNodesChangeFiltered = useCallback((changes) => { 
-          const filteredChanges = changes.filter(change => !(change.type === 'remove' && nodes.find(n => n.id === change.id)?.type === 'trigger')); 
+      const onNodesChangeFiltered = useCallback((changes) => {
+          const filteredChanges = changes.filter(change => !(change.type === 'remove' && nodes.find(n => n.id === change.id)?.type === 'trigger'));
           onNodesChange(filteredChanges);
         }, [nodes, onNodesChange]);
       const onDragOver = useCallback((event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }, []);
       
-      const onDrop = useCallback((event) => { 
-          event.preventDefault(); 
-          const bounds = reactFlowWrapper.current.getBoundingClientRect(); 
-          const type = event.dataTransfer.getData('application/reactflow'); 
-          if (!type) return; 
-          const position = reactFlowInstance.project({ x: event.clientX - bounds.left, y: event.clientY - bounds.top }); 
-          setNodes((nds) => nds.concat({ id: `${type}-${Date.now()}`, type, position, data: {} })); 
+      const onDrop = useCallback((event) => {
+          event.preventDefault();
+          const bounds = reactFlowWrapper.current.getBoundingClientRect();
+          const type = event.dataTransfer.getData('application/reactflow');
+          if (!type) return;
+          const position = reactFlowInstance.project({ x: event.clientX - bounds.left, y: event.clientY - bounds.top });
+          setNodes((nds) => nds.concat({ id: `${type}-${Date.now()}`, type, position, data: { showTyping: true } }));
         }, [reactFlowInstance]);
         
-      const handleSave = async () => { 
-          try { 
-              await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); 
-              alert("Fluxo salvo com sucesso!"); 
-            } catch(error) { 
-                alert("Erro ao salvar o fluxo."); 
-            } 
+      const handleSave = async () => {
+          try {
+              await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) });
+              alert("Fluxo salvo com sucesso!");
+            } catch(error) {
+                alert("Erro ao salvar o fluxo.");
+            }
         };
 
       return (
-          <div className="flow-editor-page"> 
-            <div className="flow-header"> 
-                <h3>Editando: {flow.name}</h3> 
-                <div> 
-                    <button className="btn btn-secondary" style={{marginRight: '0.5rem'}} onClick={onBack}>Voltar</button> 
-                    <button className="btn btn-primary" onClick={handleSave}>Salvar</button> 
-                </div> 
-            </div> 
-            <div className="reactflow-wrapper" ref={reactFlowWrapper} onDrop={onDrop} onDragOver={onDragOver}> 
-                <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChangeFiltered} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onInit={setReactFlowInstance} nodeTypes={nodeTypes} fitView> 
-                    <Background color="#555" gap={24}/> 
-                    <Controls /> 
-                </ReactFlow> 
-                {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} availableFlows={availableFlows} />} 
-            </div> 
+          <div className="flow-editor-page">
+            <div className="flow-header">
+                <h3>Editando: {flow.name}</h3>
+                <div>
+                    <button className="btn btn-secondary" style={{marginRight: '0.5rem'}} onClick={onBack}>Voltar</button>
+                    <button className="btn btn-primary" onClick={handleSave}>Salvar</button>
+                </div>
+            </div>
+            <div className="reactflow-wrapper" ref={reactFlowWrapper} onDrop={onDrop} onDragOver={onDragOver}>
+                <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChangeFiltered} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onInit={setReactFlowInstance} nodeTypes={nodeTypes} fitView>
+                    <Background color="#555" gap={24}/>
+                    <Controls />
+                </ReactFlow>
+                {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} availableFlows={availableFlows} />}
+            </div>
           </div>
         );
     }
@@ -864,111 +863,117 @@
         
         const [availableFlows, setAvailableFlows] = useState([]);
 
-        useEffect(() => { 
-            const fetchFlows = async () => { 
-                if (flow?.bot_id) { 
-                    try { 
-                        const response = await api.get('/flows'); 
-                        setAvailableFlows(response.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id)); 
-                    } catch (error) { 
-                        console.error("Erro ao buscar fluxos:", error); 
-                    } 
-                } 
-            }; 
-            fetchFlows(); 
+        useEffect(() => {
+            const fetchFlows = async () => {
+                if (flow?.bot_id) {
+                    try {
+                        const response = await api.get('/flows');
+                        setAvailableFlows(response.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id));
+                    } catch (error) {
+                        console.error("Erro ao buscar fluxos:", error);
+                    }
+                }
+            };
+            fetchFlows();
         }, [flow]);
         
-        const onDragStart = (event, nodeType) => { 
-            event.dataTransfer.setData('application/reactflow', nodeType); 
-            event.dataTransfer.effectAllowed = 'move'; 
+        const onDragStart = (event, nodeType) => {
+            event.dataTransfer.setData('application/reactflow', nodeType);
+            event.dataTransfer.effectAllowed = 'move';
         };
         
         return (
-            <div className="flow-editor-container"> 
-                <div className="flow-sidebar"> 
-                    <h3>Componentes</h3> 
-                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div> 
-                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div> 
-                    <h3>Ações</h3> 
-                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div> 
-                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div> 
-                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_city')} draggable>📍 Consultar Cidade</div> 
-                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'forward_flow')} draggable>↪️ Encaminhar p/ Fluxo</div> 
-                </div> 
-                <ReactFlowProvider> 
-                    <FlowCanvas flow={flow} onBack={onBack} availableFlows={availableFlows} /> 
-                </ReactFlowProvider> 
+            <div className="flow-editor-container">
+                <div className="flow-sidebar">
+                    <h3>Componentes</h3>
+                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div>
+                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div>
+                    <h3>Ações</h3>
+                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div>
+                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div>
+                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_city')} draggable>📍 Consultar Cidade</div>
+                    <div className="node-button" onDragStart={(e) => onDragStart(e, 'forward_flow')} draggable>↪️ Encaminhar p/ Fluxo</div>
+                </div>
+                <ReactFlowProvider>
+                    <FlowCanvas flow={flow} onBack={onBack} availableFlows={availableFlows} />
+                </ReactFlowProvider>
             </div>
         );
     }
     function EditorPanel({ selectedNode, setNodes, setSelectedNode, availableFlows }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         
-        useEffect(() => { 
-            setNodeData(selectedNode.data || {}) 
+        useEffect(() => {
+            setNodeData(selectedNode.data || {})
         }, [selectedNode]);
         
-        const handleChange = (event) => { 
-            const { name, value, type, checked } = event.target; 
-            const finalValue = type === 'checkbox' ? checked : (type === 'number' ? parseInt(value, 10) || 0 : value); 
-            setNodeData(previousData => ({...previousData, [name]: finalValue })); 
+        const handleChange = (event) => {
+            const { name, value, type, checked } = event.target;
+            const finalValue = type === 'checkbox' ? checked : (type === 'number' ? parseInt(value, 10) || 0 : value);
+            setNodeData(previousData => ({...previousData, [name]: finalValue }));
         };
         
-        const handleFlowChange = (event) => { 
-            const flowId = event.target.value; 
-            const flow = availableFlows.find(f => f.id == flowId); 
-            setNodeData(previousData => ({ ...previousData, targetFlowId: flowId, targetFlowName: flow ? flow.name : '' })); 
+        const handleFlowChange = (event) => {
+            const flowId = event.target.value;
+            const flow = availableFlows.find(f => f.id == flowId);
+            setNodeData(previousData => ({ ...previousData, targetFlowId: flowId, targetFlowName: flow ? flow.name : '' }));
         };
         
-        const onSave = () => { 
-            setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); 
-            setSelectedNode(null); 
+        const onSave = () => {
+            setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n));
+            setSelectedNode(null);
         };
         
-        const onDelete = () => { 
-            setNodes(nodes => nodes.filter(n => n.id !== selectedNode.id)); 
-            setSelectedNode(null); 
+        const onDelete = () => {
+            setNodes(nodes => nodes.filter(n => n.id !== selectedNode.id));
+            setSelectedNode(null);
         };
         
         return (
-            <div className="editor-panel"> 
-                <h3 style={{marginBottom: '1rem'}}>Editar: {selectedNode.type}</h3> 
+            <div className="editor-panel">
+                <h3 style={{marginBottom: '1rem'}}>Editar: {selectedNode.type}</h3>
                 {selectedNode.type === 'message' && (
-                    <> 
+                    <>
                         <div className="form-group">
                             <label>Texto da Mensagem</label>
                             <textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} />
-                        </div> 
+                        </div>
                         <div className="form-group">
                             <label>Delay 'Digitando' (s)</label>
                             <input name="typingDelay" type="number" className="form-input" value={nodeData.typingDelay || 0} onChange={handleChange} />
-                        </div> 
+                        </div>
+                        <div className="form-group">
+                            <label style={{display: 'flex', alignItems: 'center'}}>
+                                <input name="showTyping" type="checkbox" checked={!!nodeData.showTyping} onChange={handleChange} style={{marginRight: '0.5rem'}} />
+                                Mostrar "Digitando..."
+                            </label>
+                        </div>
                         <div className="form-group">
                             <label style={{display: 'flex', alignItems: 'center'}}>
                                 <input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} style={{marginRight: '0.5rem'}} />
                                 Aguardar Resposta
                             </label>
-                        </div> 
+                        </div>
                         {nodeData.waitForReply && (
                             <div className="form-group">
                                 <label>Timeout (minutos)</label>
                                 <input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} />
                             </div>
-                        )} 
+                        )}
                     </>
-                )} 
+                )}
                 {selectedNode.type === 'delay' && (
                     <div className="form-group">
                         <label>Atraso (segundos)</label>
                         <input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} />
                     </div>
-                )} 
+                )}
                 {selectedNode.type === 'action_pix' && (
                     <div className="form-group">
                         <label>Valor (em centavos)</label>
                         <input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} />
                     </div>
-                )} 
+                )}
                 {selectedNode.type === 'forward_flow' && (
                     <div className="form-group">
                         <label>Encaminhar para o fluxo</label>
@@ -977,41 +982,41 @@
                             {availableFlows.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}
                         </select>
                     </div>
-                )} 
-                <button className="btn btn-primary" onClick={onSave}>Salvar</button> 
-                <button className="btn btn-secondary" style={{marginLeft: '0.5rem'}} onClick={() => setSelectedNode(null)}>Fechar</button> 
-                <button className="btn btn-danger" style={{marginTop: '1rem', width: '100%'}} onClick={onDelete}>Excluir Nó</button> 
+                )}
+                <button className="btn btn-primary" onClick={onSave}>Salvar</button>
+                <button className="btn btn-secondary" style={{marginLeft: '0.5rem'}} onClick={() => setSelectedNode(null)}>Fechar</button>
+                <button className="btn btn-danger" style={{marginTop: '1rem', width: '100%'}} onClick={onDelete}>Excluir Nó</button>
             </div>
         );
     }
     function LoginScreen({ onLogin }) {
-        const [email, setEmail] = useState(''); 
+        const [email, setEmail] = useState('');
         const [password, setPassword] = useState('');
         
-        const handleSubmit = async (event) => { 
-            event.preventDefault(); 
-            try { 
-                const response = await axios.post(`${API_BASE_URL}/sellers/login`, { email, password }); 
-                onLogin(response.data.token); 
-            } catch (error) { 
-                alert('Falha no login: ' + (error.response?.data?.message || 'Erro de conexão')); 
-            } 
+        const handleSubmit = async (event) => {
+            event.preventDefault();
+            try {
+                const response = await axios.post(`${API_BASE_URL}/sellers/login`, { email, password });
+                onLogin(response.data.token);
+            } catch (error) {
+                alert('Falha no login: ' + (error.response?.data?.message || 'Erro de conexão'));
+            }
         };
         
         return (
-            <div className="login-overlay"> 
-                <div className="login-box"> 
-                    <h2 style={{textAlign: 'center', marginBottom: '1.5rem'}}>Login Hotbot</h2> 
-                    <form onSubmit={handleSubmit}> 
-                        <div className="form-group"> 
-                            <input className="form-input" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" required /> 
-                        </div> 
-                        <div className="form-group"> 
-                            <input className="form-input" type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Senha" required /> 
-                        </div> 
-                        <button className="btn btn-primary" type="submit" style={{width: '100%'}}>Entrar</button> 
-                    </form> 
-                </div> 
+            <div className="login-overlay">
+                <div className="login-box">
+                    <h2 style={{textAlign: 'center', marginBottom: '1.5rem'}}>Login Hotbot</h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <input className="form-input" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" required />
+                        </div>
+                        <div className="form-group">
+                            <input className="form-input" type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Senha" required />
+                        </div>
+                        <button className="btn btn-primary" type="submit" style={{width: '100%'}}>Entrar</button>
+                    </form>
+                </div>
             </div>
         );
     }
