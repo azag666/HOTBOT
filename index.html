@@ -75,7 +75,7 @@
     .bot-card-actions { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(10px); }
     .login-box { background: var(--bg-secondary); padding: 3rem; border-radius: 12px; width: 420px; border: 1px solid var(--border-color); }
-    .chat-page-layout { height: 100%; }
+    .chat-page-layout { height: 100%; padding: 0; }
     .chat-container { display: flex; height: calc(100vh - 8.5rem); background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
     .conversations-panel { width: 320px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
     .conversations-header { padding: 1rem; border-bottom: 1px solid var(--border-color); }
@@ -104,45 +104,32 @@
     .contact-detail p { font-size: 0.95rem; color: var(--text-primary); word-wrap: break-word; }
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
-    
-    /* Flow Editor - NOVO DESIGN */
-    .flow-editor-page { display: flex; flex-direction: column; height: 100vh; }
+    .flow-editor-page { display: flex; flex-direction: column; height: 100vh; background: #fff; color: #333; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
     .reactflow-wrapper { flex-grow: 1; position: relative; background-color: #f8f9fa; background-image: radial-gradient(#dee2e6 1px, transparent 0); background-size: 30px 30px;}
-    .flow-header { padding: 1rem 1.5rem; background: white; color: #333; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; z-index: 11; }
-    .flow-sidebar { width: 280px; background: white; color: #333; border-right: 1px solid #e9ecef; padding: 1rem; overflow-y: auto; }
+    .flow-header { padding: 1rem 1.5rem; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; z-index: 11; }
+    .flow-sidebar { width: 280px; background: white; border-right: 1px solid #e9ecef; padding: 1rem; overflow-y: auto; }
     .flow-sidebar h3 { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e9ecef; font-size: 1.1rem; }
     .node-button { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid #dee2e6; text-align: left; cursor: grab; margin-bottom: 0.75rem; transition: all 0.2s; color: #495057; }
     .node-button:hover { border-color: var(--brand-primary); color: var(--brand-secondary); background: #f1f3f5; }
-    .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: white; z-index: 10; padding: 1.5rem; border-left: 1px solid #e9ecef; overflow-y: auto; color: #333;}
-    .react-flow__node {
-        background: white;
-        border: 1px solid #adb5bd;
-        border-radius: 8px;
-        padding: 0;
-        width: 280px;
-        font-family: var(--font-sans);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        color: #343a40;
-    }
-    .react-flow__node.selected {
-        border: 2px solid var(--brand-primary);
-        box-shadow: 0 0 15px rgba(0, 245, 160, 0.5);
-    }
+    .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: white; z-index: 10; padding: 1.5rem; border-left: 1px solid #e9ecef; overflow-y: auto; }
+    .react-flow__node { background: white; border: 1px solid #adb5bd; border-radius: 8px; padding: 0; width: 280px; font-family: var(--font-sans); box-shadow: 0 4px 10px rgba(0,0,0,0.05); color: #343a40; }
+    .react-flow__node.selected { border: 2px solid var(--brand-primary); box-shadow: 0 0 15px rgba(0, 245, 160, 0.5); }
     .node-header { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid #e9ecef; }
     .node-content { padding: 1rem; font-size: 0.9rem; color: #6c757d; }
     .react-flow__handle { width: 12px; height: 12px; background: white; border: 2px solid #adb5bd; }
     .react-flow__handle:hover { border-color: var(--brand-primary); }
-    
     .node-header { color: #212529; }
     .react-flow__node-trigger .node-header { background: #e7f5ff; }
     .react-flow__node-message .node-header { background: #e6fcf5; }
     .react-flow__node-image .node-header { background: #f3e8ff; }
+    .react-flow__node-video .node-header { background: #f3e8ff; }
+    .react-flow__node-audio .node-header { background: #f3e8ff; }
     .react-flow__node-delay .node-header { background: #fff9db; }
     .react-flow__node-action_pix .node-header { background: #dcfce7; }
     .react-flow__node-action_check_pix .node-header { background: #ffedd5; }
     .react-flow__node-action_city .node-header { background: #e0f2fe; }
-
+    .react-flow__node-forward_flow .node-header { background: #eef2ff; }
     .handle-label { position: absolute; font-size: 11px; color: #6c757d; background: white; padding: 2px 6px; border-radius: 4px; bottom: -24px; border: 1px solid #e9ecef; }
   </style>
 </head>
@@ -170,8 +157,11 @@
         send: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
         text: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18H3"/></svg>,
         image: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
+        video: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>,
+        audio: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5v14M7 5v14"/></svg>,
         delay: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
-        pix: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 15a5 5 0 1 1 5-5 5 5 0 0 1-5 5z"/><path d="M12 8.5v7"/></svg>
+        pix: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 15a5 5 0 1 1 5-5 5 5 0 0 1-5 5z"/><path d="M12 8.5v7"/></svg>,
+        forward: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>
     };
 
     function App() {
@@ -231,34 +221,14 @@
       const handleSetWebhook = async (id) => { try { const res = await api.post(`/bots/${id}/set-webhook`); alert(res.data.message); } catch (e) { alert('Falha.'); } };
       return (
           <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
-            <div className="page-header">
-                <h2>Gerenciamento de Bots</h2>
-                <button className="btn btn-primary" onClick={() => document.getElementById('botName').focus()}>+ Adicionar Bot</button>
-            </div>
+            <div className="page-header"><h2>Gerenciamento de Bots</h2><button className="btn btn-primary" onClick={() => document.getElementById('botName').focus()}>+ Adicionar Bot</button></div>
             <div style={{display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', alignItems: 'start'}}>
-                <div className="card">
-                    <h3>Adicionar Novo Bot</h3>
-                    <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>Crie e configure novos bots.</p>
-                    <form onSubmit={handleCreateBot}>
-                        <div className="form-group"><label htmlFor="botName">Nome de usuário</label><input id="botName" className="form-input" value={newBotName} onChange={(e) => setNewBotName(e.target.value)} placeholder="@meu_bot"/></div>
-                        <button className="btn btn-primary" type="submit" style={{width: '100%'}}>Criar</button>
-                    </form>
-                </div>
+                <div className="card"><h3 style={{color: 'var(--text-primary)'}}>Adicionar Novo Bot</h3><p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>Crie e configure novos bots.</p><form onSubmit={handleCreateBot}><div className="form-group"><label htmlFor="botName">Nome de usuário</label><input id="botName" className="form-input" value={newBotName} onChange={(e) => setNewBotName(e.target.value)} placeholder="@meu_bot"/></div><button className="btn btn-primary" type="submit" style={{width: '100%'}}>Criar</button></form></div>
                 <div>
-                    <h3 style={{marginBottom: '1rem', fontSize: '1.5rem'}}>Bots Ativos</h3>
+                    <h3 style={{marginBottom: '1rem', fontSize: '1.5rem', color: 'var(--text-primary)'}}>Bots Ativos</h3>
                     <div className="grid">
-                        {bots.map(bot => (
-                            <div key={bot.id} className="bot-card">
-                                <div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div>
-                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p>
-                                <div className="bot-card-actions">
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button>
-                                    <button className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button>
-                                </div>
-                            </div>
-                        ))}
-                         {bots.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum bot criado.</p>}
+                        {bots.map(bot => (<div key={bot.id} className="bot-card"><div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p><div className="bot-card-actions"><button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button><button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button><button className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button></div></div>))}
+                        {bots.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum bot criado.</p>}
                     </div>
                 </div>
             </div>
@@ -338,10 +308,13 @@
             trigger: { icon: '🚀', name: 'Gatilho Inicial', content: 'Início do fluxo com click_id.' },
             message: { icon: '💬', name: 'Enviar Mensagem', content: data.text ? `"${data.text.substring(0, 50)}..."` : 'Configure o texto.' },
             image: { icon: '🖼️', name: 'Enviar Imagem', content: data.imageUrl ? 'URL configurada.' : 'Configure a URL.' },
+            video: { icon: '🎬', name: 'Enviar Vídeo', content: data.videoUrl ? 'URL configurada.' : 'Configure a URL.' },
+            audio: { icon: '🎵', name: 'Enviar Áudio', content: data.audioUrl ? 'URL configurada.' : 'Configure a URL.' },
             delay: { icon: '⏱️', name: 'Atraso', content: `Aguardar por ${data.delayInSeconds || 1}s.` },
             action_pix: { icon: '💳', name: 'Gerar PIX', content: `Valor: R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
             action_check_pix: { icon: '🔍', name: 'Consultar PIX', content: 'Verifica se o PIX foi pago.' },
-            action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade em {{city}}.' }
+            action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade em {{city}}.' },
+            forward_flow: { icon: '↪️', name: 'Encaminhar Fluxo', content: data.targetFlowName ? `Ir para: ${data.targetFlowName}` : 'Selecione um fluxo.' }
         };
         const info = nodeInfo[type] || { icon: '❓', name: 'Nó' };
         return (
@@ -353,28 +326,32 @@
                 {type === 'message' && !data.waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
                 {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
                 {type === 'action_check_pix' && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
-                {['delay', 'action_pix', 'action_city', 'image'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                {['delay', 'action_pix', 'action_city', 'image', 'video', 'audio', 'forward_flow'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
             </>
         );
     };
-    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode };
+    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
     
-    function EditorPanel({ selectedNode, setNodes, setSelectedNode }) {
+    function EditorPanel({ selectedNode, setNodes, setSelectedNode, availableFlows }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
         const handleChange = (e) => { const { name, value, type, checked } = e.target; const final = type === 'checkbox' ? checked : (type === 'number' ? parseInt(value, 10) || 0 : value); setNodeData(p => ({...p, [name]: final })); };
+        const handleFlowChange = (e) => { const flowId = e.target.value; const flow = availableFlows.find(f => f.id == flowId); setNodeData(p => ({ ...p, targetFlowId: flowId, targetFlowName: flow ? flow.name : '' })); };
         const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
         const onDelete = () => { setNodes(nodes => nodes.filter(n => n.id !== selectedNode.id)); setSelectedNode(null); };
         const renderPanel = () => {
             switch (selectedNode.type) {
                 case 'message': return (<><div className="form-group"><label>Texto (use {"{{city}}"})</label><textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div className="form-group"><label><input name="showTyping" type="checkbox" checked={!!nodeData.showTyping} onChange={handleChange} style={{marginRight:'0.5rem'}} /> Mostrar "Digitando..."</label></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} style={{marginRight:'0.5rem'}} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
                 case 'image': return (<><div className="form-group"><label>URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/img.png"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'video': return (<><div className="form-group"><label>URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/video.mp4"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'audio': return (<><div className="form-group"><label>URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/audio.mp3"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
                 case 'delay': return (<div className="form-group"><label>Atraso (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
                 case 'action_pix': return (<div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div>);
+                case 'forward_flow': return (<div className="form-group"><label>Encaminhar para o fluxo</label><select className="form-select" value={nodeData.targetFlowId || ''} onChange={handleFlowChange}><option value="">-- Selecione --</option>{availableFlows.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}</select></div>);
                 default: return <p style={{color: '#6c757d'}}>Sem configurações.</p>;
             }
         };
-        return (<div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó</h3>{renderPanel()}<div style={{marginTop: '2rem'}}><button className="btn btn-primary" style={{color: 'white', background: 'var(--brand-secondary)'}} onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{width: '100%', marginTop: '1rem'}} onClick={onDelete}>Excluir</button>}</div></div>);
+        return (<div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó</h3>{renderPanel()}<div style={{marginTop: '2rem'}}><button className="btn btn-primary" style={{color: 'var(--bg-primary)', background: 'var(--brand-secondary)'}} onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{width: '100%', marginTop: '1rem'}} onClick={onDelete}>Excluir</button>}</div></div>);
     }
     
     function FlowEditorPage({ flow, onBack }) {
@@ -383,12 +360,14 @@
         const [edges, setEdges, onEdgesChange] = useEdgesState([]);
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
+        const [availableFlows, setAvailableFlows] = useState([]);
         useEffect(() => { if(flow?.nodes) { const c = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; setNodes(c.nodes || initialNodes); setEdges(c.edges || []); } }, [flow]);
+        useEffect(() => { const fetch = async () => { if (flow?.bot_id) { try { const res = await api.get('/flows'); setAvailableFlows(res.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id)); } catch (e) { console.error("Erro", e); } } }; fetch(); }, [flow]);
         const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'smoothstep', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
         const onNodeClick = useCallback((_, n) => setSelectedNode(n), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
         const onDragOver = useCallback((e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }, []);
-        const onDrop = useCallback((e) => { e.preventDefault(); const bounds = reactFlowWrapper.current.getBoundingClientRect(); const type = e.dataTransfer.getData('application/reactflow'); if (!type) return; const pos = reactFlowInstance.project({ x: e.clientX - bounds.left, y: e.clientY - bounds.top }); const newNode = { id: `${type}-${Date.now()}`, type, position: pos, data: { text: '...', delayInSeconds: 1, valueInCents: 100, showTyping: true, waitForReply: false, replyTimeout: 5, imageUrl: '', caption: '' } }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance, setNodes]);
+        const onDrop = useCallback((e) => { e.preventDefault(); const bounds = reactFlowWrapper.current.getBoundingClientRect(); const type = e.dataTransfer.getData('application/reactflow'); if (!type) return; const pos = reactFlowInstance.project({ x: e.clientX - bounds.left, y: e.clientY - bounds.top }); const newNode = { id: `${type}-${Date.now()}`, type, position: pos, data: { text: '', delayInSeconds: 1, valueInCents: 1000, showTyping: true, waitForReply: false, replyTimeout: 5, imageUrl: '', videoUrl: '', audioUrl: '', caption: '', targetFlowId: '', targetFlowName: '' } }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance, setNodes]);
         const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch(e) { alert("Erro."); } };
         const onDragStart = (e, type) => { e.dataTransfer.setData('application/reactflow', type); e.dataTransfer.effectAllowed = 'move'; };
         return (
@@ -399,11 +378,14 @@
                         <h3>Componentes</h3>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>{Icons.text}<div>Mensagem</div></div>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>{Icons.image}<div>Imagem</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>{Icons.video}<div>Vídeo</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'audio')} draggable>{Icons.audio}<div>Áudio</div></div>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>{Icons.delay}<div>Atraso</div></div>
                         <h3>Ações</h3>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>{Icons.pix}<div>Gerar PIX</div></div>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_city')} draggable>📍 Consultar Cidade</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'forward_flow')} draggable>{Icons.forward}<div>Encaminhar Fluxo</div></div>
                     </div>
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
@@ -412,7 +394,7 @@
                                 <Controls />
                             </ReactFlow>
                         </ReactFlowProvider>
-                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} />}
+                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} availableFlows={availableFlows} />}
                     </div>
                 </div>
             </div>
