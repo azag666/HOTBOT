@@ -104,21 +104,23 @@
     .contact-detail p { font-size: 0.95rem; color: var(--text-primary); word-wrap: break-word; }
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
-    .flow-editor-container { display: flex; height: 100%; width: 100%; }
-    .flow-editor-page { display: flex; flex-direction: column; flex-grow: 1; height: 100%; }
+    
+    /* Flow Editor - Correções */
+    .flow-editor-page { display: flex; flex-direction: column; height: 100vh; }
+    .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
+    .reactflow-wrapper { flex-grow: 1; position: relative; }
     .flow-header { padding: 1rem 1.5rem; background: var(--bg-secondary); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); z-index: 11; }
-    .reactflow-wrapper { flex-grow: 1; position: relative; background: var(--bg-primary); }
     .flow-sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); padding: 1rem; overflow-y: auto; }
     .flow-sidebar h3 { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); font-size: 1.1rem; }
     .node-button { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: left; cursor: grab; margin-bottom: 0.75rem; transition: all 0.2s; }
     .node-button:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(0, 245, 160, 0.1); }
     .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: var(--bg-secondary); z-index: 10; padding: 1.5rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    .react-flow__node { border-radius: 8px; font-size: 14px; border-width: 2px; border-style: solid; background: var(--bg-tertiary); color: var(--text-primary); padding: 1rem; text-align: left; min-width: 200px; }
+    .react-flow__node { position: relative; border-radius: 8px; font-size: 14px; border-width: 2px; border-style: solid; background: var(--bg-tertiary); color: var(--text-primary); padding: 1rem; text-align: left; min-width: 220px; }
     .react-flow__node-trigger { border-color: #60a5fa; cursor: default !important; }
     .react-flow__node .node-header { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; }
     .react-flow__node .node-content { font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
     .react-flow__handle { width: 10px; height: 10px; background: var(--border-color); }
-    .handle-label { position: absolute; font-size: 10px; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 4px; border-radius: 4px; }
+    .handle-label { position: absolute; font-size: 11px; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; bottom: -24px; }
     .react-flow__handle-bottom { bottom: -6px; }
 
   </style>
@@ -186,8 +188,8 @@
       return (
         <div className="app-container">
           {currentPage !== 'flow-editor' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />}
-          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: currentPage === 'flow-editor' ? 0 : '2rem 3rem', height: '100vh', width: '100%'}}>
-            <div className="page-container" key={currentPage}>
+          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: 0, height: '100vh', width: '100%', overflow: 'hidden'}}>
+            <div className="page-container" style={{height: '100%'}}>
                 {PageComponent}
             </div>
           </main>
@@ -224,7 +226,7 @@
       const handleUpdateToken = async (id) => { const token = prompt("Token:"); if (token) { try { await api.put(`/bots/${id}`, { bot_token: token }); alert("OK"); fetchBots(); } catch (e) { alert('Erro: ' + (e.response?.data?.message || '')); } } };
       const handleSetWebhook = async (id) => { try { const res = await api.post(`/bots/${id}/set-webhook`); alert(res.data.message); } catch (e) { alert('Falha.'); } };
       return (
-          <>
+          <div style={{padding: '2rem 3rem'}}>
             <div className="page-header">
                 <h2>Gerenciamento de Bots</h2>
                 <button className="btn btn-primary" onClick={() => document.getElementById('botName').focus()}>+ Adicionar Bot</button>
@@ -256,7 +258,7 @@
                     </div>
                 </div>
             </div>
-          </>
+          </div>
         );
     }
     
@@ -270,7 +272,7 @@
         const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
         const handleDelete = async (id) => { if (confirm("Certeza?")) { try { await api.delete(`/flows/${id}`); fetchFlows(); } catch (e) { alert("Erro"); } } };
         return (
-            <>
+            <div style={{padding: '2rem 3rem'}}>
                 <div className="page-header"><h2>Fluxos de Conversa</h2><button className="btn btn-primary" onClick={handleCreate} disabled={!selectedBotId}>+ Novo Fluxo</button></div>
                 <div className="form-group" style={{maxWidth: '400px', marginBottom: '2rem'}}><label htmlFor="botSelect">Selecione um Bot</label><select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div>
                 <div className="grid">
@@ -286,11 +288,11 @@
                     ))}
                     {flows.length === 0 && selectedBotId && <p style={{color: 'var(--text-secondary)'}}>Nenhum fluxo para este bot.</p>}
                 </div>
-            </>
+            </div>
         );
     }
 
-    function DisparosPage() { return <h2 className="page-header">Disparos (Em Breve)</h2>; }
+    function DisparosPage() { return <div style={{padding: '2rem 3rem'}}><h2 className="page-header">Disparos (Em Breve)</h2></div>; }
     
     function LiveChatPage() {
         const [bots, setBots] = useState([]);
@@ -315,8 +317,8 @@
         return (
             <div className="chat-page-layout">
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-                    <div className="page-header" style={{padding: '0 0 2rem 0', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
-                    <div className="chat-container">
+                    <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
+                    <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
                         <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
                         <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${m.sender_type === 'operator' ? 'message-operator' : 'message-user'}`}><strong>{m.sender_type === 'operator' ? 'Você' : m.first_name}</strong>{m.message_text}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">{selectedChat ? (<><h3>Detalhes</h3><div className="contact-detail"><label>Nome</label><p>{`${selectedChat.first_name || ''} ${selectedChat.last_name || ''}`.trim() || 'Não informado'}</p></div><div className="contact-detail"><label>Username</label><p>{selectedChat.username ? `@${selectedChat.username}` : 'Nenhum'}</p></div><div className="contact-detail"><label>Chat ID</label><p>{selectedChat.chat_id}</p></div><div className="contact-detail"><label>Click ID</label><p>{selectedChat.click_id ? selectedChat.click_id.replace('/start ', '') : 'Nenhum'}</p></div></>) : (<div className="centered-placeholder"><h3>Informações</h3><p>Detalhes do contato aqui.</p></div>)}</div>
@@ -325,7 +327,7 @@
             </div>
         );
     }
-
+    
     const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, deletable: false }];
     const CustomNode = ({ id, type, data, isConnectable }) => {
         const nodeInfo = {
@@ -345,8 +347,8 @@
                 <div className="node-content">{info.content}</div>
                 {type === 'trigger' && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
                 {type === 'message' && !data.waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
-                {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ bottom: -20, left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ bottom: -20, left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
-                {type === 'action_check_pix' && (<><div className="handle-label" style={{ bottom: -20, left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ bottom: -20, left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
+                {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
+                {type === 'action_check_pix' && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
                 {['delay', 'action_pix', 'action_city', 'image'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
             </div>
         );
