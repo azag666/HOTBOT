@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.production.min.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hotbot - Plataforma de Gestão Avançada</title>
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.development.js"></script> 
+  
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -644,6 +645,7 @@
         }
     }
 
+    // Corrigido: Uso de window.ReactDOM.createRoot para resolver o ReferenceError
     const root = window.ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
