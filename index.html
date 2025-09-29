@@ -62,6 +62,7 @@
     .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(0, 245, 160, 0.2); }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.8rem 1.6rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; transition: all 0.2s ease-in-out; text-transform: uppercase; letter-spacing: 0.8px; font-size: 0.9rem; }
     .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .btn:disabled { background-color: var(--bg-tertiary); color: var(--text-secondary); cursor: not-allowed; transform: none; box-shadow: none; }
     .btn-primary { background: var(--brand-primary); color: #000; box-shadow: 0 4px 15px rgba(0, 245, 160, 0.2); }
     .btn-danger { background-color: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border);}
     .btn-danger:hover { background-color: var(--danger-hover-bg); color: var(--danger-hover-text); }
@@ -139,7 +140,9 @@
   <script type="text/babel">
     const { useState, useCallback, useEffect, useRef, memo } = React;
     const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position, MarkerType } = window.ReactFlow;
-    const API_BASE_URL = 'https://novaapi-one.vercel.app/api';
+    
+    // ATUALIZADO: URL da nova API dedicada ao Hotbot
+    const API_BASE_URL = 'https://hottrack.vercel.app/api';
 
     const api = axios.create({ baseURL: API_BASE_URL });
     api.interceptors.request.use(config => {
@@ -266,7 +269,114 @@
         );
     }
 
-    function DisparosPage() { return <div style={{padding: '2rem 3rem'}}><h2 className="page-header">Disparos (Em Breve)</h2></div>; }
+    // NOVA PÁGINA DE DISPAROS
+    function DisparosPage() {
+        const [bots, setBots] = useState([]);
+        const [selectedBotIds, setSelectedBotIds] = useState([]);
+        const [formData, setFormData] = useState({
+            initialText: '',
+            ctaButtonText: '',
+            externalLink: '',
+            imageUrl: ''
+        });
+        const [isSending, setIsSending] = useState(false);
+
+        useEffect(() => {
+            const fetchBots = async () => {
+                try {
+                    const res = await api.get('/dashboard/data');
+                    setBots(res.data.bots || []);
+                } catch (e) {
+                    console.error("Erro ao buscar bots", e);
+                }
+            };
+            fetchBots();
+        }, []);
+
+        const handleBotSelection = (botId) => {
+            setSelectedBotIds(prev =>
+                prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]
+            );
+        };
+
+        const handleInputChange = (e) => {
+            const { name, value } = e.target;
+            setFormData(prev => ({ ...prev, [name]: value }));
+        };
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (selectedBotIds.length === 0 || !formData.initialText || !formData.ctaButtonText || !formData.externalLink) {
+                alert('Por favor, preencha todos os campos obrigatórios e selecione ao menos um bot.');
+                return;
+            }
+            setIsSending(true);
+            try {
+                const payload = {
+                    botIds: selectedBotIds,
+                    ...formData
+                };
+                const response = await api.post('/bots/mass-send', payload);
+                alert(response.data.message);
+            } catch (error) {
+                alert('Erro ao enviar disparo: ' + (error.response?.data?.message || error.message));
+            } finally {
+                setIsSending(false);
+            }
+        };
+
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header">
+                    <h2>Disparo em Massa</h2>
+                </div>
+                <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Selecione os Bots de Destino</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                                {bots.map(bot => (
+                                    <label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBotIds.includes(bot.id)}
+                                            onChange={() => handleBotSelection(bot.id)}
+                                        />
+                                        {bot.bot_name}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="initialText">Texto da Mensagem</label>
+                            <textarea id="initialText" name="initialText" className="form-textarea" rows="4" value={formData.initialText} onChange={handleInputChange} required />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="imageUrl">URL da Imagem (Opcional)</label>
+                            <input id="imageUrl" name="imageUrl" type="url" className="form-input" value={formData.imageUrl} onChange={handleInputChange} placeholder="https://exemplo.com/imagem.png" />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="form-group">
+                                <label htmlFor="ctaButtonText">Texto do Botão</label>
+                                <input id="ctaButtonText" name="ctaButtonText" type="text" className="form-input" value={formData.ctaButtonText} onChange={handleInputChange} required />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="externalLink">URL do Botão</label>
+                                <input id="externalLink" name="externalLink" type="url" className="form-input" value={formData.externalLink} onChange={handleInputChange} required />
+                            </div>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isSending}>
+                            {isSending ? 'Enviando...' : 'Iniciar Disparo'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
     
     function LiveChatPage() {
         const [bots, setBots] = useState([]);
