@@ -9,6 +9,8 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.development.js"></script> 
   
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
+  
   <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link href="https://unpkg.com/reactflow@11/dist/style.css" rel="stylesheet">
@@ -250,9 +252,6 @@
       );
     }
     
-    // O RESTANTE DO CÓDIGO DA APLICAÇÃO (Sidebar, BotsPage, LoginScreen etc.)
-    // PERMANECE INALTERADO DA VERSÃO ANTERIOR, POIS A SINTAXE JSX É NECESSÁRIA PARA O FUNCIONAMENTO.
-
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', disparos: 'Disparos' };
         return (
@@ -289,7 +288,7 @@
                 <div>
                     <h3 style={{marginBottom: '1rem', fontSize: '1.5rem', color: 'var(--text-primary)'}}>Bots Ativos</h3>
                     <div className="grid">
-                        {bots.map(bot => (<div key={bot.id} className="bot-card"><div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p><div className="bot-card-actions"><button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button><button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button><button className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button></div></div>))}
+                        {bots.map(bot => (<div key={bot.id} className="bot-card"><div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p><div className="bot-card-actions"><button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button><button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button><button className className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button></div></div>))}
                         {bots.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum bot criado.</p>}
                     </div>
                 </div>
@@ -303,7 +302,7 @@
         const [selectedBotId, setSelectedBotId] = useState('');
         const [flows, setFlows] = useState([]);
         useEffect(() => { const fetch = async () => { try { const res = await api.get('/dashboard/data'); const d = res.data.bots || []; setBots(d); if(d.length > 0) setSelectedBotId(d[0].id); } catch(e){ console.error("Erro", e); } }; fetch(); }, []);
-        const fetchFlows = useCallback(async () => { if (!selectedBotId) return; setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
+        const fetchFlows = useCallback(async () => { if (!selectedBotId) { setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
         useEffect(() => { fetchFlows(); }, [fetchFlows]);
         const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
         const handleDelete = async (id) => { if (confirm("Certeza?")) { try { await api.delete(`/flows/${id}`); fetchFlows(); } catch (e) { alert("Erro"); } } };
