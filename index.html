@@ -32,11 +32,13 @@
     *::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; border: 2px solid var(--bg-primary); }
     .app-container { display: flex; height: 100vh; }
     .main-content {
-        flex: 1; padding: 2rem 3rem; overflow-y: auto;
+        flex: 1;
+        height: 100vh;
+        overflow-y: auto;
         background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
         background-size: 2rem 2rem;
     }
-    .page-container { animation: fadeIn 0.5s ease-in-out; }
+    .page-container { animation: fadeIn 0.5s ease-in-out; height: 100%; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .sidebar { width: 80px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); padding: 1.5rem 0; display: flex; flex-direction: column; align-items: center; transition: width 0.3s ease-in-out; z-index: 20; }
     .sidebar:hover { width: 240px; }
@@ -76,7 +78,7 @@
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(10px); }
     .login-box { background: var(--bg-secondary); padding: 3rem; border-radius: 12px; width: 420px; border: 1px solid var(--border-color); }
     .chat-page-layout { height: 100%; padding: 0; }
-    .chat-container { display: flex; height: calc(100vh - 4rem); background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
+    .chat-container { display: flex; height: calc(100vh - 8.5rem); background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
     .conversations-panel { width: 320px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
     .conversations-header { padding: 1rem; border-bottom: 1px solid var(--border-color); }
     .conversations-list { flex: 1; overflow-y: auto; }
@@ -105,7 +107,6 @@
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
     
-    /* Flow Editor - Correções */
     .flow-editor-page { display: flex; flex-direction: column; height: 100vh; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
     .reactflow-wrapper { flex-grow: 1; position: relative; }
@@ -115,14 +116,36 @@
     .node-button { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: left; cursor: grab; margin-bottom: 0.75rem; transition: all 0.2s; }
     .node-button:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(0, 245, 160, 0.1); }
     .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: var(--bg-secondary); z-index: 10; padding: 1.5rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    .react-flow__node { position: relative; border-radius: 8px; font-size: 14px; border-width: 2px; border-style: solid; background: var(--bg-tertiary); color: var(--text-primary); padding: 1rem; text-align: left; min-width: 220px; }
-    .react-flow__node-trigger { border-color: #60a5fa; cursor: default !important; }
-    .react-flow__node .node-header { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .react-flow__node .node-content { font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
-    .react-flow__handle { width: 10px; height: 10px; background: var(--border-color); }
-    .handle-label { position: absolute; font-size: 11px; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; bottom: -24px; }
-    .react-flow__handle-bottom { bottom: -6px; }
+    
+    .react-flow__node {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0;
+        min-width: 240px;
+        font-family: var(--font-sans);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        position: relative;
+    }
+    .react-flow__node.selected {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 15px rgba(0, 245, 160, 0.3);
+    }
+    .node-header { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    .node-content { padding: 1rem; font-size: 0.9rem; color: var(--text-secondary); }
+    .react-flow__handle { width: 10px; height: 10px; background: var(--border-color); border: 2px solid var(--bg-tertiary); }
+    .react-flow__handle:hover { background: var(--brand-primary); }
+    
+    .node-header { border-left: 4px solid; padding-left: 10px; }
+    .react-flow__node-trigger .node-header { border-left-color: #3b82f6; }
+    .react-flow__node-message .node-header { border-left-color: #00F5A0; }
+    .react-flow__node-image .node-header { border-left-color: #a855f7; }
+    .react-flow__node-delay .node-header { border-left-color: #facc15; }
+    .react-flow__node-action_pix .node-header { border-left-color: #22c55e; }
+    .react-flow__node-action_check_pix .node-header { border-left-color: #f97316; }
+    .react-flow__node-action_city .node-header { border-left-color: #0ea5e9; }
 
+    .handle-label { position: absolute; font-size: 11px; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; bottom: -24px; }
   </style>
 </head>
 <body>
@@ -130,7 +153,7 @@
 
   <script type="text/babel">
     const { useState, useCallback, useEffect, useRef, memo } = React;
-    const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position } = window.ReactFlow;
+    const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position, MarkerType } = window.ReactFlow;
     const API_BASE_URL = 'https://novaapi-one.vercel.app/api';
 
     const api = axios.create({ baseURL: API_BASE_URL });
@@ -157,26 +180,10 @@
       const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('authToken'));
       const [currentPage, setCurrentPage] = useState('bots');
       const [editingFlow, setEditingFlow] = useState(null);
-
-      const handleLogin = (token) => {
-        localStorage.setItem('authToken', token);
-        setIsAuthenticated(true);
-      };
-
-      const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        setIsAuthenticated(false);
-      };
-
-      const navigateToFlowEditor = (flow) => {
-        setEditingFlow(flow);
-        setCurrentPage('flow-editor');
-      };
-
-      if (!isAuthenticated) {
-        return <LoginScreen onLogin={handleLogin} />;
-      }
-
+      const handleLogin = (token) => { localStorage.setItem('authToken', token); setIsAuthenticated(true); };
+      const handleLogout = () => { localStorage.removeItem('authToken'); setIsAuthenticated(false); };
+      const navigateToFlowEditor = (flow) => { setEditingFlow(flow); setCurrentPage('flow-editor'); };
+      if (!isAuthenticated) { return <LoginScreen onLogin={handleLogin} />; }
       const PageComponent = {
         bots: <BotsPage />,
         flows: <FlowsListPage onEditFlow={navigateToFlowEditor} />,
@@ -184,11 +191,10 @@
         disparos: <DisparosPage />,
         'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
       }[currentPage];
-
       return (
         <div className="app-container">
-          {currentPage !== 'flow-editor' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />}
-          <main className={currentPage !== 'flow-editor' ? "main-content" : ''} style={{padding: 0, height: '100vh', width: '100%', overflow: 'hidden'}}>
+          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
+          <main className="main-content" style={{padding: 0, height: '100vh', width: '100%', overflow: 'hidden'}}>
             <div className="page-container" style={{height: '100%'}}>
                 {PageComponent}
             </div>
@@ -226,7 +232,7 @@
       const handleUpdateToken = async (id) => { const token = prompt("Token:"); if (token) { try { await api.put(`/bots/${id}`, { bot_token: token }); alert("OK"); fetchBots(); } catch (e) { alert('Erro: ' + (e.response?.data?.message || '')); } } };
       const handleSetWebhook = async (id) => { try { const res = await api.post(`/bots/${id}/set-webhook`); alert(res.data.message); } catch (e) { alert('Falha.'); } };
       return (
-          <div style={{padding: '2rem 3rem'}}>
+          <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
             <div className="page-header">
                 <h2>Gerenciamento de Bots</h2>
                 <button className="btn btn-primary" onClick={() => document.getElementById('botName').focus()}>+ Adicionar Bot</button>
@@ -272,7 +278,7 @@
         const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
         const handleDelete = async (id) => { if (confirm("Certeza?")) { try { await api.delete(`/flows/${id}`); fetchFlows(); } catch (e) { alert("Erro"); } } };
         return (
-            <div style={{padding: '2rem 3rem'}}>
+            <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
                 <div className="page-header"><h2>Fluxos de Conversa</h2><button className="btn btn-primary" onClick={handleCreate} disabled={!selectedBotId}>+ Novo Fluxo</button></div>
                 <div className="form-group" style={{maxWidth: '400px', marginBottom: '2rem'}}><label htmlFor="botSelect">Selecione um Bot</label><select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div>
                 <div className="grid">
@@ -335,22 +341,22 @@
             message: { icon: '💬', name: 'Enviar Mensagem', content: data.text ? `"${data.text.substring(0, 50)}..."` : 'Configure o texto.' },
             image: { icon: '🖼️', name: 'Enviar Imagem', content: data.imageUrl ? 'URL configurada.' : 'Configure a URL.' },
             delay: { icon: '⏱️', name: 'Atraso', content: `Aguardar por ${data.delayInSeconds || 1}s.` },
-            action_pix: { icon: '💳', name: 'Gerar PIX', content: `Gerar PIX de R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
+            action_pix: { icon: '💳', name: 'Gerar PIX', content: `Valor: R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
             action_check_pix: { icon: '🔍', name: 'Consultar PIX', content: 'Verifica se o PIX foi pago.' },
-            action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade na variável {{city}}.' }
+            action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade em {{city}}.' }
         };
         const info = nodeInfo[type] || { icon: '❓', name: 'Nó' };
         return (
-            <div className="react-flow__node">
+            <>
                 {type !== 'trigger' && <Handle type="target" position={Position.Top} isConnectable={isConnectable} />}
-                <div className="node-header">{info.icon} {info.name}</div>
+                <div className={`node-header react-flow__node-${type}`}>{info.icon} {info.name}</div>
                 <div className="node-content">{info.content}</div>
                 {type === 'trigger' && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
                 {type === 'message' && !data.waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
                 {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
                 {type === 'action_check_pix' && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
                 {['delay', 'action_pix', 'action_city', 'image'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
-            </div>
+            </>
         );
     };
     const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode };
@@ -380,11 +386,11 @@
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
         useEffect(() => { if(flow?.nodes) { const c = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; setNodes(c.nodes || initialNodes); setEdges(c.edges || []); } }, [flow]);
-        const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'smoothstep', animated: true }, eds)), []);
+        const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'bezier', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
         const onNodeClick = useCallback((_, n) => setSelectedNode(n), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
         const onDragOver = useCallback((e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }, []);
-        const onDrop = useCallback((e) => { e.preventDefault(); const bounds = reactFlowWrapper.current.getBoundingClientRect(); const type = e.dataTransfer.getData('application/reactflow'); if (!type) return; const pos = reactFlowInstance.project({ x: e.clientX - bounds.left, y: e.clientY - bounds.top }); const newNode = { id: `${type}-${Date.now()}`, type, position: pos, data: { text: '...', delayInSeconds: 1, valueInCents: 100 } }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance]);
+        const onDrop = useCallback((e) => { e.preventDefault(); const bounds = reactFlowWrapper.current.getBoundingClientRect(); const type = e.dataTransfer.getData('application/reactflow'); if (!type) return; const pos = reactFlowInstance.project({ x: e.clientX - bounds.left, y: e.clientY - bounds.top }); const newNode = { id: `${type}-${Date.now()}`, type, position: pos, data: { text: '...', delayInSeconds: 1, valueInCents: 100, showTyping: true, waitForReply: false, replyTimeout: 5, imageUrl: '', caption: '' } }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance, setNodes]);
         const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch(e) { alert("Erro."); } };
         const onDragStart = (e, type) => { e.dataTransfer.setData('application/reactflow', type); e.dataTransfer.effectAllowed = 'move'; };
         return (
@@ -404,7 +410,7 @@
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
                             <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} nodeTypes={nodeTypes} fitView>
-                                <Background color="#555" gap={24}/>
+                                <Background variant="dots" gap={24} size={1} color="var(--border-color)"/>
                                 <Controls />
                             </ReactFlow>
                         </ReactFlowProvider>
