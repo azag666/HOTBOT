@@ -9,8 +9,6 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.development.js"></script> 
   
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
-  
   <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link href="https://unpkg.com/reactflow@11/dist/style.css" rel="stylesheet">
@@ -162,6 +160,7 @@
       }
     );
     
+    // DEFINIÇÕES DE ÍCONES (Mantidas em JSX)
     const Icons = {
         bots: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M17 12v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>,
         flows: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h3"/><path d="M7 12h3"/><path d="M12 12h3"/><path d="M17 12h3"/><path d="M5 7v10"/><path d="M10 7v10"/><path d="M15 7v10"/><path d="M20 7v10"/><path d="M5 12a5 5 0 0 0 5 5"/><path d="M10 12a5 5 0 0 1 5 5"/><path d="M15 12a5 5 0 0 0 5-5"/></svg>,
@@ -251,6 +250,9 @@
       );
     }
     
+    // O RESTANTE DO CÓDIGO DA APLICAÇÃO (Sidebar, BotsPage, LoginScreen etc.)
+    // PERMANECE INALTERADO DA VERSÃO ANTERIOR, POIS A SINTAXE JSX É NECESSÁRIA PARA O FUNCIONAMENTO.
+
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', disparos: 'Disparos' };
         return (
@@ -301,7 +303,7 @@
         const [selectedBotId, setSelectedBotId] = useState('');
         const [flows, setFlows] = useState([]);
         useEffect(() => { const fetch = async () => { try { const res = await api.get('/dashboard/data'); const d = res.data.bots || []; setBots(d); if(d.length > 0) setSelectedBotId(d[0].id); } catch(e){ console.error("Erro", e); } }; fetch(); }, []);
-        const fetchFlows = useCallback(async () => { if (!selectedBotId) { setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
+        const fetchFlows = useCallback(async () => { if (!selectedBotId) return; setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
         useEffect(() => { fetchFlows(); }, [fetchFlows]);
         const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
         const handleDelete = async (id) => { if (confirm("Certeza?")) { try { await api.delete(`/flows/${id}`); fetchFlows(); } catch (e) { alert("Erro"); } } };
@@ -528,7 +530,7 @@
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
         const [availableFlows, setAvailableFlows] = useState([]);
         useEffect(() => { if(flow?.nodes) { const c = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; setNodes(c.nodes || initialNodes); setEdges(c.edges || []); } }, [flow]);
-        useEffect(() => { const fetch = async () => { if (flow?.bot_id) { try { const res = await api.get('/flows'); setAvailableFlows(res.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id)); } catch (e) { console.error("Erro", e); } } }; fetch(); }, [flow]);
+        useEffect(() => { const fetch = async () => { if (flow?.bot_id) { try { const res = await api.get('/flows'); setAvailableFlows(res.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id)); } catch (e) { console.error("Erro", e); } } }; fetch(); }, []);
         const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'smoothstep', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
         const onNodeClick = useCallback((_, n) => setSelectedNode(n), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
