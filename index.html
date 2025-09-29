@@ -177,7 +177,7 @@
     function App() {
       const [isAuthenticated, setIsAuthenticated] = useState(false);
       const [isLoading, setIsLoading] = useState(true);
-      const [apiError, setApiError] = useState(null); // Estado para erro de API
+      const [apiError, setApiError] = useState(null);
       const [currentPage, setCurrentPage] = useState('bots');
       const [editingFlow, setEditingFlow] = useState(null);
 
@@ -190,7 +190,7 @@
               localStorage.removeItem('authToken');
               setIsAuthenticated(false);
               if (err.code === "ERR_NETWORK") {
-                setApiError("Não foi possível conectar à API. Verifique se o servidor backend está no ar e acessível.");
+                setApiError("Não foi possível conectar à API. Verifique se o servidor backend está no ar e acessível em " + API_BASE_URL);
               }
             })
             .finally(() => setIsLoading(false));
@@ -202,7 +202,7 @@
       const handleLogin = (token) => { 
           localStorage.setItem('authToken', token); 
           setIsAuthenticated(true); 
-          setApiError(null); // Limpa erros anteriores ao logar
+          setApiError(null);
       };
       const handleLogout = () => { 
           localStorage.removeItem('authToken'); 
