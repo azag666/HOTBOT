@@ -32,9 +32,7 @@
     *::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; border: 2px solid var(--bg-primary); }
     .app-container { display: flex; height: 100vh; }
     .main-content {
-        flex: 1;
-        height: 100vh;
-        overflow-y: auto;
+        flex: 1; height: 100vh; overflow-y: auto;
         background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
         background-size: 2rem 2rem;
     }
@@ -77,7 +75,7 @@
     .bot-card-actions { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(10px); }
     .login-box { background: var(--bg-secondary); padding: 3rem; border-radius: 12px; width: 420px; border: 1px solid var(--border-color); }
-    .chat-page-layout { height: 100%; padding: 0; }
+    .chat-page-layout { height: 100%; }
     .chat-container { display: flex; height: calc(100vh - 8.5rem); background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
     .conversations-panel { width: 320px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
     .conversations-header { padding: 1rem; border-bottom: 1px solid var(--border-color); }
@@ -107,45 +105,45 @@
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
     
+    /* Flow Editor - NOVO DESIGN */
     .flow-editor-page { display: flex; flex-direction: column; height: 100vh; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
-    .reactflow-wrapper { flex-grow: 1; position: relative; }
-    .flow-header { padding: 1rem 1.5rem; background: var(--bg-secondary); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); z-index: 11; }
-    .flow-sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); padding: 1rem; overflow-y: auto; }
-    .flow-sidebar h3 { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); font-size: 1.1rem; }
-    .node-button { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: left; cursor: grab; margin-bottom: 0.75rem; transition: all 0.2s; }
-    .node-button:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(0, 245, 160, 0.1); }
-    .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: var(--bg-secondary); z-index: 10; padding: 1.5rem; border-left: 1px solid var(--border-color); overflow-y: auto; }
-    
+    .reactflow-wrapper { flex-grow: 1; position: relative; background-color: #f8f9fa; background-image: radial-gradient(#dee2e6 1px, transparent 0); background-size: 30px 30px;}
+    .flow-header { padding: 1rem 1.5rem; background: white; color: #333; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; z-index: 11; }
+    .flow-sidebar { width: 280px; background: white; color: #333; border-right: 1px solid #e9ecef; padding: 1rem; overflow-y: auto; }
+    .flow-sidebar h3 { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e9ecef; font-size: 1.1rem; }
+    .node-button { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid #dee2e6; text-align: left; cursor: grab; margin-bottom: 0.75rem; transition: all 0.2s; color: #495057; }
+    .node-button:hover { border-color: var(--brand-primary); color: var(--brand-secondary); background: #f1f3f5; }
+    .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: white; z-index: 10; padding: 1.5rem; border-left: 1px solid #e9ecef; overflow-y: auto; color: #333;}
     .react-flow__node {
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
+        background: white;
+        border: 1px solid #adb5bd;
         border-radius: 8px;
         padding: 0;
-        min-width: 240px;
+        width: 280px;
         font-family: var(--font-sans);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        position: relative;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        color: #343a40;
     }
     .react-flow__node.selected {
-        border-color: var(--brand-primary);
-        box-shadow: 0 0 15px rgba(0, 245, 160, 0.3);
+        border: 2px solid var(--brand-primary);
+        box-shadow: 0 0 15px rgba(0, 245, 160, 0.5);
     }
-    .node-header { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
-    .node-content { padding: 1rem; font-size: 0.9rem; color: var(--text-secondary); }
-    .react-flow__handle { width: 10px; height: 10px; background: var(--border-color); border: 2px solid var(--bg-tertiary); }
-    .react-flow__handle:hover { background: var(--brand-primary); }
+    .node-header { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid #e9ecef; }
+    .node-content { padding: 1rem; font-size: 0.9rem; color: #6c757d; }
+    .react-flow__handle { width: 12px; height: 12px; background: white; border: 2px solid #adb5bd; }
+    .react-flow__handle:hover { border-color: var(--brand-primary); }
     
-    .node-header { border-left: 4px solid; padding-left: 10px; }
-    .react-flow__node-trigger .node-header { border-left-color: #3b82f6; }
-    .react-flow__node-message .node-header { border-left-color: #00F5A0; }
-    .react-flow__node-image .node-header { border-left-color: #a855f7; }
-    .react-flow__node-delay .node-header { border-left-color: #facc15; }
-    .react-flow__node-action_pix .node-header { border-left-color: #22c55e; }
-    .react-flow__node-action_check_pix .node-header { border-left-color: #f97316; }
-    .react-flow__node-action_city .node-header { border-left-color: #0ea5e9; }
+    .node-header { color: #212529; }
+    .react-flow__node-trigger .node-header { background: #e7f5ff; }
+    .react-flow__node-message .node-header { background: #e6fcf5; }
+    .react-flow__node-image .node-header { background: #f3e8ff; }
+    .react-flow__node-delay .node-header { background: #fff9db; }
+    .react-flow__node-action_pix .node-header { background: #dcfce7; }
+    .react-flow__node-action_check_pix .node-header { background: #ffedd5; }
+    .react-flow__node-action_city .node-header { background: #e0f2fe; }
 
-    .handle-label { position: absolute; font-size: 11px; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; bottom: -24px; }
+    .handle-label { position: absolute; font-size: 11px; color: #6c757d; background: white; padding: 2px 6px; border-radius: 4px; bottom: -24px; border: 1px solid #e9ecef; }
   </style>
 </head>
 <body>
@@ -373,10 +371,10 @@
                 case 'image': return (<><div className="form-group"><label>URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/img.png"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
                 case 'delay': return (<div className="form-group"><label>Atraso (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
                 case 'action_pix': return (<div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div>);
-                default: return <p style={{color: 'var(--text-secondary)'}}>Sem configurações.</p>;
+                default: return <p style={{color: '#6c757d'}}>Sem configurações.</p>;
             }
         };
-        return (<div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó</h3>{renderPanel()}<div style={{marginTop: '2rem'}}><button className="btn btn-primary" onClick={onSave} style={{width: '100%'}}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{width: '100%', marginTop: '1rem'}} onClick={onDelete}>Excluir</button>}</div></div>);
+        return (<div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó</h3>{renderPanel()}<div style={{marginTop: '2rem'}}><button className="btn btn-primary" style={{color: 'white', background: 'var(--brand-secondary)'}} onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{width: '100%', marginTop: '1rem'}} onClick={onDelete}>Excluir</button>}</div></div>);
     }
     
     function FlowEditorPage({ flow, onBack }) {
@@ -386,7 +384,7 @@
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
         useEffect(() => { if(flow?.nodes) { const c = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; setNodes(c.nodes || initialNodes); setEdges(c.edges || []); } }, [flow]);
-        const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'bezier', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
+        const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'smoothstep', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
         const onNodeClick = useCallback((_, n) => setSelectedNode(n), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
         const onDragOver = useCallback((e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }, []);
@@ -410,7 +408,7 @@
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
                             <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} nodeTypes={nodeTypes} fitView>
-                                <Background variant="dots" gap={24} size={1} color="var(--border-color)"/>
+                                <Background variant="dots" gap={24} size={1} />
                                 <Controls />
                             </ReactFlow>
                         </ReactFlowProvider>
