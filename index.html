@@ -145,7 +145,6 @@
 
     const api = axios.create({ baseURL: API_BASE_URL });
     
-    // CORREÇÃO: Interceptor para adicionar o token de autenticação em todas as requisições
     api.interceptors.request.use(
       config => {
         const token = localStorage.getItem('authToken');
@@ -177,19 +176,22 @@
 
     function App() {
       const [isAuthenticated, setIsAuthenticated] = useState(false);
-      const [isLoading, setIsLoading] = useState(true); // Novo estado de carregamento
+      const [isLoading, setIsLoading] = useState(true);
+      const [apiError, setApiError] = useState(null); // Estado para erro de API
       const [currentPage, setCurrentPage] = useState('bots');
       const [editingFlow, setEditingFlow] = useState(null);
 
       useEffect(() => {
         const token = localStorage.getItem('authToken');
         if (token) {
-          // Tenta validar o token com uma requisição simples
           api.get('/dashboard/data')
             .then(() => setIsAuthenticated(true))
-            .catch(() => {
+            .catch((err) => {
               localStorage.removeItem('authToken');
               setIsAuthenticated(false);
+              if (err.code === "ERR_NETWORK") {
+                setApiError("Não foi possível conectar à API. Verifique se o servidor backend está no ar e acessível.");
+              }
             })
             .finally(() => setIsLoading(false));
         } else {
@@ -200,6 +202,7 @@
       const handleLogin = (token) => { 
           localStorage.setItem('authToken', token); 
           setIsAuthenticated(true); 
+          setApiError(null); // Limpa erros anteriores ao logar
       };
       const handleLogout = () => { 
           localStorage.removeItem('authToken'); 
@@ -209,7 +212,15 @@
       const navigateToFlowEditor = (flow) => { setEditingFlow(flow); setCurrentPage('flow-editor'); };
 
       if (isLoading) {
-        return <div id="root-loader" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}><svg style={{width: '50px', height: '50px', animation: 'spin 1s linear infinite'}} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="var(--brand-primary)" strokeWidth="4" fill="none" strokeDasharray="15 80"></circle></svg></div>;
+        return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}><svg style={{width: '50px', height: '50px', animation: 'spin 1s linear infinite'}} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="var(--brand-primary)" strokeWidth="4" fill="none" strokeDasharray="15 80"></circle></svg></div>;
+      }
+
+      if (apiError) {
+        return <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '2rem', textAlign: 'center'}}>
+            <h2 style={{color: 'var(--danger-text)', fontSize: '1.5rem'}}>Erro de Conexão</h2>
+            <p style={{color: 'var(--text-secondary)', marginTop: '1rem'}}>{apiError}</p>
+            <button className="btn btn-primary" style={{marginTop: '2rem'}} onClick={() => window.location.reload()}>Tentar Novamente</button>
+        </div>;
       }
 
       if (!isAuthenticated) { 
@@ -311,7 +322,6 @@
         );
     }
 
-    // NOVA PÁGINA DE DISPAROS
     function DisparosPage() {
         const [bots, setBots] = useState([]);
         const [selectedBotIds, setSelectedBotIds] = useState([]);
