@@ -9,6 +9,8 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.development.js"></script> 
   
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
+  
   <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link href="https://unpkg.com/reactflow@11/dist/style.css" rel="stylesheet">
@@ -138,13 +140,8 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/javascript">
-    // MUDANÇA 1: Declarações sem Babel. Não use mais a desestruturação direta do React.
-    const useState = window.React.useState;
-    const useCallback = window.React.useCallback;
-    const useEffect = window.React.useEffect;
-    const useRef = window.React.useRef;
-    const memo = window.React.memo;
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, useRef, memo } = React;
     const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position, MarkerType } = window.ReactFlow;
     
     const API_BASE_URL = 'https://hottrack.vercel.app/api';
@@ -218,75 +215,358 @@
       const navigateToFlowEditor = (flow) => { setEditingFlow(flow); setCurrentPage('flow-editor'); };
 
       if (isLoading) {
-        return window.React.createElement('div', {style: {display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}},
-          window.React.createElement('svg', {style: {width: '50px', height: '50px', animation: 'spin 1s linear infinite'}, viewBox: '0 0 24 24'},
-            window.React.createElement('circle', {cx: '12', cy: '12', r: '10', stroke: 'var(--brand-primary)', strokeWidth: '4', fill: 'none', strokeDasharray: '15 80'})
-          )
-        );
+        return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}><svg style={{width: '50px', height: '50px', animation: 'spin 1s linear infinite'}} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="var(--brand-primary)" strokeWidth="4" fill="none" strokeDasharray="15 80"></circle></svg></div>;
       }
 
       if (apiError) {
-        return window.React.createElement('div', {style: {display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '2rem', textAlign: 'center'}},
-          window.React.createElement('h2', {style: {color: 'var(--danger-text)', fontSize: '1.5rem'}}, "Erro de Conexão"),
-          window.React.createElement('p', {style: {color: 'var(--text-secondary)', marginTop: '1rem'}}, apiError),
-          window.React.createElement('button', {className: "btn btn-primary", style: {marginTop: '2rem'}, onClick: () => window.location.reload()}, "Tentar Novamente")
-        );
+        return <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '2rem', textAlign: 'center'}}>
+            <h2 style={{color: 'var(--danger-text)', fontSize: '1.5rem'}}>Erro de Conexão</h2>
+            <p style={{color: 'var(--text-secondary)', marginTop: '1rem'}}>{apiError}</p>
+            <button className="btn btn-primary" style={{marginTop: '2rem'}} onClick={() => window.location.reload()}>Tentar Novamente</button>
+        </div>;
       }
 
       if (!isAuthenticated) { 
-        return window.React.createElement(LoginScreen, {onLogin: handleLogin}); 
+        return <LoginScreen onLogin={handleLogin} />; 
       }
 
       const PageComponent = {
-        bots: window.React.createElement(BotsPage),
-        flows: window.React.createElement(FlowsListPage, {onEditFlow: navigateToFlowEditor}),
-        chat: window.React.createElement(LiveChatPage),
-        disparos: window.React.createElement(DisparosPage),
-        'flow-editor': window.React.createElement(FlowEditorPage, {flow: editingFlow, onBack: () => setCurrentPage('flows')})
+        bots: <BotsPage />,
+        flows: <FlowsListPage onEditFlow={navigateToFlowEditor} />,
+        chat: <LiveChatPage />,
+        disparos: <DisparosPage />,
+        'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
       }[currentPage];
 
       return (
-        window.React.createElement('div', {className: "app-container"},
-          window.React.createElement(Sidebar, {currentPage: currentPage, setCurrentPage: setCurrentPage, onLogout: handleLogout}),
-          window.React.createElement('main', {className: "main-content", style: {padding: 0, height: '100vh', width: '100%', overflow: 'hidden'}},
-            window.React.createElement('div', {className: "page-container", style: {height: '100%'}},
-                PageComponent
-            )
-          )
-        )
+        <div className="app-container">
+          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
+          <main className="main-content" style={{padding: 0, height: '100vh', width: '100%', overflow: 'hidden'}}>
+            <div className="page-container" style={{height: '100%'}}>
+                {PageComponent}
+            </div>
+          </main>
+        </div>
       );
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', disparos: 'Disparos' };
         return (
-            window.React.createElement('aside', {className: "sidebar"},
-                window.React.createElement('div', {className: "logo"}, "H", window.React.createElement('span', {className: "logo-text"}, "otbot")),
-                window.React.createElement('nav', {className: "nav-menu"},
-                    Object.entries(pages).map(([key, value]) => (
-                        window.React.createElement('div', {key: key, className: `nav-item ${currentPage === key ? 'active' : ''}`, onClick: () => setCurrentPage(key), title: value},
-                            Icons[key], " ", window.React.createElement('span', {className: "nav-text"}, value)
-                        )
-                    ))
-                ),
-                window.React.createElement('div', {className: "logout-btn nav-item", onClick: onLogout, title: "Sair"},
-                    Icons.logout, " ", window.React.createElement('span', {className: "nav-text"}, "Sair")
-                )
-            )
+            <aside className="sidebar">
+                <div className="logo">H<span className="logo-text">otbot</span></div>
+                <nav className="nav-menu">
+                    {Object.entries(pages).map(([key, value]) => (
+                        <div key={key} className={`nav-item ${currentPage === key ? 'active' : ''}`} onClick={() => setCurrentPage(key)} title={value}>
+                            {Icons[key]} <span className="nav-text">{value}</span>
+                        </div>
+                    ))}
+                </nav>
+                <div className="logout-btn nav-item" onClick={onLogout} title="Sair">
+                    {Icons.logout} <span className="nav-text">Sair</span>
+                </div>
+            </aside>
         );
     }
     
     function BotsPage() {
-      // ... (O código das páginas permanece o mesmo, mas a sintaxe JSX não pode ser usada diretamente.
-      // Você precisará reescrever todo o JSX usando 'window.React.createElement'.
-      // Como o código é muito extenso, e essa é uma etapa complexa e manual, você pode
-      // tentar a versão final do código ABAIXO, que mantém o JSX, pois
-      // o erro é tipicamente corrigido com a remoção do Babel.)
+      const [bots, setBots] = useState([]);
+      const [newBotName, setNewBotName] = useState('');
+      const fetchBots = async () => { try { const res = await api.get('/dashboard/data'); setBots(res.data.bots || []); } catch (e) { console.error("Erro", e); } };
+      useEffect(() => { fetchBots(); }, []);
+      const handleCreateBot = async (e) => { e.preventDefault(); if (!newBotName) return; try { await api.post('/bots', { bot_name: newBotName }); setNewBotName(''); fetchBots(); } catch (e) { alert('Erro: ' + (e.response?.data?.message || '')); } };
+      const handleDeleteBot = async (id) => { if (confirm('Certeza?')) { try { await api.delete(`/bots/${id}`); fetchBots(); } catch (e) { alert('Erro'); } } };
+      const handleUpdateToken = async (id) => { const token = prompt("Token:"); if (token) { try { await api.put(`/bots/${id}`, { bot_token: token }); alert("OK"); fetchBots(); } catch (e) { alert('Erro: ' + (e.response?.data?.message || '')); } } };
+      const handleSetWebhook = async (id) => { try { const res = await api.post(`/bots/${id}/set-webhook`); alert(res.data.message); } catch (e) { alert('Falha.'); } };
+      return (
+          <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
+            <div className="page-header"><h2>Gerenciamento de Bots</h2><button className="btn btn-primary" onClick={() => document.getElementById('botName').focus()}>+ Adicionar Bot</button></div>
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', alignItems: 'start'}}>
+                <div className="card"><h3 style={{color: 'var(--text-primary)'}}>Adicionar Novo Bot</h3><p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>Crie e configure novos bots.</p><form onSubmit={handleCreateBot}><div className="form-group"><label htmlFor="botName">Nome de usuário</label><input id="botName" className="form-input" value={newBotName} onChange={(e) => setNewBotName(e.target.value)} placeholder="@meu_bot"/></div><button className="btn btn-primary" type="submit" style={{width: '100%'}}>Criar</button></form></div>
+                <div>
+                    <h3 style={{marginBottom: '1rem', fontSize: '1.5rem', color: 'var(--text-primary)'}}>Bots Ativos</h3>
+                    <div className="grid">
+                        {bots.map(bot => (<div key={bot.id} className="bot-card"><div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p><div className="bot-card-actions"><button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button><button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button><button className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button></div></div>))}
+                        {bots.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum bot criado.</p>}
+                    </div>
+                </div>
+            </div>
+          </div>
+        );
     }
-    // ... RESTANTE DO CÓDIGO JSX PERMANECE O MESMO ...
+    
+    function FlowsListPage({ onEditFlow }) {
+        const [bots, setBots] = useState([]);
+        const [selectedBotId, setSelectedBotId] = useState('');
+        const [flows, setFlows] = useState([]);
+        useEffect(() => { const fetch = async () => { try { const res = await api.get('/dashboard/data'); const d = res.data.bots || []; setBots(d); if(d.length > 0) setSelectedBotId(d[0].id); } catch(e){ console.error("Erro", e); } }; fetch(); }, []);
+        const fetchFlows = useCallback(async () => { if (!selectedBotId) { setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
+        useEffect(() => { fetchFlows(); }, [fetchFlows]);
+        const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
+        const handleDelete = async (id) => { if (confirm("Certeza?")) { try { await api.delete(`/flows/${id}`); fetchFlows(); } catch (e) { alert("Erro"); } } };
+        return (
+            <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
+                <div className="page-header"><h2>Fluxos de Conversa</h2><button className="btn btn-primary" onClick={handleCreate} disabled={!selectedBotId}>+ Novo Fluxo</button></div>
+                <div className="form-group" style={{maxWidth: '400px', marginBottom: '2rem'}}><label htmlFor="botSelect">Selecione um Bot</label><select id="botSelect" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div>
+                <div className="grid">
+                    {flows.map(flow => (
+                        <div key={flow.id} className="bot-card">
+                           <div className="bot-card-header"><div className="icon">{Icons.flows}</div><h3>{flow.name}</h3></div>
+                           <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Modificado em: {new Date(flow.updated_at).toLocaleDateString()}</p>
+                            <div className="bot-card-actions">
+                                <button className="btn btn-primary btn-sm" onClick={() => onEditFlow(flow)}>Editor</button>
+                                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(flow.id)}>Excluir</button>
+                            </div>
+                        </div>
+                    ))}
+                    {flows.length === 0 && selectedBotId && <p style={{color: 'var(--text-secondary)'}}>Nenhum fluxo para este bot.</p>}
+                </div>
+            </div>
+        );
+    }
+
+    function DisparosPage() {
+        const [bots, setBots] = useState([]);
+        const [selectedBotIds, setSelectedBotIds] = useState([]);
+        const [formData, setFormData] = useState({
+            initialText: '',
+            ctaButtonText: '',
+            externalLink: '',
+            imageUrl: ''
+        });
+        const [isSending, setIsSending] = useState(false);
+
+        useEffect(() => {
+            const fetchBots = async () => {
+                try {
+                    const res = await api.get('/dashboard/data');
+                    setBots(res.data.bots || []);
+                } catch (e) {
+                    console.error("Erro ao buscar bots", e);
+                }
+            };
+            fetchBots();
+        }, []);
+
+        const handleBotSelection = (botId) => {
+            setSelectedBotIds(prev =>
+                prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]
+            );
+        };
+
+        const handleInputChange = (e) => {
+            const { name, value } = e.target;
+            setFormData(prev => ({ ...prev, [name]: value }));
+        };
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (selectedBotIds.length === 0 || !formData.initialText || !formData.ctaButtonText || !formData.externalLink) {
+                alert('Por favor, preencha todos os campos obrigatórios e selecione ao menos um bot.');
+                return;
+            }
+            setIsSending(true);
+            try {
+                const payload = {
+                    botIds: selectedBotIds,
+                    ...formData
+                };
+                const response = await api.post('/bots/mass-send', payload);
+                alert(response.data.message);
+            } catch (error) {
+                alert('Erro ao enviar disparo: ' + (error.response?.data?.message || error.message));
+            } finally {
+                setIsSending(false);
+            }
+        };
+
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header">
+                    <h2>Disparo em Massa</h2>
+                </div>
+                <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Selecione os Bots de Destino</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                                {bots.map(bot => (
+                                    <label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBotIds.includes(bot.id)}
+                                            onChange={() => handleBotSelection(bot.id)}
+                                        />
+                                        {bot.bot_name}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="initialText">Texto da Mensagem</label>
+                            <textarea id="initialText" name="initialText" className="form-textarea" rows="4" value={formData.initialText} onChange={handleInputChange} required />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="imageUrl">URL da Imagem (Opcional)</label>
+                            <input id="imageUrl" name="imageUrl" type="url" className="form-input" value={formData.imageUrl} onChange={handleInputChange} placeholder="https://exemplo.com/imagem.png" />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="form-group">
+                                <label htmlFor="ctaButtonText">Texto do Botão</label>
+                                <input id="ctaButtonText" name="ctaButtonText" type="text" className="form-input" value={formData.ctaButtonText} onChange={handleInputChange} required />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="externalLink">URL do Botão</label>
+                                <input id="externalLink" name="externalLink" type="url" className="form-input" value={formData.externalLink} onChange={handleInputChange} required />
+                            </div>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isSending}>
+                            {isSending ? 'Enviando...' : 'Iniciar Disparo'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+    
+    function LiveChatPage() {
+        const [bots, setBots] = useState([]);
+        const [selectedBotId, setSelectedBotId] = useState('');
+        const [users, setUsers] = useState([]);
+        const [filteredUsers, setFilteredUsers] = useState([]);
+        const [selectedChat, setSelectedChat] = useState(null);
+        const [messages, setMessages] = useState([]);
+        const [newMessage, setNewMessage] = useState('');
+        const [searchTerm, setSearchTerm] = useState('');
+        const messagesEndRef = useRef(null);
+        useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+        useEffect(() => { const fetch = async () => { const { data } = await api.get('/dashboard/data'); setBots(data.bots || []); if (data.bots && data.bots.length > 0) { setSelectedBotId(data.bots[0].id); } }; fetch(); }, []);
+        const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
+        useEffect(() => { fetchUsers(); }, [fetchUsers]);
+        const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro", e); setMessages([]); } }, [selectedBotId, selectedChat]);
+        useEffect(() => { if (selectedChat) { fetchMessages(); } }, [fetchMessages, selectedChat]);
+        useEffect(() => { const res = users.filter(u => ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || (u.chat_id || '').toString().includes(searchTerm) || (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase())); setFilteredUsers(res); }, [searchTerm, users]);
+        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
+        const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); alert('OK'); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
+        const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) return u.click_id.replace('/start ', ''); return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
+        return (
+            <div className="chat-page-layout">
+                <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+                    <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
+                    <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
+                        <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
+                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${m.sender_type === 'operator' ? 'message-operator' : 'message-user'}`}><strong>{m.sender_type === 'operator' ? 'Você' : m.first_name}</strong>{m.message_text}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
+                        <div className="contact-panel">{selectedChat ? (<><h3>Detalhes</h3><div className="contact-detail"><label>Nome</label><p>{`${selectedChat.first_name || ''} ${selectedChat.last_name || ''}`.trim() || 'Não informado'}</p></div><div className="contact-detail"><label>Username</label><p>{selectedChat.username ? `@${selectedChat.username}` : 'Nenhum'}</p></div><div className="contact-detail"><label>Chat ID</label><p>{selectedChat.chat_id}</p></div><div className="contact-detail"><label>Click ID</label><p>{selectedChat.click_id ? selectedChat.click_id.replace('/start ', '') : 'Nenhum'}</p></div></>) : (<div className="centered-placeholder"><h3>Informações</h3><p>Detalhes do contato aqui.</p></div>)}</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    
+    const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, deletable: false }];
+    const CustomNode = ({ id, type, data, isConnectable }) => {
+        const nodeInfo = {
+            trigger: { icon: '🚀', name: 'Gatilho Inicial', content: 'Início do fluxo com click_id.' },
+            message: { icon: '💬', name: 'Enviar Mensagem', content: data.text ? `"${data.text.substring(0, 50)}..."` : 'Configure o texto.' },
+            image: { icon: '🖼️', name: 'Enviar Imagem', content: data.imageUrl ? 'URL configurada.' : 'Configure a URL.' },
+            video: { icon: '🎬', name: 'Enviar Vídeo', content: data.videoUrl ? 'URL configurada.' : 'Configure a URL.' },
+            audio: { icon: '🎵', name: 'Enviar Áudio', content: data.audioUrl ? 'URL configurada.' : 'Configure a URL.' },
+            delay: { icon: '⏱️', name: 'Atraso', content: `Aguardar por ${data.delayInSeconds || 1}s.` },
+            action_pix: { icon: '💳', name: 'Gerar PIX', content: `Valor: R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
+            action_check_pix: { icon: '🔍', name: 'Consultar PIX', content: 'Verifica se o PIX foi pago.' },
+            action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade em {{city}}.' },
+            forward_flow: { icon: '↪️', name: 'Encaminhar Fluxo', content: data.targetFlowName ? `Ir para: ${data.targetFlowName}` : 'Selecione um fluxo.' }
+        };
+        const info = nodeInfo[type] || { icon: '❓', name: 'Nó' };
+        return (
+            <>
+                {type !== 'trigger' && <Handle type="target" position={Position.Top} isConnectable={isConnectable} />}
+                <div className={`node-header react-flow__node-${type}`}>{info.icon} {info.name}</div>
+                <div className="node-content">{info.content}</div>
+                {type === 'trigger' && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                {type === 'message' && !data.waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
+                {type === 'action_check_pix' && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
+                {['delay', 'action_pix', 'action_city', 'image', 'video', 'audio', 'forward_flow'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+            </>
+        );
+    };
+    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
+    
+    function EditorPanel({ selectedNode, setNodes, setSelectedNode, availableFlows }) {
+        const [nodeData, setNodeData] = useState(selectedNode.data || {});
+        useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
+        const handleChange = (e) => { const { name, value, type, checked } = e.target; const final = type === 'checkbox' ? checked : (type === 'number' ? parseInt(value, 10) || 0 : value); setNodeData(p => ({...p, [name]: final })); };
+        const handleFlowChange = (e) => { const flowId = e.target.value; const flow = availableFlows.find(f => f.id == flowId); setNodeData(p => ({ ...p, targetFlowId: flowId, targetFlowName: flow ? flow.name : '' })); };
+        const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
+        const onDelete = () => { setNodes(nodes => nodes.filter(n => n.id !== selectedNode.id)); setSelectedNode(null); };
+        const renderPanel = () => {
+            switch (selectedNode.type) {
+                case 'message': return (<><div className="form-group"><label>Texto (use {"{{city}}"})</label><textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div className="form-group"><label><input name="showTyping" type="checkbox" checked={!!nodeData.showTyping} onChange={handleChange} style={{marginRight:'0.5rem'}} /> Mostrar "Digitando..."</label></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} style={{marginRight:'0.5rem'}} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
+                case 'image': return (<><div className="form-group"><label>URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/img.png"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'video': return (<><div className="form-group"><label>URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/video.mp4"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'audio': return (<><div className="form-group"><label>URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/audio.mp3"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'delay': return (<div className="form-group"><label>Atraso (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
+                case 'action_pix': return (<div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div>);
+                case 'forward_flow': return (<div className="form-group"><label>Encaminhar para o fluxo</label><select className="form-select" value={nodeData.targetFlowId || ''} onChange={handleFlowChange}><option value="">-- Selecione --</option>{availableFlows.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}</select></div>);
+                default: return <p style={{color: '#6c757d'}}>Sem configurações.</p>;
+            }
+        };
+        return (<div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó</h3>{renderPanel()}<div style={{marginTop: '2rem'}}><button className="btn btn-primary" style={{color: 'var(--bg-primary)', background: 'var(--brand-secondary)'}} onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{width: '100%', marginTop: '1rem'}} onClick={onDelete}>Excluir</button>}</div></div>);
+    }
+    
+    function FlowEditorPage({ flow, onBack }) {
+        const reactFlowWrapper = useRef(null);
+        const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+        const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+        const [selectedNode, setSelectedNode] = useState(null);
+        const [reactFlowInstance, setReactFlowInstance] = useState(null);
+        const [availableFlows, setAvailableFlows] = useState([]);
+        useEffect(() => { if(flow?.nodes) { const c = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; setNodes(c.nodes || initialNodes); setEdges(c.edges || []); } }, [flow]);
+        useEffect(() => { const fetch = async () => { if (flow?.bot_id) { try { const res = await api.get('/flows'); setAvailableFlows(res.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id)); } catch (e) { console.error("Erro", e); } } }; fetch(); }, [flow]);
+        const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'smoothstep', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
+        const onNodeClick = useCallback((_, n) => setSelectedNode(n), []);
+        const onPaneClick = useCallback(() => setSelectedNode(null), []);
+        const onDragOver = useCallback((e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }, []);
+        const onDrop = useCallback((e) => { e.preventDefault(); const bounds = reactFlowWrapper.current.getBoundingClientRect(); const type = e.dataTransfer.getData('application/reactflow'); if (!type) return; const pos = reactFlowInstance.project({ x: e.clientX - bounds.left, y: e.clientY - bounds.top }); const newNode = { id: `${type}-${Date.now()}`, type, position: pos, data: { text: '', delayInSeconds: 1, valueInCents: 1000, showTyping: true, waitForReply: false, replyTimeout: 5, imageUrl: '', videoUrl: '', audioUrl: '', caption: '', targetFlowId: '', targetFlowName: '' } }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance, setNodes]);
+        const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch(e) { alert("Erro."); } };
+        const onDragStart = (e, type) => { e.dataTransfer.setData('application/reactflow', type); e.dataTransfer.effectAllowed = 'move'; };
+        return (
+            <div className="flow-editor-page">
+                <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" style={{marginRight: '0.5rem'}} onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
+                <div className="flow-editor-container">
+                    <div className="flow-sidebar">
+                        <h3>Componentes</h3>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>{Icons.text}<div>Mensagem</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>{Icons.image}<div>Imagem</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>{Icons.video}<div>Vídeo</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'audio')} draggable>{Icons.audio}<div>Áudio</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>{Icons.delay}<div>Atraso</div></div>
+                        <h3>Ações</h3>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>{Icons.pix}<div>Gerar PIX</div></div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_city')} draggable>📍 Consultar Cidade</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'forward_flow')} draggable>{Icons.forward}<div>Encaminhar Fluxo</div></div>
+                    </div>
+                    <div className="reactflow-wrapper" ref={reactFlowWrapper}>
+                        <ReactFlowProvider>
+                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} nodeTypes={nodeTypes} fitView>
+                                <Background variant="dots" gap={24} size={1} />
+                                <Controls />
+                            </ReactFlow>
+                        </ReactFlowProvider>
+                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} availableFlows={availableFlows} />}
+                    </div>
+                </div>
+            </div>
+        );
+    }
     
     function LoginScreen({ onLogin }) {
-        // ... (código inalterado) ...
         const [isLogin, setIsLogin] = useState(true);
 
         const [loginEmail, setLoginEmail] = useState('');
@@ -365,10 +645,10 @@
             );
         }
     }
-    
-    // MUDANÇA 2: Inicialização usando window.ReactDOM.createRoot
+
+    // CORREÇÃO 3: Uso de window.ReactDOM.createRoot para resolver o ReferenceError
     const root = window.ReactDOM.createRoot(document.getElementById('root'));
-    root.render(window.React.createElement(App));
+    root.render(<App />);
   </script>
 </body>
 </html>
