@@ -22,6 +22,7 @@
         --bg-primary: #111111; --bg-secondary: #1A1A1A; --bg-tertiary: #242424;
         --border-color: #2D2D2D; --text-primary: #E5E5E5; --text-secondary: #A3A3A3;
         --brand-primary: #00F5A0; --brand-secondary: #00B372;
+        --info-bg: #1e40af; --info-text: #dbeafe;
         --danger-bg: #441C24; --danger-text: #F87171; --danger-border: #7f1d1d;
         --danger-hover-bg: #7f1d1d; --danger-hover-text: white;
         --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -97,6 +98,7 @@
     .message-bubble-time { font-size: 0.75rem; opacity: 0.7; margin-top: 0.5rem; text-align: right; }
     .message-user { background: var(--bg-tertiary); align-self: flex-start; border-bottom-left-radius: 4px; }
     .message-operator { background: var(--brand-primary); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .message-bot { background: var(--info-bg); color: var(--info-text); align-self: flex-start; border-bottom-left-radius: 4px; }
     .chat-input-area { border-top: 1px solid var(--border-color); padding: 1rem; background: var(--bg-secondary); }
     .chat-input-form { display: flex; align-items: center; gap: 1rem; }
     .chat-input { flex: 1; }
@@ -107,24 +109,10 @@
     .contact-detail p { font-size: 0.95rem; color: var(--text-primary); word-wrap: break-word; }
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
-    
-    .media-preview {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        background-color: var(--bg-primary);
-    }
-    .chat-media {
-        max-width: 300px;
-        max-height: 300px;
-        border-radius: 10px;
-        margin-top: 0.5rem;
-        cursor: pointer;
-    }
-    
-    /* Flow Editor Styles (sem alterações) */
+    .media-preview { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; background-color: var(--bg-primary); }
+    .chat-media { max-width: 300px; max-height: 300px; border-radius: 10px; margin-top: 0.5rem; cursor: pointer; }
+    .attach-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; }
+    .attach-btn:hover { color: var(--text-primary); }
     .flow-editor-page { display: flex; flex-direction: column; height: 100vh; background: #fff; color: #333; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
     .reactflow-wrapper { flex-grow: 1; position: relative; background-color: #f8f9fa; background-image: radial-gradient(#dee2e6 1px, transparent 0); background-size: 30px 30px;}
@@ -179,6 +167,7 @@
     );
     
     const Icons = {
+        attach: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>,
         bots: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M17 12v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>,
         flows: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h3"/><path d="M7 12h3"/><path d="M12 12h3"/><path d="M17 12h3"/><path d="M5 7v10"/><path d="M10 7v10"/><path d="M15 7v10"/><path d="M20 7v10"/><path d="M5 12a5 5 0 0 0 5 5"/><path d="M10 12a5 5 0 0 1 5 5"/><path d="M15 12a5 5 0 0 0 5-5"/></svg>,
         chat: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
@@ -201,7 +190,6 @@
       const [isLoading, setIsLoading] = useState(true);
       const [currentPage, setCurrentPage] = useState('bots');
       const [editingFlow, setEditingFlow] = useState(null);
-
       useEffect(() => {
         const token = localStorage.getItem('authToken');
         if (token) {
@@ -213,26 +201,15 @@
           setIsLoading(false);
         }
       }, []);
-      
-      const handleLogin = (token) => { 
-          localStorage.setItem('authToken', token); 
-          setIsAuthenticated(true); 
-      };
-      const handleLogout = () => { 
-          localStorage.removeItem('authToken'); 
-          setIsAuthenticated(false); 
-      };
-
+      const handleLogin = (token) => { localStorage.setItem('authToken', token); setIsAuthenticated(true); };
+      const handleLogout = () => { localStorage.removeItem('authToken'); setIsAuthenticated(false); };
       const navigateToFlowEditor = (flow) => { setEditingFlow(flow); setCurrentPage('flow-editor'); };
-
       if (isLoading) {
         return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}>A carregar...</div>;
       }
-
       if (!isAuthenticated) { 
         return <LoginScreen onLogin={handleLogin} />; 
       }
-
       const PageComponent = {
         bots: <BotsPage />,
         flows: <FlowsListPage onEditFlow={navigateToFlowEditor} />,
@@ -242,7 +219,6 @@
         integrations: <SettingsPage />,
         'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
       }[currentPage];
-
       return (
         <div className="app-container">
           <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
@@ -335,12 +311,9 @@
         const [selectedBotIds, setSelectedBotIds] = useState([]);
         const [formData, setFormData] = useState({ initialText: '', ctaButtonText: '', externalLink: '', imageUrl: '' });
         const [isSending, setIsSending] = useState(false);
-
         useEffect(() => { api.get('/dashboard/data').then(res => setBots(res.data.bots || [])); }, []);
-
         const handleBotSelection = (botId) => { setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]); };
         const handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
-
         const handleSubmit = async (e) => {
             e.preventDefault();
             if (selectedBotIds.length === 0 || !formData.initialText || !formData.ctaButtonText || !formData.externalLink) {
@@ -357,7 +330,6 @@
                 setIsSending(false);
             }
         };
-
         return (
             <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
                 <div className="page-header"><h2>Disparo em Massa</h2></div>
@@ -378,14 +350,12 @@
         const [apiKey, setApiKey] = useState('');
         const [isLoading, setIsLoading] = useState(true);
         const [isSaving, setIsSaving] = useState(false);
-
         useEffect(() => {
             api.get('/dashboard/data')
                 .then(res => setApiKey(res.data.settings?.hottrack_api_key || ''))
                 .catch(() => alert("Não foi possível carregar as suas configurações."))
                 .finally(() => setIsLoading(false));
         }, []);
-
         const handleSave = async (e) => {
             e.preventDefault();
             setIsSaving(true);
@@ -398,9 +368,7 @@
                 setIsSaving(false);
             }
         };
-        
         if (isLoading) { return <div style={{padding: '2rem 3rem'}}><div className="page-header"><h2>Integrações</h2></div><p>A carregar...</p></div>; }
-
         return (
             <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
                 <div className="page-header"><h2>Integrações</h2></div>
@@ -426,6 +394,7 @@
         const [newMessage, setNewMessage] = useState('');
         const [searchTerm, setSearchTerm] = useState('');
         const messagesEndRef = useRef(null);
+        const fileInputRef = useRef(null);
         useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
         useEffect(() => { api.get('/dashboard/data').then(({data}) => { setBots(data.bots || []); if (data.bots?.[0]) setSelectedBotId(data.bots[0].id) }) }, []);
         const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
@@ -433,10 +402,43 @@
         const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro", e); setMessages([]); } }, [selectedBotId, selectedChat]);
         useEffect(() => { if (selectedChat) { fetchMessages(); } }, [fetchMessages, selectedChat]);
         useEffect(() => { setFilteredUsers(users.filter(u => ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || (u.chat_id || '').toString().includes(searchTerm) || (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase()))); }, [searchTerm, users]);
-        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
+        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
+        const handleFileChange = (e) => {
+            const file = e.target.files[0];
+            if (!file || !selectedChat) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                try {
+                    const base64Data = reader.result.split(',')[1];
+                    await api.post(`/chats/${selectedBotId}/send-media`, {
+                        chatId: selectedChat.chat_id,
+                        fileData: base64Data,
+                        fileType: file.type,
+                        fileName: file.name
+                    });
+                    fetchMessages();
+                } catch (error) {
+                    alert('Falha no upload: ' + (error.response?.data?.message || error.message));
+                }
+            };
+            e.target.value = null; // Reset input
+        };
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
-        
+        const getMessageSender = (msg) => {
+            switch(msg.sender_type) {
+                case 'user': return `${msg.first_name || ''} ${msg.last_name || ''}`.trim();
+                case 'operator': return 'Você (Operador)';
+                case 'bot': return `${msg.first_name || 'Bot'} (Fluxo)`;
+                default: return 'Desconhecido';
+            }
+        };
+        const getMessageBubbleClass = (senderType) => {
+            if (senderType === 'operator') return 'message-operator';
+            if (senderType === 'bot') return 'message-bot';
+            return 'message-user';
+        };
         const renderMessageContent = (msg) => {
             if (msg.media_type === 'photo') {
                 return <img src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" alt="Foto" onClick={() => window.open(`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`)} />;
@@ -446,14 +448,13 @@
             }
             return msg.message_text;
         };
-
         return (
             <div className="chat-page-layout">
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
                         <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
-                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${m.sender_type === 'operator' ? 'message-operator' : 'message-user'}`}><strong>{m.sender_type === 'operator' ? 'Você' : m.first_name}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
+                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()}>{Icons.attach}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">{selectedChat ? (<><h3>Detalhes</h3><div className="contact-detail"><label>Nome</label><p>{`${selectedChat.first_name || ''} ${selectedChat.last_name || ''}`.trim() || 'Não informado'}</p></div><div className="contact-detail"><label>Username</label><p>{selectedChat.username ? `@${selectedChat.username}` : 'Nenhum'}</p></div><div className="contact-detail"><label>Chat ID</label><p>{selectedChat.chat_id}</p></div><div className="contact-detail"><label>Click ID</label><p>{selectedChat.click_id || 'Nenhum'}</p></div></>) : (<div className="centered-placeholder"><h3>Informações</h3><p>Detalhes do contato aqui.</p></div>)}</div>
                     </div>
                 </div>
@@ -464,37 +465,23 @@
     function MediaLibraryPage() {
         const [media, setMedia] = useState([]);
         const [isUploading, setIsUploading] = useState(false);
-
-        const fetchMedia = async () => {
-            try {
-                const { data } = await api.get('/media');
-                setMedia(data);
-            } catch (e) { console.error("Erro ao buscar mídias", e); }
-        };
-
+        const fetchMedia = async () => { try { const { data } = await api.get('/media'); setMedia(data); } catch (e) { console.error("Erro ao buscar mídias", e); }};
         useEffect(() => { fetchMedia(); }, []);
-
         const handleFileChange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const fileType = file.type.startsWith('image/') ? 'image' : (file.type.startsWith('video/') ? 'video' : null);
             if (!fileType) {
                 alert("Formato de ficheiro não suportado.");
                 return;
             }
-
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 setIsUploading(true);
                 try {
                     const base64Data = reader.result.split(',')[1];
-                    await api.post('/media/upload', {
-                        fileName: file.name,
-                        fileData: base64Data,
-                        fileType: fileType
-                    });
+                    await api.post('/media/upload', { fileName: file.name, fileData: base64Data, fileType: fileType });
                     fetchMedia();
                 } catch (error) {
                     alert('Falha no upload: ' + (error.response?.data?.message || error.message));
@@ -503,16 +490,7 @@
                 }
             };
         };
-        
-        const handleDelete = async (id) => {
-            if (confirm('Tem a certeza?')) {
-                try {
-                    await api.delete(`/media/${id}`);
-                    fetchMedia();
-                } catch(e) { alert('Erro ao excluir.'); }
-            }
-        };
-
+        const handleDelete = async (id) => { if (confirm('Tem a certeza?')) { try { await api.delete(`/media/${id}`); fetchMedia(); } catch(e) { alert('Erro ao excluir.'); }}};
         return (
             <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
                 <div className="page-header">
@@ -544,7 +522,6 @@
     function MediaLibraryModal({ onSelect, onClose }) {
         const [media, setMedia] = useState([]);
         useEffect(() => { api.get('/media').then(res => setMedia(res.data)); }, []);
-        
         return (
             <div className="login-overlay" style={{zIndex: 1000}}>
                 <div className="login-box" style={{width: '80vw', maxWidth: '900px', height: '80vh', display: 'flex', flexDirection: 'column'}}>
@@ -568,7 +545,6 @@
             </div>
         );
     }
-
     const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, deletable: false }];
     const CustomNode = ({ id, type, data, isConnectable }) => {
         const nodeInfo = {
@@ -598,23 +574,18 @@
         );
     };
     const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
-    
     function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const [mediaTarget, setMediaTarget] = useState('');
-
         useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
         const handleChange = (e) => { const { name, value, type, checked } = e.target; setNodeData(p => ({...p, [name]: type === 'checkbox' ? checked : value })); };
-        
         const handleSelectMedia = (fileId) => {
             setNodeData(p => ({ ...p, [mediaTarget]: fileId }));
             setIsMediaModalOpen(false);
         };
-        
         const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
         const onDelete = () => { setNodes(nds => nds.filter(n => n.id !== selectedNode.id)); setEdges(eds => eds.filter(e => e.source !== selectedNode.id && e.target !== selectedNode.id)); setSelectedNode(null); };
-        
         const renderPanel = () => {
             switch (selectedNode.type) {
                 case 'message': return (<><div className="form-group"><label>Texto</label><textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
@@ -625,7 +596,6 @@
                 default: return <p>Sem configurações.</p>;
             }
         };
-
         return (
             <>
                 {isMediaModalOpen && <MediaLibraryModal onSelect={handleSelectMedia} onClose={() => setIsMediaModalOpen(false)} />}
@@ -641,7 +611,6 @@
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
         const [availableFlows, setAvailableFlows] = useState([]);
-
         useEffect(() => {
             if (flow?.nodes) {
                 const flowContent = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes;
@@ -649,7 +618,6 @@
                 setEdges(flowContent.edges || []);
             }
         }, [flow]);
-        
         const onNodesDelete = useCallback(
             (deleted) => {
                 setEdges(
@@ -661,7 +629,6 @@
             },
             [nodes, edges]
         );
-
         const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), [setEdges]);
         const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
@@ -682,7 +649,6 @@
             },
             [reactFlowInstance]
         );
-
         const handleSave = async () => {
             try {
                 await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) });
@@ -691,9 +657,7 @@
                 alert("Erro ao salvar.");
             }
         };
-
         const onDragStart = (event, nodeType) => event.dataTransfer.setData('application/reactflow', nodeType);
-
         return (
             <div className="flow-editor-page">
                 <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
@@ -720,7 +684,6 @@
         const [regName, setRegName] = useState('');
         const [regEmail, setRegEmail] = useState('');
         const [regPassword, setRegPassword] = useState('');
-
         const handleLoginSubmit = async (e) => {
             e.preventDefault();
             try {
@@ -730,7 +693,6 @@
                 alert('Falha no login: ' + (e.response?.data?.message || ''));
             }
         };
-
         const handleRegisterSubmit = async (e) => {
             e.preventDefault();
             try {
@@ -741,7 +703,6 @@
                 alert('Falha no cadastro: ' + (e.response?.data?.message || ''));
             }
         };
-        
         if (isLogin) {
             return (
                 <div className="login-overlay">
