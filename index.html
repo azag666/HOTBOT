@@ -141,7 +141,6 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    // CORREÇÃO: Força a desestruturação dos hooks usando a referência global window.React
     const { useState, useCallback, useEffect, useRef, memo } = window.React;
     const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position, MarkerType } = window.ReactFlow;
     
@@ -162,7 +161,6 @@
       }
     );
     
-    // DEFINIÇÕES DE ÍCONES (Mantidas em JSX)
     const Icons = {
         bots: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M17 12v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>,
         flows: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h3"/><path d="M7 12h3"/><path d="M12 12h3"/><path d="M17 12h3"/><path d="M5 7v10"/><path d="M10 7v10"/><path d="M15 7v10"/><path d="M20 7v10"/><path d="M5 12a5 5 0 0 0 5 5"/><path d="M10 12a5 5 0 0 1 5 5"/><path d="M15 12a5 5 0 0 0 5-5"/></svg>,
@@ -499,13 +497,18 @@
     };
     const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
     
-    function EditorPanel({ selectedNode, setNodes, setSelectedNode, availableFlows }) {
+    function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
         const handleChange = (e) => { const { name, value, type, checked } = e.target; const final = type === 'checkbox' ? checked : (type === 'number' ? parseInt(value, 10) || 0 : value); setNodeData(p => ({...p, [name]: final })); };
         const handleFlowChange = (e) => { const flowId = e.target.value; const flow = availableFlows.find(f => f.id == flowId); setNodeData(p => ({ ...p, targetFlowId: flowId, targetFlowName: flow ? flow.name : '' })); };
         const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
-        const onDelete = () => { setNodes(nodes => nodes.filter(n => n.id !== selectedNode.id)); setSelectedNode(null); };
+        const onDelete = () => {
+            const nodeIdToDelete = selectedNode.id;
+            setNodes((nds) => nds.filter((node) => node.id !== nodeIdToDelete));
+            setEdges((eds) => eds.filter((edge) => edge.source !== nodeIdToDelete && edge.target !== nodeIdToDelete));
+            setSelectedNode(null);
+        };
         const renderPanel = () => {
             switch (selectedNode.type) {
                 case 'message': return (<><div className="form-group"><label>Texto (use {"{{city}}"})</label><textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div className="form-group"><label><input name="showTyping" type="checkbox" checked={!!nodeData.showTyping} onChange={handleChange} style={{marginRight:'0.5rem'}} /> Mostrar "Digitando..."</label></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} style={{marginRight:'0.5rem'}} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
@@ -561,7 +564,7 @@
                                 <Controls />
                             </ReactFlow>
                         </ReactFlowProvider>
-                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} availableFlows={availableFlows} />}
+                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setEdges={setEdges} setSelectedNode={setSelectedNode} availableFlows={availableFlows} />}
                     </div>
                 </div>
             </div>
@@ -648,7 +651,6 @@
         }
     }
 
-    // CORREÇÃO: Uso de window.ReactDOM.createRoot para resolver o ReferenceError
     const root = window.ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
