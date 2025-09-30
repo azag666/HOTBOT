@@ -166,6 +166,7 @@
         flows: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h3"/><path d="M7 12h3"/><path d="M12 12h3"/><path d="M17 12h3"/><path d="M5 7v10"/><path d="M10 7v10"/><path d="M15 7v10"/><path d="M20 7v10"/><path d="M5 12a5 5 0 0 0 5 5"/><path d="M10 12a5 5 0 0 1 5 5"/><path d="M15 12a5 5 0 0 0 5-5"/></svg>,
         chat: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
         disparos: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+        integrations: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></svg>,
         logout: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
         send: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
         text: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18H3"/></svg>,
@@ -235,6 +236,7 @@
         flows: <FlowsListPage onEditFlow={navigateToFlowEditor} />,
         chat: <LiveChatPage />,
         disparos: <DisparosPage />,
+        integrations: <SettingsPage />,
         'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
       }[currentPage];
 
@@ -251,7 +253,7 @@
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', disparos: 'Disparos' };
+        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', disparos: 'Disparos', integrations: 'Integrações' };
         return (
             <aside className="sidebar">
                 <div className="logo">H<span className="logo-text">otbot</span></div>
@@ -286,7 +288,7 @@
                 <div>
                     <h3 style={{marginBottom: '1rem', fontSize: '1.5rem', color: 'var(--text-primary)'}}>Bots Ativos</h3>
                     <div className="grid">
-                        {bots.map(bot => (<div key={bot.id} className="bot-card"><div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p><div className="bot-card-actions"><button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button><button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button><button className className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button></div></div>))}
+                        {bots.map(bot => (<div key={bot.id} className="bot-card"><div className="bot-card-header"><div className="icon">{Icons.bots}</div><h3>{bot.bot_name}</h3></div><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Gerencie as configurações.</p><div className="bot-card-actions"><button className="btn btn-secondary btn-sm" onClick={() => handleSetWebhook(bot.id)}>Webhook</button><button className="btn btn-secondary btn-sm" onClick={() => handleUpdateToken(bot.id)}>Token</button><button className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDeleteBot(bot.id)}>Excluir</button></div></div>))}
                         {bots.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum bot criado.</p>}
                     </div>
                 </div>
@@ -433,6 +435,79 @@
         );
     }
     
+    function SettingsPage() {
+        const [apiKey, setApiKey] = useState('');
+        const [isLoading, setIsLoading] = useState(true);
+        const [isSaving, setIsSaving] = useState(false);
+
+        useEffect(() => {
+            const fetchSettings = async () => {
+                try {
+                    const res = await api.get('/dashboard/data');
+                    setApiKey(res.data.settings?.hottrack_api_key || '');
+                } catch (e) {
+                    console.error("Erro ao buscar configurações", e);
+                    alert("Não foi possível carregar suas configurações.");
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchSettings();
+        }, []);
+
+        const handleSave = async (e) => {
+            e.preventDefault();
+            setIsSaving(true);
+            try {
+                const res = await api.put('/settings/hottrack-key', { apiKey });
+                alert(res.data.message);
+            } catch (error) {
+                alert('Erro ao salvar: ' + (error.response?.data?.message || error.message));
+            } finally {
+                setIsSaving(false);
+            }
+        };
+        
+        if (isLoading) {
+            return (
+                <div style={{padding: '2rem 3rem'}}>
+                    <div className="page-header"><h2>Integrações</h2></div>
+                    <p>A carregar...</p>
+                </div>
+            );
+        }
+
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header">
+                    <h2>Integrações</h2>
+                </div>
+                <div className="card" style={{ maxWidth: '700px' }}>
+                    <h3 style={{color: 'var(--text-primary)'}}>Integração com HotTrack PIX</h3>
+                    <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
+                        Insira a sua Chave de API da plataforma HotTrack para permitir que este bot gere e consulte PIXs.
+                    </p>
+                    <form onSubmit={handleSave}>
+                        <div className="form-group">
+                            <label htmlFor="hottrackApiKey">A sua Chave de API HotTrack</label>
+                            <input 
+                                id="hottrackApiKey" 
+                                className="form-input" 
+                                type="password"
+                                value={apiKey} 
+                                onChange={(e) => setApiKey(e.target.value)} 
+                                placeholder="Cole a sua chave de API aqui"
+                            />
+                        </div>
+                        <button className="btn btn-primary" type="submit" disabled={isSaving}>
+                            {isSaving ? 'A guardar...' : 'Guardar Chave'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
     function LiveChatPage() {
         const [bots, setBots] = useState([]);
         const [selectedBotId, setSelectedBotId] = useState('');
@@ -554,17 +629,12 @@
             fetchFlows();
         }, [flow]);
         
-        // CORREÇÃO FINAL: Lógica robusta para deletar nós e suas conexões
         const onNodesDelete = useCallback(
             (deleted) => {
                 setEdges(
                     deleted.reduce((acc, node) => {
-                        const incomers = getIncomers(node, nodes, acc);
-                        const outgoers = getOutgoers(node, nodes, acc);
                         const connectedEdges = getConnectedEdges([node], acc);
-
-                        const remainingEdges = acc.filter((edge) => !connectedEdges.includes(edge));
-                        return remainingEdges;
+                        return acc.filter((edge) => !connectedEdges.includes(edge));
                     }, edges)
                 );
             },
@@ -643,7 +713,7 @@
                                 onInit={setReactFlowInstance}
                                 onDrop={onDrop}
                                 onDragOver={onDragOver}
-                                onNodesDelete={onNodesDelete} // AQUI ESTÁ A CORREÇÃO
+                                onNodesDelete={onNodesDelete}
                                 nodeTypes={nodeTypes}
                                 fitView
                             >
