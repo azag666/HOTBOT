@@ -404,9 +404,9 @@
             api.get('/dashboard/data').then(({data}) => { setBots(data.bots || []); if (data.bots?.[0]) setSelectedBotId(data.bots[0].id) });
             api.get('/flows').then(({data}) => setAllFlows(data || []));
         }, []);
-        const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
+        const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro ao buscar usuários", e); } }, [selectedBotId]);
         useEffect(() => { fetchUsers(); }, [fetchUsers]);
-        const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro", e); setMessages([]); } }, [selectedBotId, selectedChat]);
+        const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro ao buscar mensagens", e); setMessages([]); alert("Erro ao buscar mensagens."); } }, [selectedBotId, selectedChat]);
         useEffect(() => { if (selectedChat) { fetchMessages(); } }, [fetchMessages, selectedChat]);
         useEffect(() => { setFilteredUsers(users.filter(u => ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || (u.chat_id || '').toString().includes(searchTerm) || (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase()))); }, [searchTerm, users]);
         const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
@@ -475,7 +475,7 @@
     }
     
     function ChatActionsPanel({ botId, chat, flows, onAction }) {
-        const [pixValue, setPixValue] = useState(100); // 1.00 R$ em centavos
+        const [pixValue, setPixValue] = useState(100);
         const [selectedFlow, setSelectedFlow] = useState('');
 
         const handleGeneratePix = async () => {
@@ -490,7 +490,8 @@
 
         const handleCheckPix = async () => {
              try {
-                const res = await api.get(`/chats/check-pix/${chat.chat_id}`);
+                // CORRIGIDO: Adicionado botId à URL
+                const res = await api.get(`/chats/check-pix/${botId}/${chat.chat_id}`);
                 alert(`Status do PIX: ${res.data.status}`);
             } catch (e) {
                 alert('Erro: ' + (e.response?.data?.message || e.message));
