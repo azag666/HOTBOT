@@ -434,7 +434,7 @@
             </div>
         );
     }
-
+    
     function SettingsPage() {
         const [apiKey, setApiKey] = useState('');
         const [isLoading, setIsLoading] = useState(true);
@@ -591,7 +591,7 @@
                 case 'video': return (<><div className="form-group"><label>URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/video.mp4"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
                 case 'audio': return (<><div className="form-group"><label>URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} placeholder="https://exemplo.com/audio.mp3"/></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
                 case 'delay': return (<div className="form-group"><label>Atraso (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
-                case 'action_pix': return (<div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div>);
+                case 'action_pix': return (<><div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div><div className="form-group"><label>Texto da Mensagem do PIX</label><textarea name="pixMessageText" className="form-textarea" rows="4" value={nodeData.pixMessageText || ''} onChange={handleChange} placeholder="Ex: PIX Gerado! Copie o código abaixo..." /></div></>);
                 case 'forward_flow': return (<div className="form-group"><label>Encaminhar para o fluxo</label><select className="form-select" value={nodeData.targetFlowId || ''} onChange={handleFlowChange}><option value="">-- Selecione --</option>{availableFlows.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}</select></div>);
                 default: return <p style={{color: '#6c757d'}}>Sem configurações.</p>;
             }
