@@ -398,6 +398,7 @@
         const [messages, setMessages] = useState([]);
         const [newMessage, setNewMessage] = useState('');
         const [searchTerm, setSearchTerm] = useState('');
+        const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const messagesEndRef = useRef(null);
         const fileInputRef = useRef(null);
         useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -425,6 +426,28 @@
             };
             e.target.value = null;
         };
+        const handleSendFromLibrary = async (mediaItem) => {
+            if (!selectedChat) return;
+            setIsMediaModalOpen(false);
+            try {
+                const mediaUrl = `${API_BASE_URL}/media/preview/storage/${mediaItem.file_id}`;
+                const response = await axios.get(mediaUrl, { responseType: 'blob' });
+                const reader = new FileReader();
+                reader.readAsDataURL(response.data);
+                reader.onloadend = async () => {
+                    const base64Data = reader.result.split(',')[1];
+                    await api.post(`/chats/${selectedBotId}/send-media`, {
+                        chatId: selectedChat.chat_id,
+                        fileData: base64Data,
+                        fileType: response.data.type,
+                        fileName: mediaItem.file_name
+                    });
+                    fetchMessages();
+                };
+            } catch (error) {
+                alert('Falha ao enviar mídia da biblioteca: ' + (error.response?.data?.message || error.message));
+            }
+        };
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
         const getMessageSender = (msg) => {
@@ -446,7 +469,7 @@
             if (msg.media_type === 'video') {
                 return <video src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" controls />;
             }
-            if (msg.media_type === 'voice') {
+             if (msg.media_type === 'voice') {
                 return <audio src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-audio" controls />;
             }
             return msg.message_text;
@@ -457,11 +480,12 @@
 
         return (
             <div className="chat-page-layout">
+                {isMediaModalOpen && <MediaLibraryModal onSelect={handleSendFromLibrary} onClose={() => setIsMediaModalOpen(false)} />}
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
                         <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
-                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*,audio/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()}>{Icons.attach}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
+                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*,audio/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()} title="Anexar do computador">{Icons.attach}</button><button type="button" className="attach-btn" onClick={() => setIsMediaModalOpen(true)} title="Selecionar da Biblioteca">{Icons.media}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">
                             {selectedChat ? (<>
                                 <h3>Detalhes</h3>
@@ -494,7 +518,6 @@
 
         const handleCheckPix = async () => {
              try {
-                // CORRIGIDO: Adicionado botId à URL
                 const res = await api.get(`/chats/check-pix/${botId}/${chat.chat_id}`);
                 alert(`Status do PIX: ${res.data.status}`);
             } catch (e) {
@@ -607,7 +630,7 @@
                     </div>
                     <div className="grid" style={{overflowY: 'auto', flex: 1, padding: '1rem'}}>
                         {media.map(item => (
-                            <div key={item.id} className="bot-card" onClick={() => onSelect(item.file_id)} style={{cursor: 'pointer'}}>
+                            <div key={item.id} className="bot-card" onClick={() => onSelect(item)} style={{cursor: 'pointer'}}>
                                 {item.thumbnail_file_id || item.file_type === 'image' ? (
                                     <img src={`${API_BASE_URL}/media/preview/storage/${item.thumbnail_file_id || item.file_id}`} className="media-preview" alt={item.file_name} />
                                  ) : item.file_type === 'video' ? (
@@ -658,8 +681,8 @@
         const [mediaTarget, setMediaTarget] = useState('');
         useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
         const handleChange = (e) => { const { name, value, type, checked } = e.target; setNodeData(p => ({...p, [name]: type === 'checkbox' ? checked : value })); };
-        const handleSelectMedia = (fileId) => {
-            setNodeData(p => ({ ...p, [mediaTarget]: fileId }));
+        const handleSelectMedia = (mediaItem) => {
+            setNodeData(p => ({ ...p, [mediaTarget]: mediaItem.file_id }));
             setIsMediaModalOpen(false);
         };
         const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
@@ -740,7 +763,7 @@
             <div className="flow-editor-page">
                 <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
                 <div className="flow-editor-container">
-                    <div className="flow-sidebar"><h3>Componentes</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>🖼️ Imagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>🎬 Vídeo</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div><h3>Ações</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div></div>
+                    <div className="flow-sidebar"><h3>Componentes</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>🖼️ Imagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>🎬 Vídeo</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'audio')} draggable>🎵 Áudio</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div><h3>Ações</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div></div>
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
                             <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
