@@ -66,6 +66,7 @@
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.8rem 1.6rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; transition: all 0.2s ease-in-out; text-transform: uppercase; letter-spacing: 0.8px; font-size: 0.9rem; }
     .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
     .btn:disabled { background-color: var(--bg-tertiary); color: var(--text-secondary); cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-sm { padding: 0.5rem 1rem; font-size: 0.8rem; }
     .btn-primary { background: var(--brand-primary); color: #000; box-shadow: 0 4px 15px rgba(0, 245, 160, 0.2); }
     .btn-danger { background-color: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border);}
     .btn-danger:hover { background-color: var(--danger-hover-bg); color: var(--danger-hover-text); }
@@ -97,22 +98,24 @@
     .message-bubble strong { display: block; margin-bottom: 0.25rem; font-size: 0.8rem; }
     .message-bubble-time { font-size: 0.75rem; opacity: 0.7; margin-top: 0.5rem; text-align: right; }
     .message-user { background: var(--bg-tertiary); align-self: flex-start; border-bottom-left-radius: 4px; }
-    .message-operator { background: var(--brand-primary); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; }
-    .message-bot { background: var(--info-bg); color: var(--info-text); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .message-attendant { background: var(--brand-primary); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; }
     .chat-input-area { border-top: 1px solid var(--border-color); padding: 1rem; background: var(--bg-secondary); }
     .chat-input-form { display: flex; align-items: center; gap: 1rem; }
     .chat-input { flex: 1; }
-    .contact-panel { width: 320px; border-left: 1px solid var(--border-color); background: var(--bg-primary); padding: 1.5rem; overflow-y: auto; }
-    .contact-panel h3 { margin-bottom: 1.5rem; font-size: 1.2rem; }
-    .contact-detail { margin-bottom: 1.25rem; }
+    .contact-panel { width: 320px; border-left: 1px solid var(--border-color); background: var(--bg-primary); padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;}
+    .contact-panel h3 { margin-bottom: 0; font-size: 1.2rem; }
+    .contact-detail { margin-bottom: 0; }
     .contact-detail label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.25rem; display: block; }
     .contact-detail p { font-size: 0.95rem; color: var(--text-primary); word-wrap: break-word; }
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
     .media-preview { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; background-color: var(--bg-primary); }
     .chat-media { max-width: 300px; max-height: 300px; border-radius: 10px; margin-top: 0.5rem; cursor: pointer; }
-    .attach-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; }
+    .attach-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center;}
     .attach-btn:hover { color: var(--text-primary); }
+    .actions-panel { border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem; }
+    .actions-panel .form-group { margin-bottom: 0.75rem; }
+    .actions-panel .btn { width: 100%; margin-top: 0.5rem; }
     .flow-editor-page { display: flex; flex-direction: column; height: 100vh; background: #fff; color: #333; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
     .reactflow-wrapper { flex-grow: 1; position: relative; background-color: #f8f9fa; background-image: radial-gradient(#dee2e6 1px, transparent 0); background-size: 30px 30px;}
@@ -387,6 +390,7 @@
     function LiveChatPage() {
         const [bots, setBots] = useState([]);
         const [selectedBotId, setSelectedBotId] = useState('');
+        const [allFlows, setAllFlows] = useState([]);
         const [users, setUsers] = useState([]);
         const [filteredUsers, setFilteredUsers] = useState([]);
         const [selectedChat, setSelectedChat] = useState(null);
@@ -396,7 +400,10 @@
         const messagesEndRef = useRef(null);
         const fileInputRef = useRef(null);
         useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-        useEffect(() => { api.get('/dashboard/data').then(({data}) => { setBots(data.bots || []); if (data.bots?.[0]) setSelectedBotId(data.bots[0].id) }) }, []);
+        useEffect(() => {
+            api.get('/dashboard/data').then(({data}) => { setBots(data.bots || []); if (data.bots?.[0]) setSelectedBotId(data.bots[0].id) });
+            api.get('/flows').then(({data}) => setAllFlows(data || []));
+        }, []);
         const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
         useEffect(() => { fetchUsers(); }, [fetchUsers]);
         const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro", e); setMessages([]); } }, [selectedBotId, selectedChat]);
@@ -411,18 +418,11 @@
             reader.onload = async () => {
                 try {
                     const base64Data = reader.result.split(',')[1];
-                    await api.post(`/chats/${selectedBotId}/send-media`, {
-                        chatId: selectedChat.chat_id,
-                        fileData: base64Data,
-                        fileType: file.type,
-                        fileName: file.name
-                    });
+                    await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: file.type, fileName: file.name });
                     fetchMessages();
-                } catch (error) {
-                    alert('Falha no upload: ' + (error.response?.data?.message || error.message));
-                }
+                } catch (error) { alert('Falha no upload: ' + (error.response?.data?.message || error.message)); }
             };
-            e.target.value = null; // Reset input
+            e.target.value = null;
         };
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
@@ -430,14 +430,13 @@
             switch(msg.sender_type) {
                 case 'user': return `${msg.first_name || ''} ${msg.last_name || ''}`.trim();
                 case 'operator': return 'Você (Operador)';
-                case 'bot': return `${msg.first_name || 'Bot'} (Fluxo)`;
+                case 'bot': return `${(selectedBot?.bot_name || 'Bot').replace('@', '')} (Fluxo)`;
                 default: return 'Desconhecido';
             }
         };
         const getMessageBubbleClass = (senderType) => {
-            if (senderType === 'operator') return 'message-operator';
-            if (senderType === 'bot') return 'message-bot';
-            return 'message-user';
+            if (senderType === 'user') return 'message-user';
+            return 'message-attendant';
         };
         const renderMessageContent = (msg) => {
             if (msg.media_type === 'photo') {
@@ -448,6 +447,10 @@
             }
             return msg.message_text;
         };
+        
+        const selectedBot = bots.find(b => b.id === selectedBotId);
+        const botFlows = allFlows.filter(f => f.bot_id === selectedBotId);
+
         return (
             <div className="chat-page-layout">
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
@@ -455,8 +458,74 @@
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
                         <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
                         <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()}>{Icons.attach}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
-                        <div className="contact-panel">{selectedChat ? (<><h3>Detalhes</h3><div className="contact-detail"><label>Nome</label><p>{`${selectedChat.first_name || ''} ${selectedChat.last_name || ''}`.trim() || 'Não informado'}</p></div><div className="contact-detail"><label>Username</label><p>{selectedChat.username ? `@${selectedChat.username}` : 'Nenhum'}</p></div><div className="contact-detail"><label>Chat ID</label><p>{selectedChat.chat_id}</p></div><div className="contact-detail"><label>Click ID</label><p>{selectedChat.click_id || 'Nenhum'}</p></div></>) : (<div className="centered-placeholder"><h3>Informações</h3><p>Detalhes do contato aqui.</p></div>)}</div>
+                        <div className="contact-panel">
+                            {selectedChat ? (<>
+                                <h3>Detalhes</h3>
+                                <div className="contact-detail"><label>Nome</label><p>{`${selectedChat.first_name || ''} ${selectedChat.last_name || ''}`.trim() || 'Não informado'}</p></div>
+                                <div className="contact-detail"><label>Username</label><p>{selectedChat.username ? `@${selectedChat.username}` : 'Nenhum'}</p></div>
+                                <div className="contact-detail"><label>Chat ID</label><p>{selectedChat.chat_id}</p></div>
+                                <div className="contact-detail"><label>Click ID</label><p>{selectedChat.click_id || 'Nenhum'}</p></div>
+                                <ChatActionsPanel botId={selectedBotId} chat={selectedChat} flows={botFlows} onAction={fetchMessages}/>
+                            </>) : (<div className="centered-placeholder"><h3>Informações</h3><p>Detalhes do contato aqui.</p></div>)}
+                        </div>
                     </div>
+                </div>
+            </div>
+        );
+    }
+    
+    function ChatActionsPanel({ botId, chat, flows, onAction }) {
+        const [pixValue, setPixValue] = useState(100); // 1.00 R$ em centavos
+        const [selectedFlow, setSelectedFlow] = useState('');
+
+        const handleGeneratePix = async () => {
+            try {
+                const res = await api.post('/chats/generate-pix', { botId, chatId: chat.chat_id, click_id: chat.click_id, valueInCents: pixValue });
+                alert(res.data.message);
+                onAction();
+            } catch (e) {
+                alert('Erro: ' + (e.response?.data?.message || e.message));
+            }
+        };
+
+        const handleCheckPix = async () => {
+             try {
+                const res = await api.get(`/chats/check-pix/${chat.chat_id}`);
+                alert(`Status do PIX: ${res.data.status}`);
+            } catch (e) {
+                alert('Erro: ' + (e.response?.data?.message || e.message));
+            }
+        };
+
+        const handleStartFlow = async () => {
+            if (!selectedFlow) {
+                alert('Selecione um fluxo para iniciar.');
+                return;
+            }
+            try {
+                const res = await api.post('/chats/start-flow', { botId, chatId: chat.chat_id, flowId: selectedFlow });
+                alert(res.data.message);
+            } catch (e) {
+                alert('Erro: ' + (e.response?.data?.message || e.message));
+            }
+        };
+
+        return (
+            <div className="actions-panel">
+                <h3>Ações Rápidas</h3>
+                <div className="form-group">
+                    <label htmlFor="pixValue">Valor do PIX (em centavos)</label>
+                    <input id="pixValue" type="number" className="form-input" value={pixValue} onChange={e => setPixValue(e.target.value)} />
+                    <button className="btn btn-secondary btn-sm" onClick={handleGeneratePix}>Gerar e Enviar PIX</button>
+                    <button className="btn btn-secondary btn-sm" onClick={handleCheckPix}>Consultar Último PIX</button>
+                </div>
+                <div className="form-group">
+                    <label htmlFor="flowSelect">Iniciar Fluxo</label>
+                    <select id="flowSelect" className="form-select" value={selectedFlow} onChange={e => setSelectedFlow(e.target.value)}>
+                        <option value="">Selecione um fluxo...</option>
+                        {flows.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
+                    <button className="btn btn-secondary btn-sm" onClick={handleStartFlow} disabled={!selectedFlow}>Iniciar Fluxo</button>
                 </div>
             </div>
         );
