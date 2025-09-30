@@ -69,8 +69,8 @@
     .btn-danger { background-color: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border);}
     .btn-danger:hover { background-color: var(--danger-hover-bg); color: var(--danger-hover-text); }
     .btn-secondary { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; }
-    .bot-card { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; transition: all 0.2s ease-in-out; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
+    .bot-card { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 1rem; display: flex; flex-direction: column; transition: all 0.2s ease-in-out; }
     .bot-card:hover { transform: translateY(-5px); border-color: var(--brand-primary); box-shadow: 0 8px 30px rgba(0, 245, 160, 0.1); }
     .bot-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
     .bot-card-header .icon { background: var(--bg-primary); padding: 0.75rem; border-radius: 8px; }
@@ -107,6 +107,24 @@
     .contact-detail p { font-size: 0.95rem; color: var(--text-primary); word-wrap: break-word; }
     .centered-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); }
     .centered-placeholder svg { margin-bottom: 1rem; }
+    
+    .media-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        background-color: var(--bg-primary);
+    }
+    .chat-media {
+        max-width: 300px;
+        max-height: 300px;
+        border-radius: 10px;
+        margin-top: 0.5rem;
+        cursor: pointer;
+    }
+    
+    /* Flow Editor Styles (sem alterações) */
     .flow-editor-page { display: flex; flex-direction: column; height: 100vh; background: #fff; color: #333; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
     .reactflow-wrapper { flex-grow: 1; position: relative; background-color: #f8f9fa; background-image: radial-gradient(#dee2e6 1px, transparent 0); background-size: 30px 30px;}
@@ -418,13 +436,24 @@
         const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
+        
+        const renderMessageContent = (msg) => {
+            if (msg.media_type === 'photo') {
+                return <img src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" alt="Foto" onClick={() => window.open(`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`)} />;
+            }
+            if (msg.media_type === 'video') {
+                return <video src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" controls />;
+            }
+            return msg.message_text;
+        };
+
         return (
             <div className="chat-page-layout">
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
                         <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
-                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${m.sender_type === 'operator' ? 'message-operator' : 'message-user'}`}><strong>{m.sender_type === 'operator' ? 'Você' : m.first_name}</strong>{m.message_text}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
+                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${m.sender_type === 'operator' ? 'message-operator' : 'message-user'}`}><strong>{m.sender_type === 'operator' ? 'Você' : m.first_name}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">{selectedChat ? (<><h3>Detalhes</h3><div className="contact-detail"><label>Nome</label><p>{`${selectedChat.first_name || ''} ${selectedChat.last_name || ''}`.trim() || 'Não informado'}</p></div><div className="contact-detail"><label>Username</label><p>{selectedChat.username ? `@${selectedChat.username}` : 'Nenhum'}</p></div><div className="contact-detail"><label>Chat ID</label><p>{selectedChat.chat_id}</p></div><div className="contact-detail"><label>Click ID</label><p>{selectedChat.click_id || 'Nenhum'}</p></div></>) : (<div className="centered-placeholder"><h3>Informações</h3><p>Detalhes do contato aqui.</p></div>)}</div>
                     </div>
                 </div>
@@ -496,8 +525,13 @@
                 <div className="grid">
                     {media.map(item => (
                         <div key={item.id} className="bot-card">
-                             <div className="bot-card-header"><div className="icon">{item.file_type === 'image' ? Icons.image : Icons.video}</div><h3>{item.file_name}</h3></div>
-                             <p style={{color: 'var(--text-secondary)', fontSize: '0.8rem', wordBreak: 'break-all', marginBottom: '1.5rem', flexGrow: 1}}>File ID: {item.file_id}</p>
+                             {item.thumbnail_file_id || item.file_type === 'image' ? (
+                                <img src={`${API_BASE_URL}/media/preview/storage/${item.thumbnail_file_id || item.file_id}`} className="media-preview" alt={item.file_name} />
+                             ) : (
+                                <div className="media-preview" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{Icons.video}</div>
+                             )}
+                             <h3 style={{fontSize: '1.1rem', marginBottom: '0.5rem'}}>{item.file_name}</h3>
+                             <p style={{color: 'var(--text-secondary)', fontSize: '0.8rem', wordBreak: 'break-all', flexGrow: 1, marginBottom: '1rem'}}>File ID: {item.file_id}</p>
                              <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Excluir</button>
                         </div>
                     ))}
@@ -521,7 +555,12 @@
                     <div className="grid" style={{overflowY: 'auto', flex: 1, padding: '1rem'}}>
                         {media.map(item => (
                             <div key={item.id} className="bot-card" onClick={() => onSelect(item.file_id)} style={{cursor: 'pointer'}}>
-                                <div className="bot-card-header"><div className="icon">{item.file_type === 'image' ? Icons.image : Icons.video}</div><h3>{item.file_name}</h3></div>
+                                {item.thumbnail_file_id || item.file_type === 'image' ? (
+                                    <img src={`${API_BASE_URL}/media/preview/storage/${item.thumbnail_file_id || item.file_id}`} className="media-preview" alt={item.file_name} />
+                                 ) : (
+                                    <div className="media-preview" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{Icons.video}</div>
+                                 )}
+                                <div className="bot-card-header" style={{padding: 0, marginBottom: 0}}><h3 style={{fontSize: '1.1rem'}}>{item.file_name}</h3></div>
                             </div>
                         ))}
                     </div>
