@@ -142,7 +142,7 @@
 
   <script type="text/babel">
     const { useState, useCallback, useEffect, useRef, memo } = window.React;
-    const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position, MarkerType } = window.ReactFlow;
+    const { ReactFlowProvider, ReactFlow, useNodesState, useEdgesState, addEdge, Background, Controls, Handle, Position, MarkerType, applyNodeChanges, applyEdgeChanges } = window.ReactFlow;
     
     const API_BASE_URL = 'https://hottrack.vercel.app/api';
 
@@ -526,13 +526,31 @@
     
     function FlowEditorPage({ flow, onBack }) {
         const reactFlowWrapper = useRef(null);
-        const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-        const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+        const [nodes, setNodes] = useState(initialNodes);
+        const [edges, setEdges] = useState([]);
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
         const [availableFlows, setAvailableFlows] = useState([]);
+
         useEffect(() => { if(flow?.nodes) { const c = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes; setNodes(c.nodes || initialNodes); setEdges(c.edges || []); } }, [flow]);
         useEffect(() => { const fetch = async () => { if (flow?.bot_id) { try { const res = await api.get('/flows'); setAvailableFlows(res.data.filter(f => f.bot_id == flow.bot_id && f.id != flow.id)); } catch (e) { console.error("Erro", e); } } }; fetch(); }, []);
+
+        const onNodesChange = useCallback(
+            (changes) => {
+                setNodes((nds) => {
+                    const nextNodes = applyNodeChanges(changes, nds);
+                    // Lógica para remover arestas conectadas quando um nó é removido
+                    const nodeIdsToRemove = changes.filter(c => c.type === 'remove').map(c => c.id);
+                    if (nodeIdsToRemove.length > 0) {
+                        setEdges((eds) => eds.filter(e => !nodeIdsToRemove.includes(e.source) && !nodeIdsToRemove.includes(e.target)));
+                    }
+                    return nextNodes;
+                });
+            },
+            [setNodes, setEdges]
+        );
+
+        const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), [setEdges]);
         const onConnect = useCallback((p) => setEdges((eds) => addEdge({ ...p, type: 'smoothstep', animated: true, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--brand-primary)' }, style: { stroke: 'var(--brand-primary)', strokeWidth: 2 } }, eds)), []);
         const onNodeClick = useCallback((_, n) => setSelectedNode(n), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
@@ -540,6 +558,7 @@
         const onDrop = useCallback((e) => { e.preventDefault(); const bounds = reactFlowWrapper.current.getBoundingClientRect(); const type = e.dataTransfer.getData('application/reactflow'); if (!type) return; const pos = reactFlowInstance.project({ x: e.clientX - bounds.left, y: e.clientY - bounds.top }); const newNode = { id: `${type}-${Date.now()}`, type, position: pos, data: { text: '', delayInSeconds: 1, valueInCents: 1000, showTyping: true, waitForReply: false, replyTimeout: 5, imageUrl: '', videoUrl: '', audioUrl: '', caption: '', targetFlowId: '', targetFlowName: '' } }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance, setNodes]);
         const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch(e) { alert("Erro."); } };
         const onDragStart = (e, type) => { e.dataTransfer.setData('application/reactflow', type); e.dataTransfer.effectAllowed = 'move'; };
+        
         return (
             <div className="flow-editor-page">
                 <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" style={{marginRight: '0.5rem'}} onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
