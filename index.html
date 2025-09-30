@@ -610,6 +610,18 @@
                 setEdges(flowContent.edges || []);
             }
         }, [flow]);
+        
+        const onNodesDelete = useCallback(
+            (deleted) => {
+                setEdges(
+                    deleted.reduce((acc, node) => {
+                        const connectedEdges = getConnectedEdges([node], acc);
+                        return acc.filter((edge) => !connectedEdges.includes(edge));
+                    }, edges)
+                );
+            },
+            [nodes, edges]
+        );
 
         const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), [setEdges]);
         const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
@@ -650,7 +662,7 @@
                     <div className="flow-sidebar"><h3>Componentes</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>🖼️ Imagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>🎬 Vídeo</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div><h3>Ações</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div></div>
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
-                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} nodeTypes={nodeTypes} fitView>
+                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
                                 <Background />
                                 <Controls />
                             </ReactFlow>
@@ -663,7 +675,64 @@
     }
     
     function LoginScreen({ onLogin }) {
-        // ... (Componente LoginScreen inalterado)
+        const [isLogin, setIsLogin] = useState(true);
+        const [loginEmail, setLoginEmail] = useState('');
+        const [loginPassword, setLoginPassword] = useState('');
+        const [regName, setRegName] = useState('');
+        const [regEmail, setRegEmail] = useState('');
+        const [regPassword, setRegPassword] = useState('');
+
+        const handleLoginSubmit = async (e) => {
+            e.preventDefault();
+            try {
+                const res = await api.post(`/sellers/login`, { email: loginEmail, password: loginPassword });
+                onLogin(res.data.token);
+            } catch (e) {
+                alert('Falha no login: ' + (e.response?.data?.message || ''));
+            }
+        };
+
+        const handleRegisterSubmit = async (e) => {
+            e.preventDefault();
+            try {
+                await api.post(`/sellers/register`, { name: regName, email: regEmail, password: regPassword });
+                alert('Cadastro realizado com sucesso! Você já pode fazer o login.');
+                setIsLogin(true);
+            } catch (e) {
+                alert('Falha no cadastro: ' + (e.response?.data?.message || ''));
+            }
+        };
+        
+        if (isLogin) {
+            return (
+                <div className="login-overlay">
+                    <div className="login-box">
+                        <h2 style={{textAlign: 'center', marginBottom: '1.5rem', fontWeight: 800}}>Acessar Plataforma</h2>
+                        <form onSubmit={handleLoginSubmit}>
+                            <div className="form-group"><label>Email</label><input className="form-input" type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required /></div>
+                            <div className="form-group"><label>Senha</label><input className="form-input" type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required /></div>
+                            <button className="btn btn-primary" type="submit" style={{width: '100%'}}>Entrar</button>
+                        </form>
+                        <p style={{textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem'}}>Não tem uma conta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }} style={{color: 'var(--brand-primary)', fontWeight: '600'}}>Cadastre-se</a></p>
+                    </div>
+                </div>
+            );
+        } else {
+            return (
+                 <div className="login-overlay">
+                    <div className="login-box">
+                        <h2 style={{textAlign: 'center', marginBottom: '1.5rem', fontWeight: 800}}>Criar Conta</h2>
+                        <form onSubmit={handleRegisterSubmit}>
+                            <div className="form-group"><label>Nome</label><input className="form-input" type="text" value={regName} onChange={e => setRegName(e.target.value)} required /></div>
+                            <div className="form-group"><label>Email</label><input className="form-input" type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} required /></div>
+                            <div className="form-group"><label>Senha</label><input className="form-input" type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} required minLength="8" /></div>
+                            <button className="btn btn-primary" type="submit" style={{width: '100%'}}>Criar Conta</button>
+                        </form>
+                         <p style={{textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem'}}>Já tem uma conta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }} style={{color: 'var(--brand-primary)', fontWeight: '600'}}>Faça Login</a></p>
+                    </div>
+                </div>
+            );
+        }
     }
 
     const root = window.ReactDOM.createRoot(document.getElementById('root'));
