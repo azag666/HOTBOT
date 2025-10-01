@@ -1027,7 +1027,8 @@
     
     const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, deletable: false }];
     
-    const CustomNode = ({ id, type, data, isConnectable }) => {
+    const CustomNode = ({ id, type, data, isConnectable, ...props }) => {
+        const { availableFlows } = props;
         const nodeInfo = {
             trigger: { icon: '🚀', name: 'Gatilho Inicial', content: 'Início do fluxo com click_id.' },
             message: { icon: '💬', name: 'Enviar Mensagem', content: data.text ? `"${data.text.substring(0, 50)}..."` : 'Configure o texto.' },
@@ -1038,6 +1039,7 @@
             typing_action: { icon: '✍️', name: 'Ação de Digitando', content: `Simular por ${data.durationInSeconds || 1}s.` },
             action_pix: { icon: '💳', name: 'Gerar PIX', content: `Valor: R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
             action_check_pix: { icon: '🔍', name: 'Consultar PIX', content: 'Verifica se o PIX foi pago.' },
+            forward_flow: { icon: '↪️', name: 'Encaminhar Fluxo', content: data.targetFlowId ? `Para: ${availableFlows?.find(f => f.id == data.targetFlowId)?.name || '...'}` : 'Selecione um fluxo.' },
         };
         const info = nodeInfo[type] || { icon: '❓', name: 'Nó' };
 
@@ -1066,14 +1068,14 @@
                         <Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} />
                     </>
                 )}
-                {['delay', 'typing_action', 'action_pix', 'image', 'video', 'audio'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                {['delay', 'typing_action', 'action_pix', 'image', 'video', 'audio', 'forward_flow'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
             </>
         );
     };
 
-    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, typing_action: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode };
+    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, typing_action: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, forward_flow: CustomNode };
 
-    function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows }) {
+    function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows, openMediaLibrary }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         const textAreaRef = useRef(null);
         
@@ -1081,7 +1083,8 @@
 
         const handleChange = (e) => {
             const { name, value, type, checked } = e.target;
-            const newData = { ...nodeData, [name]: type === 'checkbox' ? checked : value };
+            const finalValue = type === 'checkbox' ? checked : value;
+            const newData = { ...nodeData, [name]: finalValue };
             setNodeData(newData);
             setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: newData } : n));
         };
@@ -1108,13 +1111,25 @@
 
         const renderPanel = () => {
             switch (selectedNode.type) {
-                case 'message': return (<><div className="form-group"><label>Texto</label><textarea ref={textAreaRef} name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div><label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Inserir variável:</label><div style={{marginTop: '0.5rem', marginBottom: '1rem'}}><button className="variable-btn" onClick={() => insertVariable('primeiro_nome')}>Nome</button><button className="variable-btn" onClick={() => insertVariable('nome_completo')}>Nome Completo</button><button className="variable-btn" onClick={() => insertVariable('cidade')}>Cidade</button></div></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
-                case 'image': return (<><div className="form-group"><label>File ID ou URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} /></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
-                case 'video': return (<><div className="form-group"><label>File ID ou URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} /></div><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
-                case 'audio': return (<><div className="form-group"><label>File ID ou URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} /></div><div className="form-group"><label>Duração do áudio (em segundos)</label><p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Define por quanto tempo a ação "gravando áudio" será exibida.</p><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 0} onChange={handleChange} /></div></>);
+                case 'message': return (<>
+                    <div className="form-group"><label>Texto</label><textarea ref={textAreaRef} name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div>
+                    <div><label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Inserir variável:</label><div style={{marginTop: '0.5rem', marginBottom: '1rem'}}><button className="variable-btn" onClick={() => insertVariable('primeiro_nome')}>Nome</button><button className="variable-btn" onClick={() => insertVariable('nome_completo')}>Nome Completo</button><button className="variable-btn" onClick={() => insertVariable('cidade')}>Cidade</button></div></div>
+                    <hr style={{border: 'none', borderTop: '1px solid #e9ecef', margin: '1rem 0'}} />
+                    <div className="form-group"><label>Botão (Opcional)</label><input name="buttonText" type="text" className="form-input" value={nodeData.buttonText || ''} onChange={handleChange} placeholder="Texto do Botão"/><input name="buttonUrl" type="url" className="form-input" value={nodeData.buttonUrl || ''} onChange={handleChange} placeholder="URL do Botão" style={{marginTop: '0.5rem'}}/></div>
+                    <hr style={{border: 'none', borderTop: '1px solid #e9ecef', margin: '1rem 0'}} />
+                    <div className="form-group"><label><input name="addTypingAction" type="checkbox" checked={!!nodeData.addTypingAction} onChange={handleChange} /> Adicionar "Digitando" antes</label></div>
+                    {nodeData.addTypingAction && (<div className="form-group"><label>Duração do "Digitando..." (s)</label><input name="typingDuration" type="number" className="form-input" value={nodeData.typingDuration || 2} onChange={handleChange} /></div>)}
+                    <hr style={{border: 'none', borderTop: '1px solid #e9ecef', margin: '1rem 0'}} />
+                    <div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} /> Aguardar Resposta</label></div>
+                    {nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}
+                </>);
+                case 'image': return (<><div className="form-group"><label>File ID ou URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary btn-sm" onClick={() => openMediaLibrary(media => handleChange({target: { name: 'imageUrl', value: media.file_id}}))}>Selecionar da Biblioteca</button><div className="form-group" style={{marginTop: '1rem'}}><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'video': return (<><div className="form-group"><label>File ID ou URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary btn-sm" onClick={() => openMediaLibrary(media => handleChange({target: { name: 'videoUrl', value: media.file_id}}))}>Selecionar da Biblioteca</button><div className="form-group" style={{marginTop: '1rem'}}><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
+                case 'audio': return (<><div className="form-group"><label>File ID ou URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary btn-sm" onClick={() => openMediaLibrary(media => handleChange({target: { name: 'audioUrl', value: media.file_id}}))}>Selecionar da Biblioteca</button><div className="form-group" style={{marginTop: '1rem'}}><label>Duração do áudio (em segundos)</label><p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Define por quanto tempo a ação "gravando áudio" será exibida.</p><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 0} onChange={handleChange} /></div></>);
                 case 'delay': return (<div className="form-group"><label>Aguardar por (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
                 case 'typing_action': return (<div className="form-group"><label>Duração do "Digitando..." (em segundos)</label><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 1} onChange={handleChange} /></div>);
                 case 'action_pix': return (<><div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div><div className="form-group"><label>Texto da Mensagem do PIX</label><textarea name="pixMessageText" className="form-textarea" rows="4" value={nodeData.pixMessageText || ''} onChange={handleChange} placeholder="Ex: PIX Gerado! Copie o código abaixo..." /></div></>);
+                case 'forward_flow': return (<div className="form-group"><label>Encaminhar para o fluxo</label><select name="targetFlowId" className="form-select" value={nodeData.targetFlowId || ''} onChange={handleChange}><option value="">Selecione um fluxo...</option>{availableFlows.filter(f => f.id !== selectedNode.id).map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}</select></div>);
                 default: return <p>Sem configurações para este nó.</p>;
             }
         };
@@ -1136,12 +1151,20 @@
         const [edges, setEdges, onEdgesChange] = useEdgesState([]);
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
+        const [availableFlows, setAvailableFlows] = useState([]);
+        const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+        const [mediaSelectionCallback, setMediaSelectionCallback] = useState(null);
         
         useEffect(() => {
             if (flow?.nodes) {
                 const flowContent = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes;
                 setNodes(flowContent.nodes || initialNodes);
                 setEdges(flowContent.edges || []);
+            }
+            if(flow?.bot_id) {
+                api.get('/flows')
+                   .then(res => setAvailableFlows(res.data.filter(f => f.bot_id == flow.bot_id && f.id !== flow.id)))
+                   .catch(console.error);
             }
         }, [flow]);
 
@@ -1153,9 +1176,30 @@
         const onDrop = useCallback((event) => { event.preventDefault(); const type = event.dataTransfer.getData('application/reactflow'); if (!type) return; const position = reactFlowInstance.project({ x: event.clientX, y: event.clientY }); const newNode = { id: `${type}-${Date.now()}`, type, position, data: {}, }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance] );
         const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch (e) { alert("Erro ao salvar."); } };
         const onDragStart = (event, nodeType) => event.dataTransfer.setData('application/reactflow', nodeType);
+        
+        const openMediaLibrary = (callback) => { setMediaSelectionCallback(() => callback); setIsMediaModalOpen(true); };
+        const handleSelectMedia = (mediaItem) => { if (mediaSelectionCallback) { mediaSelectionCallback(mediaItem); } setIsMediaModalOpen(false); setMediaSelectionCallback(null); };
+
+        const MemoizedCustomNode = memo(({ data, ...props }) => (
+            <CustomNode data={data} {...props} availableFlows={availableFlows} />
+        ));
+
+        const memoizedNodeTypes = useMemo(() => ({
+            trigger: (props) => <MemoizedCustomNode {...props} />,
+            message: (props) => <MemoizedCustomNode {...props} />,
+            image: (props) => <MemoizedCustomNode {...props} />,
+            video: (props) => <MemoizedCustomNode {...props} />,
+            audio: (props) => <MemoizedCustomNode {...props} />,
+            delay: (props) => <MemoizedCustomNode {...props} />,
+            typing_action: (props) => <MemoizedCustomNode {...props} />,
+            action_pix: (props) => <MemoizedCustomNode {...props} />,
+            action_check_pix: (props) => <MemoizedCustomNode {...props} />,
+            forward_flow: (props) => <MemoizedCustomNode {...props} />,
+        }), [availableFlows]);
 
         return (
             <div className="flow-editor-page">
+                {isMediaModalOpen && <MediaLibraryModal onSelect={handleSelectMedia} onClose={() => setIsMediaModalOpen(false)} />}
                 <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
                 <div className="flow-editor-container">
                     <div className="flow-sidebar">
@@ -1169,15 +1213,16 @@
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'typing_action')} draggable>✍️ Ação de Digitando</div>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div>
                         <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'forward_flow')} draggable>↪️ Encaminhar Fluxo</div>
                     </div>
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
-                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
+                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={memoizedNodeTypes} fitView>
                                 <Background />
                                 <Controls />
                             </ReactFlow>
                         </ReactFlowProvider>
-                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setEdges={setEdges} setSelectedNode={setSelectedNode} />}
+                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setEdges={setEdges} setSelectedNode={setSelectedNode} availableFlows={availableFlows} openMediaLibrary={openMediaLibrary} />}
                     </div>
                 </div>
             </div>
