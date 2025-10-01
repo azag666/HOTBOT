@@ -178,6 +178,7 @@
         chat: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
         media: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
         disparos: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+        history: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a6 6 0 0 1-8.4 0l-6.3-6.3"/><path d="M12 20.7a6 6 0 0 0 8.4 0l1.3-1.3"/></svg>,
         integrations: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></svg>,
         logout: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
         send: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
@@ -253,6 +254,7 @@
         contacts: <ContactsPage bots={bots} />,
         media: <MediaLibraryPage />,
         disparos: <DisparosPage bots={bots} />,
+        'disparos-history': <DisparosHistoryPage />,
         integrations: <SettingsPage />,
         'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
       }[currentPage];
@@ -270,14 +272,23 @@
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', contacts: 'Contatos', media: 'Biblioteca', disparos: 'Disparos', integrations: 'Integrações' };
+        const pages = { 
+            bots: 'Bots', 
+            flows: 'Fluxos', 
+            chat: 'Chat ao Vivo', 
+            contacts: 'Contatos', 
+            media: 'Biblioteca', 
+            disparos: 'Disparos',
+            'disparos-history': 'Histórico',
+            integrations: 'Integrações'
+        };
         return (
             <aside className="sidebar">
                 <div className="logo">H<span className="logo-text">otbot</span></div>
                 <nav className="nav-menu">
                     {Object.entries(pages).map(([key, value]) => (
                         <div key={key} className={`nav-item ${currentPage === key ? 'active' : ''}`} onClick={() => setCurrentPage(key)} title={value}>
-                            {Icons[key]} <span className="nav-text">{value}</span>
+                            {Icons[key] || Icons.history} <span className="nav-text">{value}</span>
                         </div>
                     ))}
                 </nav>
@@ -345,10 +356,11 @@
             </div>
         );
     }
-
+    
     function DisparosPage({ bots }) {
         const [selectedBotIds, setSelectedBotIds] = useState([]);
         const [flowSteps, setFlowSteps] = useState([]);
+        const [campaignName, setCampaignName] = useState('');
         const [isSending, setIsSending] = useState(false);
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const [mediaSelectionCallback, setMediaSelectionCallback] = useState(null);
@@ -360,65 +372,37 @@
         const addStep = (type) => {
             const newStep = { id: Date.now(), type };
             switch (type) {
-                case 'message':
-                    newStep.text = '';
-                    newStep.buttonText = '';
-                    newStep.buttonUrl = '';
-                    break;
-                case 'image':
-                case 'video':
-                case 'audio':
-                    newStep.fileUrl = '';
-                    newStep.caption = '';
-                    break;
-                case 'pix':
-                    newStep.valueInCents = 100;
-                    newStep.pixMessage = '✅ PIX Gerado! Copie o código abaixo:';
-                    newStep.pixButtonText = '📋 Copiar Código';
-                    break;
-                case 'check_pix':
-                    newStep.deliveryText = '✅ Pagamento confirmado! Aqui está seu acesso:';
-                    newStep.deliveryButtonText = 'Acessar Conteúdo';
-                    newStep.deliveryButtonUrl = '';
-                    break;
-                default:
-                    break;
+                case 'message': newStep.text = ''; newStep.buttonText = ''; newStep.buttonUrl = ''; break;
+                case 'image': case 'video': case 'audio': newStep.fileUrl = ''; newStep.caption = ''; break;
+                case 'pix': newStep.valueInCents = 100; newStep.pixMessage = '✅ PIX Gerado! Copie o código abaixo:'; newStep.pixButtonText = '📋 Copiar Código'; break;
+                case 'check_pix': newStep.deliveryText = '✅ Pagamento confirmado! Aqui está seu acesso:'; newStep.deliveryButtonText = 'Acessar Conteúdo'; newStep.deliveryButtonUrl = ''; break;
+                default: break;
             }
             setFlowSteps(prev => [...prev, newStep]);
         };
         
-        const updateStep = (id, field, value) => {
-            setFlowSteps(prev => prev.map(step => step.id === id ? { ...step, [field]: value } : step));
-        };
-
-        const removeStep = (id) => {
-            setFlowSteps(prev => prev.filter(step => step.id !== id));
-        };
-        
-        const openMediaLibrary = (callback) => {
-            setMediaSelectionCallback(() => callback);
-            setIsMediaModalOpen(true);
-        };
+        const updateStep = (id, field, value) => { setFlowSteps(prev => prev.map(step => step.id === id ? { ...step, [field]: value } : step)); };
+        const removeStep = (id) => { setFlowSteps(prev => prev.filter(step => step.id !== id)); };
+        const openMediaLibrary = (callback) => { setMediaSelectionCallback(() => callback); setIsMediaModalOpen(true); };
 
         const handleSelectMedia = (mediaItem) => {
-            if (mediaSelectionCallback) {
-                mediaSelectionCallback(mediaItem.file_id);
-            }
+            if (mediaSelectionCallback) { mediaSelectionCallback(mediaItem.file_id); }
             setIsMediaModalOpen(false);
             setMediaSelectionCallback(null);
         };
         
         const handleSubmit = async (e) => {
             e.preventDefault();
-            if (selectedBotIds.length === 0 || flowSteps.length === 0) {
-                alert('Selecione ao menos um bot e adicione uma ação ao fluxo.');
+            if (!campaignName || selectedBotIds.length === 0 || flowSteps.length === 0) {
+                alert('Preencha o nome da campanha, selecione ao menos um bot e adicione uma ação ao fluxo.');
                 return;
             }
             setIsSending(true);
             try {
-                const response = await api.post('/bots/mass-send', { botIds: selectedBotIds, flowSteps });
+                const response = await api.post('/bots/mass-send', { campaignName, botIds: selectedBotIds, flowSteps });
                 alert(response.data.message || 'Disparo agendado com sucesso!');
                 setFlowSteps([]);
+                setCampaignName('');
             } catch (error) {
                 alert('Erro ao enviar disparo: ' + (error.response?.data?.message || error.message));
             } finally {
@@ -428,51 +412,11 @@
 
         const renderStep = (step) => {
             switch (step.type) {
-                case 'message':
-                    return (
-                        <div key={step.id} className="card" style={{marginBottom: '1rem'}}>
-                            <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>💬 Enviar Mensagem</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
-                            <div className="form-group"><label>Texto da Mensagem</label><textarea className="form-textarea" rows="3" value={step.text} onChange={e => updateStep(step.id, 'text', e.target.value)} placeholder="Use {{primeiro_nome}} ou {{nome_completo}}"/></div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div className="form-group"><label>Texto do Botão (Opcional)</label><input type="text" className="form-input" value={step.buttonText} onChange={e => updateStep(step.id, 'buttonText', e.target.value)} /></div>
-                                <div className="form-group"><label>URL do Botão (Opcional)</label><input type="url" className="form-input" value={step.buttonUrl} onChange={e => updateStep(step.id, 'buttonUrl', e.target.value)} /></div>
-                            </div>
-                        </div>
-                    );
-                case 'image':
-                case 'video':
-                case 'audio':
-                     return (
-                        <div key={step.id} className="card" style={{marginBottom: '1rem'}}>
-                            <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>{step.type === 'image' ? '🖼️' : (step.type === 'video' ? '🎬' : '🎵')} Enviar {step.type.charAt(0).toUpperCase() + step.type.slice(1)}</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
-                            <div className="form-group"><label>File ID ou URL</label><input type="text" className="form-input" value={step.fileUrl} onChange={e => updateStep(step.id, 'fileUrl', e.target.value)} /></div>
-                            <button className="btn btn-secondary btn-sm" style={{marginBottom: '1rem'}} onClick={() => openMediaLibrary(fileId => updateStep(step.id, 'fileUrl', fileId))}>Selecionar da Biblioteca</button>
-                            <div className="form-group"><label>Legenda (Opcional)</label><textarea className="form-textarea" rows="2" value={step.caption} onChange={e => updateStep(step.id, 'caption', e.target.value)} /></div>
-                        </div>
-                    );
-                case 'pix':
-                    return (
-                        <div key={step.id} className="card" style={{marginBottom: '1rem'}}>
-                           <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>💳 Gerar PIX</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
-                           <div className="form-group"><label>Valor (em centavos)</label><input type="number" className="form-input" value={step.valueInCents} onChange={e => updateStep(step.id, 'valueInCents', e.target.value)} /></div>
-                           <div className="form-group"><label>Texto da Mensagem PIX</label><textarea className="form-textarea" rows="2" value={step.pixMessage} onChange={e => updateStep(step.id, 'pixMessage', e.target.value)} /></div>
-                           <div className="form-group"><label>Texto do Botão PIX</label><input type="text" className="form-input" value={step.pixButtonText} onChange={e => updateStep(step.id, 'pixButtonText', e.target.value)} /></div>
-                        </div>
-                    );
-                case 'check_pix':
-                     return (
-                        <div key={step.id} className="card" style={{marginBottom: '1rem', borderLeft: '4px solid var(--info-bg)'}}>
-                            <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>🔍 Verificar PIX & Entregar</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
-                            <p style={{color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem'}}>Esta ação só será executada se o PIX gerado na etapa anterior for pago.</p>
-                            <div className="form-group"><label>Texto de Entrega (Pós-Pagamento)</label><textarea className="form-textarea" rows="3" value={step.deliveryText} onChange={e => updateStep(step.id, 'deliveryText', e.target.value)} /></div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div className="form-group"><label>Texto do Botão de Entrega</label><input type="text" className="form-input" value={step.deliveryButtonText} onChange={e => updateStep(step.id, 'deliveryButtonText', e.target.value)} /></div>
-                                <div className="form-group"><label>URL do Botão de Entrega</label><input type="url" className="form-input" value={step.deliveryButtonUrl} onChange={e => updateStep(step.id, 'deliveryButtonUrl', e.target.value)} /></div>
-                            </div>
-                        </div>
-                    );
-                default:
-                    return null;
+                case 'message': return (<div key={step.id} className="card" style={{marginBottom: '1rem'}}><h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>💬 Enviar Mensagem</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4><div className="form-group"><label>Texto da Mensagem</label><textarea className="form-textarea" rows="3" value={step.text} onChange={e => updateStep(step.id, 'text', e.target.value)} placeholder="Use {{primeiro_nome}} ou {{nome_completo}}"/></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}><div className="form-group"><label>Texto do Botão (Opcional)</label><input type="text" className="form-input" value={step.buttonText} onChange={e => updateStep(step.id, 'buttonText', e.target.value)} /></div><div className="form-group"><label>URL do Botão (Opcional)</label><input type="url" className="form-input" value={step.buttonUrl} onChange={e => updateStep(step.id, 'buttonUrl', e.target.value)} /></div></div></div>);
+                case 'image': case 'video': case 'audio': return (<div key={step.id} className="card" style={{marginBottom: '1rem'}}><h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>{step.type === 'image' ? '🖼️' : (step.type === 'video' ? '🎬' : '🎵')} Enviar {step.type.charAt(0).toUpperCase() + step.type.slice(1)}</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4><div className="form-group"><label>File ID ou URL</label><input type="text" className="form-input" value={step.fileUrl} onChange={e => updateStep(step.id, 'fileUrl', e.target.value)} /></div><button className="btn btn-secondary btn-sm" style={{marginBottom: '1rem'}} onClick={() => openMediaLibrary(fileId => updateStep(step.id, 'fileUrl', fileId))}>Selecionar da Biblioteca</button><div className="form-group"><label>Legenda (Opcional)</label><textarea className="form-textarea" rows="2" value={step.caption} onChange={e => updateStep(step.id, 'caption', e.target.value)} /></div></div>);
+                case 'pix': return (<div key={step.id} className="card" style={{marginBottom: '1rem'}}><h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>💳 Gerar PIX</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4><div className="form-group"><label>Valor (em centavos)</label><input type="number" className="form-input" value={step.valueInCents} onChange={e => updateStep(step.id, 'valueInCents', e.target.value)} /></div><div className="form-group"><label>Texto da Mensagem PIX</label><textarea className="form-textarea" rows="2" value={step.pixMessage} onChange={e => updateStep(step.id, 'pixMessage', e.target.value)} /></div><div className="form-group"><label>Texto do Botão PIX</label><input type="text" className="form-input" value={step.pixButtonText} onChange={e => updateStep(step.id, 'pixButtonText', e.target.value)} /></div></div>);
+                case 'check_pix': return (<div key={step.id} className="card" style={{marginBottom: '1rem', borderLeft: '4px solid var(--info-bg)'}}><h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>🔍 Verificar PIX & Entregar</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4><p style={{color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem'}}>Esta ação só será executada se o PIX gerado na etapa anterior for pago.</p><div className="form-group"><label>Texto de Entrega (Pós-Pagamento)</label><textarea className="form-textarea" rows="3" value={step.deliveryText} onChange={e => updateStep(step.id, 'deliveryText', e.target.value)} /></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}><div className="form-group"><label>Texto do Botão de Entrega</label><input type="text" className="form-input" value={step.deliveryButtonText} onChange={e => updateStep(step.id, 'deliveryButtonText', e.target.value)} /></div><div className="form-group"><label>URL do Botão de Entrega</label><input type="url" className="form-input" value={step.deliveryButtonUrl} onChange={e => updateStep(step.id, 'deliveryButtonUrl', e.target.value)} /></div></div></div>);
+                default: return null;
             }
         };
 
@@ -481,44 +425,98 @@
                 {isMediaModalOpen && <MediaLibraryModal onSelect={handleSelectMedia} onClose={() => setIsMediaModalOpen(false)} />}
                 <div className="page-header"><h2>Disparo em Massa Inteligente</h2></div>
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                    <div className="card" style={{marginBottom: '2rem'}}>
-                         <div className="form-group">
-                            <label>1. Selecione os Bots de Destino</label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                                {bots.map(bot => (
-                                    <label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />
-                                        {bot.bot_name}
-                                    </label>
-                                ))}
-                            </div>
+                    <form onSubmit={handleSubmit}>
+                        <div className="card" style={{marginBottom: '2rem'}}>
+                            <div className="form-group"><label>1. Nome da Campanha</label><input type="text" className="form-input" value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="Ex: Lançamento VIP" required /></div>
+                            <div className="form-group"><label>2. Selecione os Bots de Destino</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>{bots.map(bot => (<label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}><input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />{bot.bot_name}</label>))}</div></div>
                         </div>
-                    </div>
-                    
-                    <div className="card" style={{marginBottom: '2rem'}}>
-                        <label>2. Monte o Fluxo de Disparo</label>
-                        <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Adicione as ações na ordem em que devem ser enviadas.</p>
-                        <div style={{display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem'}}>
-                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('message')}>+ Mensagem</button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('image')}>+ Imagem</button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('video')}>+ Vídeo</button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('audio')}>+ Áudio</button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('pix')}>+ Gerar PIX</button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('check_pix')}>+ Verificar PIX</button>
-                        </div>
-
-                        <div>{flowSteps.map(renderStep)}</div>
-                        {flowSteps.length === 0 && <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>Nenhuma ação adicionada ainda.</p>}
-                    </div>
-                    
-                    <button onClick={handleSubmit} className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={isSending}>
-                        {isSending ? 'Enviando...' : 'Iniciar Disparo para ' + selectedBotIds.length + ' bot(s)'}
-                    </button>
+                        <div className="card" style={{marginBottom: '2rem'}}><label>3. Monte o Fluxo de Disparo</label><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Adicione as ações na ordem em que devem ser enviadas.</p><div style={{display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem'}}><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('message')}>+ Mensagem</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('image')}>+ Imagem</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('video')}>+ Vídeo</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('audio')}>+ Áudio</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('pix')}>+ Gerar PIX</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('check_pix')}>+ Verificar PIX</button></div><div>{flowSteps.map(renderStep)}</div>{flowSteps.length === 0 && <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>Nenhuma ação adicionada ainda.</p>}</div>
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={isSending}>{isSending ? 'Enviando...' : 'Iniciar Disparo para ' + selectedBotIds.length + ' bot(s)'}</button>
+                    </form>
                 </div>
             </div>
         );
     }
     
+    function DisparosHistoryPage() {
+        const [history, setHistory] = useState([]);
+        const [isLoading, setIsLoading] = useState(true);
+        const [isChecking, setIsChecking] = useState(null);
+
+        const fetchHistory = useCallback(() => {
+            setIsLoading(true);
+            api.get('/disparos/history')
+                .then(res => setHistory(res.data))
+                .catch(() => alert('Erro ao carregar o histórico.'))
+                .finally(() => setIsLoading(false));
+        }, []);
+
+        useEffect(() => {
+            fetchHistory();
+        }, [fetchHistory]);
+        
+        const handleCheckConversions = async (historyId) => {
+            setIsChecking(historyId);
+            try {
+                const res = await api.post(`/disparos/check-conversions/${historyId}`);
+                alert(res.data.message);
+                fetchHistory(); // Re-fetch to update conversion count
+            } catch (error) {
+                alert('Erro ao verificar: ' + (error.response?.data?.message || error.message));
+            } finally {
+                setIsChecking(null);
+            }
+        };
+        
+        const getStatusChip = (status) => {
+            const styles = {
+                PENDING: { background: '#a16207', color: '#fefce8' },
+                RUNNING: { background: '#1d4ed8', color: '#dbeafe' },
+                COMPLETED: { background: '#166534', color: '#dcfce7' },
+                FAILED: { background: '#991b1b', color: '#fee2e2' }
+            };
+            return <span style={{...styles[status], padding: '4px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600'}}>{status}</span>
+        }
+
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header"><h2>Histórico de Disparos</h2><button className="btn btn-secondary" onClick={fetchHistory} disabled={isLoading}>Atualizar</button></div>
+                <div className="card">
+                    <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left'}}>
+                        <thead>
+                            <tr style={{borderBottom: '1px solid var(--border-color)'}}>
+                                <th style={{padding: '1rem'}}>Campanha</th>
+                                <th style={{padding: '1rem'}}>Data</th>
+                                <th style={{padding: '1rem'}}>Status</th>
+                                <th style={{padding: '1rem'}}>Envios</th>
+                                <th style={{padding: '1rem'}}>Conversões</th>
+                                <th style={{padding: '1rem'}}>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (<tr><td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>A carregar...</td></tr>) : 
+                             history.map(item => (
+                                <tr key={item.id} style={{borderBottom: '1px solid var(--border-color)'}}>
+                                    <td style={{padding: '1rem', fontWeight: '600'}}>{item.campaign_name}</td>
+                                    <td style={{padding: '1rem'}}>{new Date(item.created_at).toLocaleString()}</td>
+                                    <td style={{padding: '1rem'}}>{getStatusChip(item.status)}</td>
+                                    <td style={{padding: '1rem'}}>{item.total_sent || 0}</td>
+                                    <td style={{padding: '1rem', fontWeight: 'bold', color: 'var(--brand-primary)'}}>{item.conversions || 0}</td>
+                                    <td style={{padding: '1rem'}}>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => handleCheckConversions(item.id)} disabled={isChecking === item.id}>
+                                            {isChecking === item.id ? 'A verificar...' : 'Verificar PIX'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                     {!isLoading && history.length === 0 && <p style={{textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)'}}>Nenhum disparo encontrado.</p>}
+                </div>
+            </div>
+        );
+    }
+
     function SettingsPage() {
         const [apiKey, setApiKey] = useState('');
         const [isLoading, setIsLoading] = useState(true);
