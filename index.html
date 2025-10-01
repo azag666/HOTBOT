@@ -137,13 +137,16 @@
     .react-flow__node-message .node-header { background: #e6fcf5; }
     .react-flow__node-image .node-header { background: #f3e8ff; }
     .react-flow__node-video .node-header { background: #f3e8ff; }
-    .react-flow__node-audio .node-header { background: #f3e8ff; }
+    .react-flow__node-audio .node-header { background: #fff0f6; }
     .react-flow__node-delay .node-header { background: #fff9db; }
+    .react-flow__node-typing_action .node-header { background: #f0f9ff; }
     .react-flow__node-action_pix .node-header { background: #dcfce7; }
     .react-flow__node-action_check_pix .node-header { background: #ffedd5; }
     .react-flow__node-action_city .node-header { background: #e0f2fe; }
     .react-flow__node-forward_flow .node-header { background: #eef2ff; }
     .handle-label { position: absolute; font-size: 11px; color: #6c757d; background: white; padding: 2px 6px; border-radius: 4px; bottom: -24px; border: 1px solid #e9ecef; }
+    .variable-btn { background: #e9ecef; color: #495057; border: none; border-radius: 4px; padding: 2px 8px; margin-right: 5px; cursor: pointer; font-size: 0.8rem;}
+    .variable-btn:hover { background: #dee2e6; }
   </style>
 </head>
 <body>
@@ -466,21 +469,18 @@
         const fetchHistory = useCallback(() => {
             api.get('/disparos/history')
                 .then(res => setHistory(res.data))
-                .catch(() => console.error('Erro ao atualizar histórico.')); // Alterado para não mostrar alert em refresh
+                .catch(() => console.error('Erro ao atualizar histórico.'));
         }, []);
 
         useEffect(() => {
-            // Carga inicial com indicador
             setIsLoading(true);
             api.get('/disparos/history')
                 .then(res => setHistory(res.data))
                 .catch(() => alert('Erro ao carregar o histórico.'))
                 .finally(() => setIsLoading(false));
             
-            // Configura o intervalo para atualização silenciosa
             const intervalId = setInterval(fetchHistory, 5000);
 
-            // Limpa o intervalo quando o componente é desmontado
             return () => clearInterval(intervalId);
         }, [fetchHistory]);
         
@@ -489,7 +489,7 @@
             try {
                 const res = await api.post(`/disparos/check-conversions/${historyId}`);
                 alert(res.data.message);
-                fetchHistory(); // Re-fetch to update conversion count
+                fetchHistory();
             } catch (error) {
                 alert('Erro ao verificar: ' + (error.response?.data?.message || error.message));
             } finally {
@@ -594,7 +594,6 @@
         const [newMessage, setNewMessage] = useState('');
         const [searchTerm, setSearchTerm] = useState('');
         
-        // NOVOS ESTADOS
         const [showOnlyActive, setShowOnlyActive] = useState(false);
         const [inactiveChatIds, setInactiveChatIds] = useState([]);
         const [isValidating, setIsValidating] = useState(false);
@@ -613,8 +612,7 @@
             const chatWindow = chatWindowRef.current;
             if (!chatWindow) return;
 
-            // Smart scroll: only scroll down if user is already near the bottom
-            const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 150; // 150px threshold
+            const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 150;
 
             if (isScrolledToBottom) {
                 chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
@@ -638,7 +636,7 @@
         useEffect(() => {
             if (!selectedBotId) return;
             fetchUsers();
-            const intervalId = setInterval(fetchUsers, 10000); // Poll users every 10 seconds
+            const intervalId = setInterval(fetchUsers, 10000);
             return () => clearInterval(intervalId);
         }, [fetchUsers, selectedBotId]);
 
@@ -655,7 +653,7 @@
         useEffect(() => {
             if (!selectedChat) return;
             fetchMessages(); 
-            const intervalId = setInterval(fetchMessages, 5000); // Poll messages every 5 seconds
+            const intervalId = setInterval(fetchMessages, 5000);
             return () => clearInterval(intervalId);
         }, [fetchMessages, selectedChat]);
         
@@ -727,7 +725,6 @@
             if (msg.media_type === 'photo') { return <img src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" alt="Foto" onClick={() => window.open(`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`)} />; }
             if (msg.media_type === 'video') { return <video src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" controls />; }
             if (msg.media_type === 'voice') { return <audio src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-audio" controls />; }
-            // Renderiza o texto como HTML para suportar tags como <pre> do PIX
             return <div dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, '<br />') }} />;
         };
         
@@ -743,7 +740,6 @@
                             <div className="conversations-header">
                                 <input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                             </div>
-                            {/* NOVO ELEMENTO DE FILTRO */}
                             <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <label htmlFor="activeFilter" style={{ cursor: 'pointer', flexGrow: 1, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                     {isValidating ? 'Validando...' : 'Mostrar apenas ativos'}
@@ -953,7 +949,7 @@
                 const chatIds = inactiveContacts.map(c => c.chat_id);
                 const response = await api.post('/bots/remove-contacts', { botId: selectedBotId, chatIds });
                 alert(response.data.message);
-                setInactiveContacts([]); // Clear the list after removal
+                setInactiveContacts([]);
             } catch (error) {
                 alert('Erro ao remover contatos: ' + (error.response?.data?.message || 'Falha na remoção.'));
             } finally {
@@ -1043,6 +1039,7 @@
             video: { icon: '🎬', name: 'Enviar Vídeo', content: data.videoUrl ? 'Configurado.' : 'Configure.' },
             audio: { icon: '🎵', name: 'Enviar Áudio', content: data.audioUrl ? 'Configurado.' : 'Configure.' },
             delay: { icon: '⏱️', name: 'Atraso', content: `Aguardar por ${data.delayInSeconds || 1}s.` },
+            typing_action: { icon: '✍️', name: 'Ação de Digitando', content: `Simular por ${data.durationInSeconds || 1}s.` },
             action_pix: { icon: '💳', name: 'Gerar PIX', content: `Valor: R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
             action_check_pix: { icon: '🔍', name: 'Consultar PIX', content: 'Verifica se o PIX foi pago.' },
             action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade em {{city}}.' },
@@ -1058,37 +1055,53 @@
                 {type === 'message' && !data.waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
                 {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
                 {type === 'action_check_pix' && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
-                {['delay', 'action_pix', 'action_city', 'image', 'video', 'audio', 'forward_flow'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                {['delay', 'typing_action', 'action_pix', 'action_city', 'image', 'video', 'audio', 'forward_flow'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
             </>
         );
     };
-    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
+    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, typing_action: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
+
     function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const [mediaTarget, setMediaTarget] = useState('');
+        const textAreaRef = useRef(null);
         useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
         const handleChange = (e) => { const { name, value, type, checked } = e.target; setNodeData(p => ({...p, [name]: type === 'checkbox' ? checked : value })); };
-        const handleSelectMedia = (mediaItem) => {
-            setNodeData(p => ({ ...p, [mediaTarget]: mediaItem.file_id }));
-            setIsMediaModalOpen(false);
-        };
+        const handleSelectMedia = (mediaItem) => { setNodeData(p => ({ ...p, [mediaTarget]: mediaItem.file_id })); setIsMediaModalOpen(false); };
         const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
         const onDelete = () => { setNodes(nds => nds.filter(n => n.id !== selectedNode.id)); setEdges(eds => eds.filter(e => e.source !== selectedNode.id && e.target !== selectedNode.id)); setSelectedNode(null); };
+        
+        const insertVariable = (variable) => {
+            const textarea = textAreaRef.current;
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const newText = text.substring(0, start) + `{{${variable}}}` + text.substring(end);
+            setNodeData(p => ({ ...p, text: newText }));
+            setTimeout(() => {
+                textarea.selectionStart = textarea.selectionEnd = start + variable.length + 4;
+                textarea.focus();
+            }, 0);
+        };
+
         const renderPanel = () => {
             switch (selectedNode.type) {
-                case 'message': return (<><div className="form-group"><label>Texto</label><textarea name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
+                case 'message': return (<><div className="form-group"><label>Texto</label><textarea ref={textAreaRef} name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div><label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Inserir variável:</label><div style={{marginTop: '0.5rem', marginBottom: '1rem'}}><button className="variable-btn" onClick={() => insertVariable('primeiro_nome')}>Nome</button><button className="variable-btn" onClick={() => insertVariable('nome_completo')}>Nome Completo</button><button className="variable-btn" onClick={() => insertVariable('cidade')}>Cidade</button></div></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
                 case 'image': return (<><div className="form-group"><label>File ID ou URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('imageUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
                 case 'video': return (<><div className="form-group"><label>File ID ou URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('videoUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
-                case 'audio': return (<><div className="form-group"><label>File ID ou URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('audioUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button></>);
+                case 'audio': return (<><div className="form-group"><label>File ID ou URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('audioUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button><div className="form-group"><label>Duração do áudio (em segundos)</label><p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Define por quanto tempo a ação "gravando áudio" será exibida.</p><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 0} onChange={handleChange} /></div></>);
+                case 'delay': return (<div className="form-group"><label>Aguardar por (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
+                case 'typing_action': return (<div className="form-group"><label>Duração do "Digitando..." (em segundos)</label><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 1} onChange={handleChange} /></div>);
                 case 'action_pix': return (<><div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div><div className="form-group"><label>Texto da Mensagem do PIX</label><textarea name="pixMessageText" className="form-textarea" rows="4" value={nodeData.pixMessageText || ''} onChange={handleChange} placeholder="Ex: PIX Gerado! Copie o código abaixo..." /></div></>);
-                default: return <p>Sem configurações.</p>;
+                default: return <p>Sem configurações para este nó.</p>;
             }
         };
         return (
             <>
                 {isMediaModalOpen && <MediaLibraryModal onSelect={handleSelectMedia} onClose={() => setIsMediaModalOpen(false)} />}
-                <div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó</h3>{renderPanel()}<div style={{marginTop: '2rem'}}><button className="btn btn-primary" onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" style={{width: '100%', marginTop: '1rem'}} onClick={onDelete}>Excluir</button>}</div></div>
+                <div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó: {selectedNode.type}</h3>{renderPanel()}<div style={{marginTop: '2rem', display: 'grid', gap: '0.5rem'}}><button className="btn btn-primary" onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" onClick={onDelete}>Excluir</button>}</div></div>
             </>
         );
     }
@@ -1107,51 +1120,30 @@
                 setEdges(flowContent.edges || []);
             }
         }, [flow]);
-        const onNodesDelete = useCallback(
-            (deleted) => {
-                setEdges(
-                    deleted.reduce((acc, node) => {
-                        const connectedEdges = getConnectedEdges([node], acc);
-                        return acc.filter((edge) => !connectedEdges.includes(edge));
-                    }, edges)
-                );
-            },
-            [nodes, edges]
-        );
+        const onNodesDelete = useCallback((deleted) => { setEdges(deleted.reduce((acc, node) => { const connectedEdges = getConnectedEdges([node], acc); return acc.filter((edge) => !connectedEdges.includes(edge)); }, edges)); }, [nodes, edges] );
         const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), [setEdges]);
         const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
         const onDragOver = useCallback((event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }, []);
-        const onDrop = useCallback(
-            (event) => {
-                event.preventDefault();
-                const type = event.dataTransfer.getData('application/reactflow');
-                if (!type) return;
-                const position = reactFlowInstance.project({ x: event.clientX, y: event.clientY });
-                const newNode = {
-                    id: `${type}-${Date.now()}`,
-                    type,
-                    position,
-                    data: { text: '' },
-                };
-                setNodes((nds) => nds.concat(newNode));
-            },
-            [reactFlowInstance]
-        );
-        const handleSave = async () => {
-            try {
-                await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) });
-                alert("Salvo!");
-            } catch (e) {
-                alert("Erro ao salvar.");
-            }
-        };
+        const onDrop = useCallback((event) => { event.preventDefault(); const type = event.dataTransfer.getData('application/reactflow'); if (!type) return; const position = reactFlowInstance.project({ x: event.clientX, y: event.clientY }); const newNode = { id: `${type}-${Date.now()}`, type, position, data: {}, }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance] );
+        const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch (e) { alert("Erro ao salvar."); } };
         const onDragStart = (event, nodeType) => event.dataTransfer.setData('application/reactflow', nodeType);
         return (
             <div className="flow-editor-page">
                 <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
                 <div className="flow-editor-container">
-                    <div className="flow-sidebar"><h3>Componentes</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>🖼️ Imagem</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>🎬 Vídeo</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'audio')} draggable>🎵 Áudio</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div><h3>Ações</h3><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div><div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div></div>
+                    <div className="flow-sidebar">
+                        <h3>Componentes</h3>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>🖼️ Imagem</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>🎬 Vídeo</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'audio')} draggable>🎵 Áudio</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div>
+                        <h3>Ações</h3>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'typing_action')} draggable>✍️ Ação de Digitando</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div>
+                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div>
+                    </div>
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
                             <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
@@ -1173,25 +1165,8 @@
         const [regName, setRegName] = useState('');
         const [regEmail, setRegEmail] = useState('');
         const [regPassword, setRegPassword] = useState('');
-        const handleLoginSubmit = async (e) => {
-            e.preventDefault();
-            try {
-                const res = await api.post(`/sellers/login`, { email: loginEmail, password: loginPassword });
-                onLogin(res.data.token);
-            } catch (e) {
-                alert('Falha no login: ' + (e.response?.data?.message || ''));
-            }
-        };
-        const handleRegisterSubmit = async (e) => {
-            e.preventDefault();
-            try {
-                await api.post(`/sellers/register`, { name: regName, email: regEmail, password: regPassword });
-                alert('Cadastro realizado com sucesso! Você já pode fazer o login.');
-                setIsLogin(true);
-            } catch (e) {
-                alert('Falha no cadastro: ' + (e.response?.data?.message || ''));
-            }
-        };
+        const handleLoginSubmit = async (e) => { e.preventDefault(); try { const res = await api.post(`/sellers/login`, { email: loginEmail, password: loginPassword }); onLogin(res.data.token); } catch (e) { alert('Falha no login: ' + (e.response?.data?.message || '')); } };
+        const handleRegisterSubmit = async (e) => { e.preventDefault(); try { await api.post(`/sellers/register`, { name: regName, email: regEmail, password: regPassword }); alert('Cadastro realizado com sucesso! Você já pode fazer o login.'); setIsLogin(true); } catch (e) { alert('Falha no cadastro: ' + (e.response?.data?.message || '')); } };
         if (isLogin) {
             return (
                 <div className="login-overlay">
