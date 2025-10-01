@@ -216,17 +216,20 @@
         }
       }, []);
 
+      // <<< CORREÇÃO APLICADA AQUI >>>
       useEffect(() => {
+          // Sempre carrega os dados iniciais para autenticar o usuário e carregar os bots.
+          fetchInitialData();
+          
           const urlParams = new URLSearchParams(window.location.search);
           const shareLink = urlParams.get('link');
-          if (shareLink && !importingFlowLink) {
+
+          // Se um link for encontrado, prepara para a página de importação.
+          if (shareLink) {
               setImportingFlowLink(shareLink);
               setCurrentPage('import-flow');
           }
-          if(!shareLink) {
-            fetchInitialData();
-          }
-      }, [importingFlowLink, fetchInitialData]);
+      }, []); // Executa apenas uma vez quando o componente é montado.
 
       const handleLogin = (token) => {
           localStorage.setItem('authToken', token);
@@ -243,7 +246,13 @@
       const navigateToFlowEditor = (flow) => { setEditingFlow(flow); setCurrentPage('flow-editor'); };
       
       if (isLoading) return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}>A carregar...</div>;
-      if (!isAuthenticated) return <LoginScreen onLogin={handleLogin} />;
+      if (!isAuthenticated) {
+        // Se houver um link de importação, força o login primeiro.
+        if(importingFlowLink) {
+            return <LoginScreen onLogin={handleLogin} />;
+        }
+        return <LoginScreen onLogin={handleLogin} />;
+      }
       
       const PageComponent = {
         bots: <BotsPage bots={bots} fetchBots={fetchInitialData} />,
