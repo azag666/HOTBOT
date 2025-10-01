@@ -594,17 +594,77 @@
             }
         }, [bots, selectedBotId]);
         
-        useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+        useEffect(() => { 
+            if (messages.length) {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }
+        }, [messages.length]);
         
         useEffect(() => {
             api.get('/flows').then(({data}) => setAllFlows(data || []));
         }, []);
 
-        const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro ao buscar usuários", e); } }, [selectedBotId]);
-        useEffect(() => { fetchUsers(); }, [fetchUsers]);
-        const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro ao buscar mensagens", e); setMessages([]); alert("Erro ao buscar mensagens."); } }, [selectedBotId, selectedChat]);
-        useEffect(() => { if (selectedChat) { fetchMessages(); } }, [fetchMessages, selectedChat]);
-        useEffect(() => { setFilteredUsers(users.filter(u => ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || (u.chat_id || '').toString().includes(searchTerm) || (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase()))); }, [searchTerm, users]);
+        const fetchUsers = useCallback(async () => {
+            if (!selectedBotId) return;
+            try {
+                const { data } = await api.get(`/chats/${selectedBotId}`);
+                setUsers(data);
+            } catch (e) {
+                console.error("Erro ao buscar usuários", e);
+            }
+        }, [selectedBotId]);
+        
+        // Polling for user list
+        useEffect(() => {
+            if (!selectedBotId) return;
+            fetchUsers(); // Initial fetch
+            const intervalId = setInterval(fetchUsers, 10000); // Poll every 10 seconds
+            return () => clearInterval(intervalId); // Cleanup on component unmount or bot change
+        }, [fetchUsers, selectedBotId]);
+
+        const fetchMessages = useCallback(async () => {
+             if (!selectedBotId || !selectedChat?.chat_id) return;
+             try {
+                 const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`);
+                 if (data.length > messages.length) {
+                     setMessages(data);
+                 }
+             } catch (e) {
+                 console.error("Erro ao buscar mensagens", e);
+             }
+        }, [selectedBotId, selectedChat, messages.length]);
+
+        // Polling for messages in the selected chat
+        useEffect(() => {
+            if (!selectedChat) return;
+            const intervalId = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+            return () => clearInterval(intervalId);
+        }, [fetchMessages, selectedChat]);
+        
+        useEffect(() => {
+            setFilteredUsers(users.filter(u => ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || (u.chat_id || '').toString().includes(searchTerm) || (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase())));
+        }, [searchTerm, users]);
+
+        useEffect(() => {
+            if (selectedBotId) {
+                setUsers([]);
+                setFilteredUsers([]);
+                setMessages([]);
+                setSelectedChat(null);
+            }
+        }, [selectedBotId]);
+
+        useEffect(() => {
+            if (selectedChat) {
+                const currentChatId = selectedChat.chat_id;
+                const updatedChat = users.find(u => u.chat_id === currentChatId);
+                setSelectedChat(updatedChat || null);
+                setMessages([]); // Clear previous messages
+                fetchMessages(); // Trigger initial message fetch for the new chat
+            }
+        }, [selectedChat?.chat_id, users]);
+
+
         const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
         const handleFileChange = (e) => {
             const file = e.target.files[0];
@@ -649,7 +709,7 @@
             switch(msg.sender_type) {
                 case 'user': return `${msg.first_name || ''} ${msg.last_name || ''}`.trim();
                 case 'operator': return 'Você (Operador)';
-                case 'bot': return `${(selectedBot?.bot_name || 'Bot').replace('@', '')} (Fluxo)`;
+                case 'bot': return `${(selectedBot?.bot_name || 'Bot').replace('@', '')} (Fluxo/Disparo)`;
                 default: return 'Desconhecido';
             }
         };
