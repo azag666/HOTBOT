@@ -117,33 +117,36 @@
     .actions-panel { border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem; }
     .actions-panel .form-group { margin-bottom: 0.75rem; }
     .actions-panel .btn { width: 100%; margin-top: 0.5rem; }
+    
+    /* ESTILOS DO NOVO EDITOR DE FLUXO */
     .flow-editor-page { display: flex; flex-direction: column; height: 100vh; background: #fff; color: #333; }
     .flow-editor-container { flex: 1; display: flex; overflow: hidden; }
     .reactflow-wrapper { flex-grow: 1; position: relative; background-color: #f8f9fa; background-image: radial-gradient(#dee2e6 1px, transparent 0); background-size: 30px 30px;}
     .flow-header { padding: 1rem 1.5rem; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; z-index: 11; }
-    .flow-sidebar { width: 280px; background: white; border-right: 1px solid #e9ecef; padding: 1rem; overflow-y: auto; }
+    .flow-sidebar { width: 280px; background: white; border-right: 1px solid #e9ecef; padding: 1rem; }
     .flow-sidebar h3 { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e9ecef; font-size: 1.1rem; }
     .node-button { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid #dee2e6; text-align: left; cursor: grab; margin-bottom: 0.75rem; transition: all 0.2s; color: #495057; }
     .node-button:hover { border-color: var(--brand-primary); color: var(--brand-secondary); background: #f1f3f5; }
-    .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: white; z-index: 10; padding: 1.5rem; border-left: 1px solid #e9ecef; overflow-y: auto; }
+
+    .editor-panel { position: absolute; top: 0; right: 0; width: 350px; height: 100%; background: white; z-index: 10; border-left: 1px solid #e9ecef; display: flex; flex-direction: column; }
+    .editor-panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; }
+    .editor-panel-content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+    .editor-panel-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; }
+    
+    .action-item { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .action-item:hover { background: #f1f3f5; }
+    .action-item.selected { border-left: 4px solid var(--brand-primary); background: #e6fcf5; }
+    .action-config-panel { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e9ecef; }
+
     .react-flow__node { background: white; border: 1px solid #adb5bd; border-radius: 8px; padding: 0; width: 280px; font-family: var(--font-sans); box-shadow: 0 4px 10px rgba(0,0,0,0.05); color: #343a40; }
     .react-flow__node.selected { border: 2px solid var(--brand-primary); box-shadow: 0 0 15px rgba(0, 245, 160, 0.5); }
     .node-header { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid #e9ecef; }
     .node-content { padding: 1rem; font-size: 0.9rem; color: #6c757d; }
     .react-flow__handle { width: 12px; height: 12px; background: white; border: 2px solid #adb5bd; }
     .react-flow__handle:hover { border-color: var(--brand-primary); }
-    .node-header { color: #212529; }
     .react-flow__node-trigger .node-header { background: #e7f5ff; }
-    .react-flow__node-message .node-header { background: #e6fcf5; }
-    .react-flow__node-image .node-header { background: #f3e8ff; }
-    .react-flow__node-video .node-header { background: #f3e8ff; }
-    .react-flow__node-audio .node-header { background: #fff0f6; }
-    .react-flow__node-delay .node-header { background: #fff9db; }
-    .react-flow__node-typing_action .node-header { background: #f0f9ff; }
-    .react-flow__node-action_pix .node-header { background: #dcfce7; }
-    .react-flow__node-action_check_pix .node-header { background: #ffedd5; }
-    .react-flow__node-action_city .node-header { background: #e0f2fe; }
-    .react-flow__node-forward_flow .node-header { background: #eef2ff; }
+    .react-flow__node-step .node-header { background: #e6fcf5; }
+    
     .handle-label { position: absolute; font-size: 11px; color: #6c757d; background: white; padding: 2px 6px; border-radius: 4px; bottom: -24px; border: 1px solid #e9ecef; }
     .variable-btn { background: #e9ecef; color: #495057; border: none; border-radius: 4px; padding: 2px 8px; margin-right: 5px; cursor: pointer; font-size: 0.8rem;}
     .variable-btn:hover { background: #dee2e6; }
@@ -185,13 +188,6 @@
         integrations: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></svg>,
         logout: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
         send: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-        text: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18H3"/></svg>,
-        image: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
-        video: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>,
-        audio: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5v14M7 5v14"/></svg>,
-        delay: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
-        pix: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 15a5 5 0 1 1 5-5 5 5 0 0 1-5 5z"/><path d="M12 8.5v7"/></svg>,
-        forward: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>
     };
 
     function App() {
@@ -1030,48 +1026,55 @@
             </div>
         );
     }
+
+    // ===== NOVOS COMPONENTES DO EDITOR DE FLUXO =====
+    
     const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, deletable: false }];
+    
+    const getActionIcon = (type) => {
+        const icons = { message: '💬', image: '🖼️', video: '🎬', audio: '🎵', delay: '⏱️', typing_action: '✍️', action_pix: '💳', action_check_pix: '🔍' };
+        return icons[type] || '⚙️';
+    };
+
     const CustomNode = ({ id, type, data, isConnectable }) => {
+        const { label, actions = [], waitForReply } = data;
+
+        const summary = actions.length > 0
+            ? actions.map(a => getActionIcon(a.type)).join(' ')
+            : 'Nenhuma ação configurada.';
+
         const nodeInfo = {
             trigger: { icon: '🚀', name: 'Gatilho Inicial', content: 'Início do fluxo com click_id.' },
-            message: { icon: '💬', name: 'Enviar Mensagem', content: data.text ? `"${data.text.substring(0, 50)}..."` : 'Configure o texto.' },
-            image: { icon: '🖼️', name: 'Enviar Imagem', content: data.imageUrl ? 'Configurado.' : 'Configure.' },
-            video: { icon: '🎬', name: 'Enviar Vídeo', content: data.videoUrl ? 'Configurado.' : 'Configure.' },
-            audio: { icon: '🎵', name: 'Enviar Áudio', content: data.audioUrl ? 'Configurado.' : 'Configure.' },
-            delay: { icon: '⏱️', name: 'Atraso', content: `Aguardar por ${data.delayInSeconds || 1}s.` },
-            typing_action: { icon: '✍️', name: 'Ação de Digitando', content: `Simular por ${data.durationInSeconds || 1}s.` },
-            action_pix: { icon: '💳', name: 'Gerar PIX', content: `Valor: R$ ${((data.valueInCents || 0) / 100).toFixed(2)}.` },
-            action_check_pix: { icon: '🔍', name: 'Consultar PIX', content: 'Verifica se o PIX foi pago.' },
-            action_city: { icon: '📍', name: 'Consultar Cidade', content: 'Salva a cidade em {{city}}.' },
-            forward_flow: { icon: '↪️', name: 'Encaminhar Fluxo', content: data.targetFlowName ? `Ir para: ${data.targetFlowName}` : 'Selecione um fluxo.' }
+            step: { icon: '▶️', name: label || 'Etapa', content: summary }
         };
+
         const info = nodeInfo[type] || { icon: '❓', name: 'Nó' };
+
         return (
             <>
                 {type !== 'trigger' && <Handle type="target" position={Position.Top} isConnectable={isConnectable} />}
                 <div className={`node-header react-flow__node-${type}`}>{info.icon} {info.name}</div>
                 <div className="node-content">{info.content}</div>
+                
                 {type === 'trigger' && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
-                {type === 'message' && !data.waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
-                {type === 'message' && data.waitForReply && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
-                {type === 'action_check_pix' && (<><div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Pago</div><Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} /><div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Pendente</div><Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} /></>)}
-                {['delay', 'typing_action', 'action_pix', 'action_city', 'image', 'video', 'audio', 'forward_flow'].includes(type) && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                
+                {type === 'step' && !waitForReply && <Handle type="source" position={Position.Bottom} id="a" isConnectable={isConnectable} />}
+                {type === 'step' && waitForReply && (
+                    <>
+                        <div className="handle-label" style={{ left: '25%', transform: 'translateX(-50%)' }}>Com Resp.</div>
+                        <Handle type="source" position={Position.Bottom} id="a" style={{ left: '25%' }} isConnectable={isConnectable} />
+                        <div className="handle-label" style={{ left: '75%', transform: 'translateX(-50%)' }}>Sem Resp.</div>
+                        <Handle type="source" position={Position.Bottom} id="b" style={{ left: '75%' }} isConnectable={isConnectable} />
+                    </>
+                )}
             </>
         );
     };
-    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, typing_action: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, action_city: CustomNode, forward_flow: CustomNode };
 
-    function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows }) {
-        const [nodeData, setNodeData] = useState(selectedNode.data || {});
-        const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-        const [mediaTarget, setMediaTarget] = useState('');
+    const nodeTypes = { trigger: CustomNode, step: CustomNode };
+
+    const ActionConfigPanel = ({ action, updateAction, deleteAction, availableFlows }) => {
         const textAreaRef = useRef(null);
-        useEffect(() => { setNodeData(selectedNode.data || {}) }, [selectedNode]);
-        const handleChange = (e) => { const { name, value, type, checked } = e.target; setNodeData(p => ({...p, [name]: type === 'checkbox' ? checked : value })); };
-        const handleSelectMedia = (mediaItem) => { setNodeData(p => ({ ...p, [mediaTarget]: mediaItem.file_id })); setIsMediaModalOpen(false); };
-        const onSave = () => { setNodes(nodes => nodes.map(n => n.id === selectedNode.id ? {...n, data: nodeData} : n)); setSelectedNode(null); };
-        const onDelete = () => { setNodes(nds => nds.filter(n => n.id !== selectedNode.id)); setEdges(eds => eds.filter(e => e.source !== selectedNode.id && e.target !== selectedNode.id)); setSelectedNode(null); };
-        
         const insertVariable = (variable) => {
             const textarea = textAreaRef.current;
             if (!textarea) return;
@@ -1079,79 +1082,155 @@
             const end = textarea.selectionEnd;
             const text = textarea.value;
             const newText = text.substring(0, start) + `{{${variable}}}` + text.substring(end);
-            setNodeData(p => ({ ...p, text: newText }));
+            updateAction('text', newText);
             setTimeout(() => {
                 textarea.selectionStart = textarea.selectionEnd = start + variable.length + 4;
                 textarea.focus();
             }, 0);
         };
 
-        const renderPanel = () => {
-            switch (selectedNode.type) {
-                case 'message': return (<><div className="form-group"><label>Texto</label><textarea ref={textAreaRef} name="text" className="form-textarea" rows="5" value={nodeData.text || ''} onChange={handleChange} /></div><div><label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Inserir variável:</label><div style={{marginTop: '0.5rem', marginBottom: '1rem'}}><button className="variable-btn" onClick={() => insertVariable('primeiro_nome')}>Nome</button><button className="variable-btn" onClick={() => insertVariable('nome_completo')}>Nome Completo</button><button className="variable-btn" onClick={() => insertVariable('cidade')}>Cidade</button></div></div><div className="form-group"><label><input name="waitForReply" type="checkbox" checked={!!nodeData.waitForReply} onChange={handleChange} /> Aguardar Resposta</label></div>{nodeData.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input name="replyTimeout" type="number" className="form-input" value={nodeData.replyTimeout || 5} onChange={handleChange} /></div>)}</>);
-                case 'image': return (<><div className="form-group"><label>File ID ou URL da Imagem</label><input name="imageUrl" type="text" className="form-input" value={nodeData.imageUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('imageUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
-                case 'video': return (<><div className="form-group"><label>File ID ou URL do Vídeo</label><input name="videoUrl" type="text" className="form-input" value={nodeData.videoUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('videoUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button><div className="form-group"><label>Legenda</label><textarea name="caption" className="form-textarea" rows="3" value={nodeData.caption || ''} onChange={handleChange} /></div></>);
-                case 'audio': return (<><div className="form-group"><label>File ID ou URL do Áudio</label><input name="audioUrl" type="text" className="form-input" value={nodeData.audioUrl || ''} onChange={handleChange} /></div><button className="btn btn-secondary" style={{width: '100%', marginBottom: '1rem'}} onClick={() => { setMediaTarget('audioUrl'); setIsMediaModalOpen(true); }}>Selecionar da Biblioteca</button><div className="form-group"><label>Duração do áudio (em segundos)</label><p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Define por quanto tempo a ação "gravando áudio" será exibida.</p><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 0} onChange={handleChange} /></div></>);
-                case 'delay': return (<div className="form-group"><label>Aguardar por (segundos)</label><input name="delayInSeconds" type="number" className="form-input" value={nodeData.delayInSeconds || 1} onChange={handleChange} /></div>);
-                case 'typing_action': return (<div className="form-group"><label>Duração do "Digitando..." (em segundos)</label><input name="durationInSeconds" type="number" className="form-input" value={nodeData.durationInSeconds || 1} onChange={handleChange} /></div>);
-                case 'action_pix': return (<><div className="form-group"><label>Valor (centavos)</label><input name="valueInCents" type="number" className="form-input" value={nodeData.valueInCents || 0} onChange={handleChange} /></div><div className="form-group"><label>Texto da Mensagem do PIX</label><textarea name="pixMessageText" className="form-textarea" rows="4" value={nodeData.pixMessageText || ''} onChange={handleChange} placeholder="Ex: PIX Gerado! Copie o código abaixo..." /></div></>);
-                default: return <p>Sem configurações para este nó.</p>;
+        const commonProps = (field) => ({
+            value: action.data?.[field] || '',
+            onChange: (e) => updateAction(field, e.target.value)
+        });
+
+        const renderConfig = () => {
+            switch(action.type) {
+                case 'message': return (<><div className="form-group"><label>Texto da Mensagem</label><textarea ref={textAreaRef} className="form-textarea" rows="5" {...commonProps('text')} /></div><div><label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Inserir variável:</label><div style={{marginTop: '0.5rem', marginBottom: '1rem'}}><button className="variable-btn" onClick={() => insertVariable('primeiro_nome')}>Nome</button><button className="variable-btn" onClick={() => insertVariable('nome_completo')}>Nome Completo</button><button className="variable-btn" onClick={() => insertVariable('cidade')}>Cidade</button></div></div></>);
+                case 'image': return (<><div className="form-group"><label>File ID ou URL da Imagem</label><input type="text" className="form-input" {...commonProps('fileUrl')} /></div><div className="form-group"><label>Legenda</label><textarea className="form-textarea" rows="3" {...commonProps('caption')} /></div></>);
+                case 'video': return (<><div className="form-group"><label>File ID ou URL do Vídeo</label><input type="text" className="form-input" {...commonProps('fileUrl')} /></div><div className="form-group"><label>Legenda</label><textarea className="form-textarea" rows="3" {...commonProps('caption')} /></div></>);
+                case 'audio': return (<><div className="form-group"><label>File ID ou URL do Áudio</label><input type="text" className="form-input" {...commonProps('fileUrl')} /></div><div className="form-group"><label>Duração do áudio (em segundos)</label><p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Simula "gravando áudio..." por este tempo.</p><input type="number" className="form-input" {...commonProps('durationInSeconds')} /></div></>);
+                case 'delay': return <div className="form-group"><label>Aguardar por (segundos)</label><input type="number" className="form-input" {...commonProps('delayInSeconds')} /></div>;
+                case 'typing_action': return <div className="form-group"><label>Duração do "Digitando..." (em segundos)</label><input type="number" className="form-input" {...commonProps('durationInSeconds')} /></div>;
+                case 'action_pix': return (<><div className="form-group"><label>Valor (em centavos)</label><input type="number" className="form-input" {...commonProps('valueInCents')} /></div><div className="form-group"><label>Texto da Mensagem PIX</label><textarea className="form-textarea" rows="4" {...commonProps('pixMessageText')} placeholder="Ex: PIX Gerado! Copie o código abaixo..." /></div></>);
+                default: return <p>Sem configurações para esta ação.</p>;
             }
-        };
-        return (
-            <>
-                {isMediaModalOpen && <MediaLibraryModal onSelect={handleSelectMedia} onClose={() => setIsMediaModalOpen(false)} />}
-                <div className="editor-panel"><h3 style={{marginBottom: '1.5rem'}}>Editar Nó: {selectedNode.type}</h3>{renderPanel()}<div style={{marginTop: '2rem', display: 'grid', gap: '0.5rem'}}><button className="btn btn-primary" onClick={onSave}>Salvar</button>{selectedNode.type !== 'trigger' && <button className="btn btn-danger" onClick={onDelete}>Excluir</button>}</div></div>
-            </>
-        );
+        }
+        return <div className="action-config-panel">{renderConfig()}<button className="btn btn-danger btn-sm" style={{width: '100%'}} onClick={deleteAction}>Excluir Ação</button></div>
     }
-    
+
+    const EditorPanel = ({ selectedNode, setNodes, setSelectedNode }) => {
+        const [selectedActionId, setSelectedActionId] = useState(null);
+
+        const updateNodeData = (field, value) => {
+            setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, [field]: value } } : n));
+        };
+
+        const addAction = (type) => {
+            const newAction = { id: Date.now(), type, data: {} };
+            const actions = [...(selectedNode.data.actions || []), newAction];
+            updateNodeData('actions', actions);
+        };
+
+        const updateAction = (actionId, field, value) => {
+            const actions = (selectedNode.data.actions || []).map(a => a.id === actionId ? { ...a, data: { ...a.data, [field]: value } } : a);
+            updateNodeData('actions', actions);
+        };
+        
+        const deleteAction = (actionId) => {
+            const actions = (selectedNode.data.actions || []).filter(a => a.id !== actionId);
+            updateNodeData('actions', actions);
+            setSelectedActionId(null);
+        };
+        
+        const onDeleteNode = () => {
+            setNodes(nds => nds.filter(n => n.id !== selectedNode.id));
+            setSelectedNode(null);
+        };
+        
+        const actionTypes = [
+            { type: 'message', label: '💬 Mensagem' },
+            { type: 'image', label: '🖼️ Imagem' },
+            { type: 'video', label: '🎬 Vídeo' },
+            { type: 'audio', label: '🎵 Áudio' },
+            { type: 'delay', label: '⏱️ Atraso' },
+            { type: 'typing_action', label: '✍️ Digitando...' },
+            { type: 'action_pix', label: '💳 Gerar PIX' },
+        ];
+        
+        const selectedAction = (selectedNode.data.actions || []).find(a => a.id === selectedActionId);
+        
+        return (
+            <div className="editor-panel">
+                <div className="editor-panel-header"><h3>Editar Etapa</h3></div>
+                <div className="editor-panel-content">
+                    <div className="form-group"><label>Nome da Etapa</label><input type="text" className="form-input" value={selectedNode.data.label || ''} onChange={e => updateNodeData('label', e.target.value)} /></div>
+                    <div className="form-group"><label><input type="checkbox" checked={!!selectedNode.data.waitForReply} onChange={e => updateNodeData('waitForReply', e.target.checked)} /> Aguardar Resposta do Usuário</label></div>
+                    {selectedNode.data.waitForReply && (<div className="form-group"><label>Tempo de espera (min)</label><input type="number" className="form-input" value={selectedNode.data.replyTimeout || 5} onChange={e => updateNodeData('replyTimeout', e.target.value)} /></div>)}
+                    
+                    <hr style={{border: '1px solid #e9ecef', margin: '1.5rem 0'}} />
+                    
+                    <h4>Ações na Etapa</h4>
+                    {(selectedNode.data.actions || []).map(action => (
+                        <div key={action.id} className={`action-item ${action.id === selectedActionId ? 'selected' : ''}`} onClick={() => setSelectedActionId(action.id)}>
+                           <span>{getActionIcon(action.type)} {action.type.replace('_', ' ')}</span>
+                        </div>
+                    ))}
+
+                    <div className="form-group" style={{marginTop: '1rem'}}>
+                        <select className="form-select" onChange={e => addAction(e.target.value)} value="">
+                            <option value="" disabled>+ Adicionar Ação</option>
+                            {actionTypes.map(at => <option key={at.type} value={at.type}>{at.label}</option>)}
+                        </select>
+                    </div>
+
+                    {selectedAction && <ActionConfigPanel action={selectedAction} updateAction={(field, value) => updateAction(selectedAction.id, field, value)} deleteAction={() => deleteAction(selectedAction.id)} />}
+                </div>
+                <div className="editor-panel-footer">
+                    <button className="btn btn-danger" style={{width: '100%'}} onClick={onDeleteNode}>Excluir Etapa</button>
+                </div>
+            </div>
+        );
+    };
+
     function FlowEditorPage({ flow, onBack }) {
-        const reactFlowWrapper = useRef(null);
         const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
         const [edges, setEdges, onEdgesChange] = useEdgesState([]);
         const [selectedNode, setSelectedNode] = useState(null);
         const [reactFlowInstance, setReactFlowInstance] = useState(null);
-        const [availableFlows, setAvailableFlows] = useState([]);
+        
         useEffect(() => {
             if (flow?.nodes) {
                 const flowContent = typeof flow.nodes === 'string' ? JSON.parse(flow.nodes) : flow.nodes;
-                setNodes(flowContent.nodes || initialNodes);
+                const initialNodes = flowContent.nodes || [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {} }];
+                setNodes(initialNodes.map(n => ({ ...n, data: n.data || {} }))); // Garante que data exista
                 setEdges(flowContent.edges || []);
             }
         }, [flow]);
+        
         const onNodesDelete = useCallback((deleted) => { setEdges(deleted.reduce((acc, node) => { const connectedEdges = getConnectedEdges([node], acc); return acc.filter((edge) => !connectedEdges.includes(edge)); }, edges)); }, [nodes, edges] );
         const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), [setEdges]);
         const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
-        const onDragOver = useCallback((event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }, []);
-        const onDrop = useCallback((event) => { event.preventDefault(); const type = event.dataTransfer.getData('application/reactflow'); if (!type) return; const position = reactFlowInstance.project({ x: event.clientX, y: event.clientY }); const newNode = { id: `${type}-${Date.now()}`, type, position, data: {}, }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance] );
+        
+        const addStepNode = () => {
+             const newNode = {
+                id: `step-${Date.now()}`,
+                type: 'step',
+                position: { x: Math.random() * 400, y: Math.random() * 400 },
+                data: { label: 'Nova Etapa', actions: [], waitForReply: false },
+            };
+            setNodes((nds) => nds.concat(newNode));
+        };
+        
         const handleSave = async () => { try { await api.put(`/flows/${flow.id}`, { name: flow.name, nodes: JSON.stringify({ nodes, edges }) }); alert("Salvo!"); } catch (e) { alert("Erro ao salvar."); } };
-        const onDragStart = (event, nodeType) => event.dataTransfer.setData('application/reactflow', nodeType);
+
         return (
             <div className="flow-editor-page">
                 <div className="flow-header"><h3>Editando: {flow.name}</h3><div><button className="btn btn-secondary" onClick={onBack}>Voltar</button><button className="btn btn-primary" onClick={handleSave}>Salvar</button></div></div>
                 <div className="flow-editor-container">
                     <div className="flow-sidebar">
                         <h3>Componentes</h3>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'message')} draggable>💬 Mensagem</div>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'image')} draggable>🖼️ Imagem</div>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'video')} draggable>🎬 Vídeo</div>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'audio')} draggable>🎵 Áudio</div>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'delay')} draggable>⏱️ Atraso</div>
-                        <h3>Ações</h3>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'typing_action')} draggable>✍️ Ação de Digitando</div>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_pix')} draggable>💳 Gerar PIX</div>
-                        <div className="node-button" onDragStart={(e) => onDragStart(e, 'action_check_pix')} draggable>🔍 Consultar PIX</div>
+                        <div className="node-button" onClick={addStepNode} style={{cursor: 'pointer'}}>▶️ Nova Etapa</div>
                     </div>
-                    <div className="reactflow-wrapper" ref={reactFlowWrapper}>
+                    <div className="reactflow-wrapper">
                         <ReactFlowProvider>
-                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
+                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
                                 <Background />
                                 <Controls />
                             </ReactFlow>
                         </ReactFlowProvider>
-                        {selectedNode && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setEdges={setEdges} setSelectedNode={setSelectedNode} />}
+                        {selectedNode && selectedNode.type !== 'trigger' && <EditorPanel selectedNode={selectedNode} setNodes={setNodes} setSelectedNode={setSelectedNode} />}
                     </div>
                 </div>
             </div>
