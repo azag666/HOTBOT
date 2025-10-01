@@ -348,37 +348,172 @@
 
     function DisparosPage({ bots }) {
         const [selectedBotIds, setSelectedBotIds] = useState([]);
-        const [formData, setFormData] = useState({ initialText: '', ctaButtonText: '', externalLink: '', imageUrl: '' });
+        const [flowSteps, setFlowSteps] = useState([]);
         const [isSending, setIsSending] = useState(false);
-        const handleBotSelection = (botId) => { setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]); };
-        const handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
+        const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+        const [mediaSelectionCallback, setMediaSelectionCallback] = useState(null);
+
+        const handleBotSelection = (botId) => {
+            setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]);
+        };
+
+        const addStep = (type) => {
+            const newStep = { id: Date.now(), type };
+            switch (type) {
+                case 'message':
+                    newStep.text = '';
+                    newStep.buttonText = '';
+                    newStep.buttonUrl = '';
+                    break;
+                case 'image':
+                case 'video':
+                case 'audio':
+                    newStep.fileUrl = '';
+                    newStep.caption = '';
+                    break;
+                case 'pix':
+                    newStep.valueInCents = 100;
+                    newStep.pixMessage = '✅ PIX Gerado! Copie o código abaixo:';
+                    newStep.pixButtonText = '📋 Copiar Código';
+                    break;
+                case 'check_pix':
+                    newStep.deliveryText = '✅ Pagamento confirmado! Aqui está seu acesso:';
+                    newStep.deliveryButtonText = 'Acessar Conteúdo';
+                    newStep.deliveryButtonUrl = '';
+                    break;
+                default:
+                    break;
+            }
+            setFlowSteps(prev => [...prev, newStep]);
+        };
+        
+        const updateStep = (id, field, value) => {
+            setFlowSteps(prev => prev.map(step => step.id === id ? { ...step, [field]: value } : step));
+        };
+
+        const removeStep = (id) => {
+            setFlowSteps(prev => prev.filter(step => step.id !== id));
+        };
+        
+        const openMediaLibrary = (callback) => {
+            setMediaSelectionCallback(() => callback);
+            setIsMediaModalOpen(true);
+        };
+
+        const handleSelectMedia = (mediaItem) => {
+            if (mediaSelectionCallback) {
+                mediaSelectionCallback(mediaItem.file_id);
+            }
+            setIsMediaModalOpen(false);
+            setMediaSelectionCallback(null);
+        };
+        
         const handleSubmit = async (e) => {
             e.preventDefault();
-            if (selectedBotIds.length === 0 || !formData.initialText || !formData.ctaButtonText || !formData.externalLink) {
-                alert('Preencha todos os campos e selecione ao menos um bot.');
+            if (selectedBotIds.length === 0 || flowSteps.length === 0) {
+                alert('Selecione ao menos um bot e adicione uma ação ao fluxo.');
                 return;
             }
             setIsSending(true);
             try {
-                const response = await api.post('/bots/mass-send', { botIds: selectedBotIds, ...formData });
-                alert(response.data.message);
+                const response = await api.post('/bots/mass-send', { botIds: selectedBotIds, flowSteps });
+                alert(response.data.message || 'Disparo agendado com sucesso!');
+                setFlowSteps([]);
             } catch (error) {
                 alert('Erro ao enviar disparo: ' + (error.response?.data?.message || error.message));
             } finally {
                 setIsSending(false);
             }
         };
+
+        const renderStep = (step) => {
+            switch (step.type) {
+                case 'message':
+                    return (
+                        <div key={step.id} className="card" style={{marginBottom: '1rem'}}>
+                            <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>💬 Enviar Mensagem</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
+                            <div className="form-group"><label>Texto da Mensagem</label><textarea className="form-textarea" rows="3" value={step.text} onChange={e => updateStep(step.id, 'text', e.target.value)} placeholder="Use {{primeiro_nome}} ou {{nome_completo}}"/></div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group"><label>Texto do Botão (Opcional)</label><input type="text" className="form-input" value={step.buttonText} onChange={e => updateStep(step.id, 'buttonText', e.target.value)} /></div>
+                                <div className="form-group"><label>URL do Botão (Opcional)</label><input type="url" className="form-input" value={step.buttonUrl} onChange={e => updateStep(step.id, 'buttonUrl', e.target.value)} /></div>
+                            </div>
+                        </div>
+                    );
+                case 'image':
+                case 'video':
+                case 'audio':
+                     return (
+                        <div key={step.id} className="card" style={{marginBottom: '1rem'}}>
+                            <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>{step.type === 'image' ? '🖼️' : (step.type === 'video' ? '🎬' : '🎵')} Enviar {step.type.charAt(0).toUpperCase() + step.type.slice(1)}</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
+                            <div className="form-group"><label>File ID ou URL</label><input type="text" className="form-input" value={step.fileUrl} onChange={e => updateStep(step.id, 'fileUrl', e.target.value)} /></div>
+                            <button className="btn btn-secondary btn-sm" style={{marginBottom: '1rem'}} onClick={() => openMediaLibrary(fileId => updateStep(step.id, 'fileUrl', fileId))}>Selecionar da Biblioteca</button>
+                            <div className="form-group"><label>Legenda (Opcional)</label><textarea className="form-textarea" rows="2" value={step.caption} onChange={e => updateStep(step.id, 'caption', e.target.value)} /></div>
+                        </div>
+                    );
+                case 'pix':
+                    return (
+                        <div key={step.id} className="card" style={{marginBottom: '1rem'}}>
+                           <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>💳 Gerar PIX</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
+                           <div className="form-group"><label>Valor (em centavos)</label><input type="number" className="form-input" value={step.valueInCents} onChange={e => updateStep(step.id, 'valueInCents', e.target.value)} /></div>
+                           <div className="form-group"><label>Texto da Mensagem PIX</label><textarea className="form-textarea" rows="2" value={step.pixMessage} onChange={e => updateStep(step.id, 'pixMessage', e.target.value)} /></div>
+                           <div className="form-group"><label>Texto do Botão PIX</label><input type="text" className="form-input" value={step.pixButtonText} onChange={e => updateStep(step.id, 'pixButtonText', e.target.value)} /></div>
+                        </div>
+                    );
+                case 'check_pix':
+                     return (
+                        <div key={step.id} className="card" style={{marginBottom: '1rem', borderLeft: '4px solid var(--info-bg)'}}>
+                            <h4 style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'}}><span>🔍 Verificar PIX & Entregar</span> <button className="btn btn-danger btn-sm" onClick={() => removeStep(step.id)}>&times;</button></h4>
+                            <p style={{color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem'}}>Esta ação só será executada se o PIX gerado na etapa anterior for pago.</p>
+                            <div className="form-group"><label>Texto de Entrega (Pós-Pagamento)</label><textarea className="form-textarea" rows="3" value={step.deliveryText} onChange={e => updateStep(step.id, 'deliveryText', e.target.value)} /></div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group"><label>Texto do Botão de Entrega</label><input type="text" className="form-input" value={step.deliveryButtonText} onChange={e => updateStep(step.id, 'deliveryButtonText', e.target.value)} /></div>
+                                <div className="form-group"><label>URL do Botão de Entrega</label><input type="url" className="form-input" value={step.deliveryButtonUrl} onChange={e => updateStep(step.id, 'deliveryButtonUrl', e.target.value)} /></div>
+                            </div>
+                        </div>
+                    );
+                default:
+                    return null;
+            }
+        };
+
         return (
             <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
-                <div className="page-header"><h2>Disparo em Massa</h2></div>
-                <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group"><label>Selecione os Bots de Destino</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>{bots.map(bot => (<label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}><input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />{bot.bot_name}</label>))}</div></div>
-                        <div className="form-group"><label htmlFor="initialText">Texto da Mensagem</label><textarea id="initialText" name="initialText" className="form-textarea" rows="4" value={formData.initialText} onChange={handleInputChange} required /></div>
-                        <div className="form-group"><label htmlFor="imageUrl">URL da Imagem (Opcional)</label><input id="imageUrl" name="imageUrl" type="url" className="form-input" value={formData.imageUrl} onChange={handleInputChange} /></div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}><div className="form-group"><label htmlFor="ctaButtonText">Texto do Botão</label><input id="ctaButtonText" name="ctaButtonText" type="text" className="form-input" value={formData.ctaButtonText} onChange={handleInputChange} required /></div><div className="form-group"><label htmlFor="externalLink">URL do Botão</label><input id="externalLink" name="externalLink" type="url" className="form-input" value={formData.externalLink} onChange={handleInputChange} required /></div></div>
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isSending}>{isSending ? 'Enviando...' : 'Iniciar Disparo'}</button>
-                    </form>
+                {isMediaModalOpen && <MediaLibraryModal onSelect={handleSelectMedia} onClose={() => setIsMediaModalOpen(false)} />}
+                <div className="page-header"><h2>Disparo em Massa Inteligente</h2></div>
+                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <div className="card" style={{marginBottom: '2rem'}}>
+                         <div className="form-group">
+                            <label>1. Selecione os Bots de Destino</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                                {bots.map(bot => (
+                                    <label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />
+                                        {bot.bot_name}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="card" style={{marginBottom: '2rem'}}>
+                        <label>2. Monte o Fluxo de Disparo</label>
+                        <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Adicione as ações na ordem em que devem ser enviadas.</p>
+                        <div style={{display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem'}}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('message')}>+ Mensagem</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('image')}>+ Imagem</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('video')}>+ Vídeo</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('audio')}>+ Áudio</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('pix')}>+ Gerar PIX</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => addStep('check_pix')}>+ Verificar PIX</button>
+                        </div>
+
+                        <div>{flowSteps.map(renderStep)}</div>
+                        {flowSteps.length === 0 && <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>Nenhuma ação adicionada ainda.</p>}
+                    </div>
+                    
+                    <button onClick={handleSubmit} className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={isSending}>
+                        {isSending ? 'Enviando...' : 'Iniciar Disparo para ' + selectedBotIds.length + ' bot(s)'}
+                    </button>
                 </div>
             </div>
         );
