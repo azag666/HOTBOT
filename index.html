@@ -195,36 +195,64 @@
       const [isLoading, setIsLoading] = useState(true);
       const [currentPage, setCurrentPage] = useState('bots');
       const [editingFlow, setEditingFlow] = useState(null);
+      const [bots, setBots] = useState([]);
+
       useEffect(() => {
         const token = localStorage.getItem('authToken');
-        if (token) {
-          api.get('/dashboard/data')
-            .then(() => setIsAuthenticated(true))
-            .catch(() => localStorage.removeItem('authToken'))
-            .finally(() => setIsLoading(false));
-        } else {
-          setIsLoading(false);
-        }
-      }, []);
-      const handleLogin = (token) => { localStorage.setItem('authToken', token); setIsAuthenticated(true); };
-      const handleLogout = () => { localStorage.removeItem('authToken'); setIsAuthenticated(false); };
+        const fetchData = () => {
+            if (token) {
+                api.get('/dashboard/data')
+                    .then((res) => {
+                        setIsAuthenticated(true);
+                        setBots(res.data.bots || []);
+                    })
+                    .catch(() => {
+                        localStorage.removeItem('authToken');
+                        setIsAuthenticated(false);
+                    })
+                    .finally(() => setIsLoading(false));
+            } else {
+                setIsLoading(false);
+                setIsAuthenticated(false);
+            }
+        };
+        fetchData();
+      }, [isAuthenticated]);
+
+      const handleLogin = (token) => {
+          localStorage.setItem('authToken', token);
+          setIsAuthenticated(true);
+      };
+      
+      const handleLogout = () => {
+          localStorage.removeItem('authToken');
+          setIsAuthenticated(false);
+      };
+
+      const fetchBots = () => {
+        api.get('/dashboard/data').then(res => setBots(res.data.bots || [])).catch(() => {});
+      }
+
       const navigateToFlowEditor = (flow) => { setEditingFlow(flow); setCurrentPage('flow-editor'); };
+      
       if (isLoading) {
         return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}>A carregar...</div>;
       }
       if (!isAuthenticated) { 
         return <LoginScreen onLogin={handleLogin} />; 
       }
+      
       const PageComponent = {
-        bots: <BotsPage />,
-        flows: <FlowsListPage onEditFlow={navigateToFlowEditor} />,
-        chat: <LiveChatPage />,
-        contacts: <ContactsPage />,
+        bots: <BotsPage bots={bots} fetchBots={fetchBots} />,
+        flows: <FlowsListPage bots={bots} onEditFlow={navigateToFlowEditor} />,
+        chat: <LiveChatPage bots={bots} />,
+        contacts: <ContactsPage bots={bots} />,
         media: <MediaLibraryPage />,
-        disparos: <DisparosPage />,
+        disparos: <DisparosPage bots={bots} />,
         integrations: <SettingsPage />,
         'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
       }[currentPage];
+
       return (
         <div className="app-container">
           <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
@@ -256,11 +284,8 @@
         );
     }
     
-    function BotsPage() {
-      const [bots, setBots] = useState([]);
+    function BotsPage({ bots, fetchBots }) {
       const [newBotName, setNewBotName] = useState('');
-      const fetchBots = async () => { try { const res = await api.get('/dashboard/data'); setBots(res.data.bots || []); } catch (e) { console.error("Erro", e); } };
-      useEffect(() => { fetchBots(); }, []);
       const handleCreateBot = async (e) => { e.preventDefault(); if (!newBotName) return; try { await api.post('/bots', { bot_name: newBotName }); setNewBotName(''); fetchBots(); } catch (e) { alert('Erro: ' + (e.response?.data?.message || '')); } };
       const handleDeleteBot = async (id) => { if (confirm('Certeza?')) { try { await api.delete(`/bots/${id}`); fetchBots(); } catch (e) { alert('Erro'); } } };
       const handleUpdateToken = async (id) => { const token = prompt("Token:"); if (token) { try { await api.put(`/bots/${id}`, { bot_token: token }); alert("OK"); fetchBots(); } catch (e) { alert('Erro: ' + (e.response?.data?.message || '')); } } };
@@ -282,11 +307,16 @@
         );
     }
     
-    function FlowsListPage({ onEditFlow }) {
-        const [bots, setBots] = useState([]);
+    function FlowsListPage({ bots, onEditFlow }) {
         const [selectedBotId, setSelectedBotId] = useState('');
         const [flows, setFlows] = useState([]);
-        useEffect(() => { const fetch = async () => { try { const res = await api.get('/dashboard/data'); const d = res.data.bots || []; setBots(d); if(d.length > 0) setSelectedBotId(d[0].id); } catch(e){ console.error("Erro", e); } }; fetch(); }, []);
+        
+        useEffect(() => {
+            if (bots.length > 0 && !selectedBotId) {
+                setSelectedBotId(bots[0].id);
+            }
+        }, [bots]);
+
         const fetchFlows = useCallback(async () => { if (!selectedBotId) { setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
         useEffect(() => { fetchFlows(); }, [fetchFlows]);
         const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
@@ -312,12 +342,10 @@
         );
     }
 
-    function DisparosPage() {
-        const [bots, setBots] = useState([]);
+    function DisparosPage({ bots }) {
         const [selectedBotIds, setSelectedBotIds] = useState([]);
         const [formData, setFormData] = useState({ initialText: '', ctaButtonText: '', externalLink: '', imageUrl: '' });
         const [isSending, setIsSending] = useState(false);
-        useEffect(() => { api.get('/dashboard/data').then(res => setBots(res.data.bots || [])); }, []);
         const handleBotSelection = (botId) => { setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]); };
         const handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
         const handleSubmit = async (e) => {
@@ -390,8 +418,7 @@
         );
     }
     
-    function LiveChatPage() {
-        const [bots, setBots] = useState([]);
+    function LiveChatPage({ bots }) {
         const [selectedBotId, setSelectedBotId] = useState('');
         const [allFlows, setAllFlows] = useState([]);
         const [users, setUsers] = useState([]);
@@ -403,11 +430,19 @@
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const messagesEndRef = useRef(null);
         const fileInputRef = useRef(null);
-        useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
         useEffect(() => {
-            api.get('/dashboard/data').then(({data}) => { setBots(data.bots || []); if (data.bots?.[0]) setSelectedBotId(data.bots[0].id) });
+            if (bots.length > 0 && !selectedBotId) {
+                setSelectedBotId(bots[0].id);
+            }
+        }, [bots]);
+        
+        useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+        
+        useEffect(() => {
             api.get('/flows').then(({data}) => setAllFlows(data || []));
         }, []);
+
         const fetchUsers = useCallback(async () => { if (!selectedBotId) return; setUsers([]); setFilteredUsers([]); setMessages([]); setSelectedChat(null); try { const { data } = await api.get(`/chats/${selectedBotId}`); setUsers(data); setFilteredUsers(data); } catch (e) { console.error("Erro ao buscar usuários", e); } }, [selectedBotId]);
         useEffect(() => { fetchUsers(); }, [fetchUsers]);
         const fetchMessages = useCallback(async () => { if (!selectedBotId || !selectedChat?.chat_id) return; try { const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`); setMessages(data); } catch (e) { console.error("Erro ao buscar mensagens", e); setMessages([]); alert("Erro ao buscar mensagens."); } }, [selectedBotId, selectedChat]);
@@ -453,6 +488,7 @@
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
         const getMessageSender = (msg) => {
+            const selectedBot = bots.find(b => b.id == selectedBotId);
             switch(msg.sender_type) {
                 case 'user': return `${msg.first_name || ''} ${msg.last_name || ''}`.trim();
                 case 'operator': return 'Você (Operador)';
@@ -477,8 +513,7 @@
             return msg.message_text;
         };
         
-        const selectedBot = bots.find(b => b.id === selectedBotId);
-        const botFlows = allFlows.filter(f => f.bot_id === selectedBotId);
+        const botFlows = allFlows.filter(f => f.bot_id == selectedBotId);
 
         return (
             <div className="chat-page-layout">
@@ -636,18 +671,11 @@
         );
     }
     
-    function ContactsPage() {
-        const [bots, setBots] = useState([]);
+    function ContactsPage({ bots }) {
         const [sourceBotId, setSourceBotId] = useState('');
         const [destinationBotId, setDestinationBotId] = useState('');
         const [isLoading, setIsLoading] = useState(false);
         const [message, setMessage] = useState('');
-
-        useEffect(() => {
-            api.get('/dashboard/data').then(res => {
-                setBots(res.data.bots || []);
-            });
-        }, []);
 
         const handleImport = async () => {
             if (!sourceBotId || !destinationBotId) {
