@@ -504,11 +504,20 @@
     
     function ChatActionsPanel({ botId, chat, flows, onAction }) {
         const [pixValue, setPixValue] = useState(100);
+        const [pixMessage, setPixMessage] = useState('🚨 Meu amor, o código expira em 6 minutos.');
+        const [pixButtonText, setPixButtonText] = useState('📋 Copiar Código PIX');
         const [selectedFlow, setSelectedFlow] = useState('');
 
         const handleGeneratePix = async () => {
             try {
-                const res = await api.post('/chats/generate-pix', { botId, chatId: chat.chat_id, click_id: chat.click_id, valueInCents: pixValue });
+                const res = await api.post('/chats/generate-pix', {
+                    botId,
+                    chatId: chat.chat_id,
+                    click_id: chat.click_id,
+                    valueInCents: pixValue,
+                    pixMessage: pixMessage,
+                    pixButtonText: pixButtonText
+                });
                 alert(res.data.message);
                 onAction();
             } catch (e) {
@@ -547,7 +556,11 @@
                 <div className="form-group">
                     <label htmlFor="pixValue">Valor do PIX (em centavos)</label>
                     <input id="pixValue" type="number" className="form-input" value={pixValue} onChange={e => setPixValue(e.target.value)} />
-                    <button className="btn btn-secondary btn-sm" onClick={handleGeneratePix}>Gerar e Enviar PIX</button>
+                    <label htmlFor="pixMessage">Texto da Mensagem do PIX</label>
+                    <textarea id="pixMessage" className="form-textarea" rows="3" value={pixMessage} onChange={e => setPixMessage(e.target.value)} />
+                    <label htmlFor="pixButtonText">Texto do Botão PIX</label>
+                    <input id="pixButtonText" type="text" className="form-input" value={pixButtonText} onChange={e => setPixButtonText(e.target.value)} />
+                    <button className="btn btn-secondary btn-sm" onClick={handleGeneratePix} style={{marginTop: '1rem'}}>Gerar e Enviar PIX</button>
                     <button className="btn btn-secondary btn-sm" onClick={handleCheckPix}>Consultar Último PIX</button>
                 </div>
                 <div className="form-group">
