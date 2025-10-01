@@ -533,6 +533,9 @@
             try {
                 const res = await api.post('/chats/start-flow', { botId, chatId: chat.chat_id, flowId: selectedFlow });
                 alert(res.data.message);
+                setTimeout(() => {
+                    onAction();
+                }, 1500);
             } catch (e) {
                 alert('Erro: ' + (e.response?.data?.message || e.message));
             }
