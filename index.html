@@ -144,11 +144,6 @@
     .react-flow__node-action_city .node-header { background: #e0f2fe; }
     .react-flow__node-forward_flow .node-header { background: #eef2ff; }
     .handle-label { position: absolute; font-size: 11px; color: #6c757d; background: white; padding: 2px 6px; border-radius: 4px; bottom: -24px; border: 1px solid #e9ecef; }
-    .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; }
-    .tab-button { padding: 1rem 1.5rem; cursor: pointer; background: none; border: none; color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid transparent; }
-    .tab-button.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
@@ -176,7 +171,6 @@
     );
     
     const Icons = {
-        validator: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
         contacts: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
         attach: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>,
         bots: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M17 12v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>,
@@ -257,7 +251,6 @@
         flows: <FlowsListPage bots={bots} onEditFlow={navigateToFlowEditor} />,
         chat: <LiveChatPage bots={bots} />,
         contacts: <ContactsPage bots={bots} />,
-        validator: <ValidatorPage bots={bots} />,
         media: <MediaLibraryPage />,
         disparos: <DisparosPage bots={bots} />,
         integrations: <SettingsPage />,
@@ -277,7 +270,7 @@
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', contacts: 'Contatos', validator: 'Validar Contatos', media: 'Biblioteca', disparos: 'Disparos', integrations: 'Integrações' };
+        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', contacts: 'Contatos', media: 'Biblioteca', disparos: 'Disparos', integrations: 'Integrações' };
         return (
             <aside className="sidebar">
                 <div className="logo">H<span className="logo-text">otbot</span></div>
@@ -348,6 +341,44 @@
                         </div>
                     ))}
                     {flows.length === 0 && selectedBotId && <p style={{color: 'var(--text-secondary)'}}>Nenhum fluxo para este bot.</p>}
+                </div>
+            </div>
+        );
+    }
+
+    function DisparosPage({ bots }) {
+        const [selectedBotIds, setSelectedBotIds] = useState([]);
+        const [formData, setFormData] = useState({ initialText: '', ctaButtonText: '', externalLink: '', imageUrl: '' });
+        const [isSending, setIsSending] = useState(false);
+        const handleBotSelection = (botId) => { setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]); };
+        const handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (selectedBotIds.length === 0 || !formData.initialText || !formData.ctaButtonText || !formData.externalLink) {
+                alert('Preencha todos os campos e selecione ao menos um bot.');
+                return;
+            }
+            setIsSending(true);
+            try {
+                const response = await api.post('/bots/mass-send', { botIds: selectedBotIds, ...formData });
+                alert(response.data.message);
+            } catch (error) {
+                alert('Erro ao enviar disparo: ' + (error.response?.data?.message || error.message));
+            } finally {
+                setIsSending(false);
+            }
+        };
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header"><h2>Disparo em Massa</h2></div>
+                <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group"><label>Selecione os Bots de Destino</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>{bots.map(bot => (<label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}><input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />{bot.bot_name}</label>))}</div></div>
+                        <div className="form-group"><label htmlFor="initialText">Texto da Mensagem</label><textarea id="initialText" name="initialText" className="form-textarea" rows="4" value={formData.initialText} onChange={handleInputChange} required /></div>
+                        <div className="form-group"><label htmlFor="imageUrl">URL da Imagem (Opcional)</label><input id="imageUrl" name="imageUrl" type="url" className="form-input" value={formData.imageUrl} onChange={handleInputChange} /></div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}><div className="form-group"><label htmlFor="ctaButtonText">Texto do Botão</label><input id="ctaButtonText" name="ctaButtonText" type="text" className="form-input" value={formData.ctaButtonText} onChange={handleInputChange} required /></div><div className="form-group"><label htmlFor="externalLink">URL do Botão</label><input id="externalLink" name="externalLink" type="url" className="form-input" value={formData.externalLink} onChange={handleInputChange} required /></div></div>
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isSending}>{isSending ? 'Enviando...' : 'Iniciar Disparo'}</button>
+                    </form>
                 </div>
             </div>
         );
