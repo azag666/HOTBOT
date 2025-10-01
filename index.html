@@ -464,15 +464,24 @@
         const [isChecking, setIsChecking] = useState(null);
 
         const fetchHistory = useCallback(() => {
+            api.get('/disparos/history')
+                .then(res => setHistory(res.data))
+                .catch(() => console.error('Erro ao atualizar histórico.')); // Alterado para não mostrar alert em refresh
+        }, []);
+
+        useEffect(() => {
+            // Carga inicial com indicador
             setIsLoading(true);
             api.get('/disparos/history')
                 .then(res => setHistory(res.data))
                 .catch(() => alert('Erro ao carregar o histórico.'))
                 .finally(() => setIsLoading(false));
-        }, []);
+            
+            // Configura o intervalo para atualização silenciosa
+            const intervalId = setInterval(fetchHistory, 5000);
 
-        useEffect(() => {
-            fetchHistory();
+            // Limpa o intervalo quando o componente é desmontado
+            return () => clearInterval(intervalId);
         }, [fetchHistory]);
         
         const handleCheckConversions = async (historyId) => {
