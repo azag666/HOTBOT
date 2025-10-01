@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-t" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hotbot - Plataforma de Gestão Avançada</title>
 
@@ -194,6 +194,7 @@
       const [currentPage, setCurrentPage] = useState('bots');
       const [editingFlow, setEditingFlow] = useState(null);
       const [bots, setBots] = useState([]);
+      const [importingFlowLink, setImportingFlowLink] = useState(null);
 
       const fetchInitialData = useCallback(() => {
         const token = localStorage.getItem('authToken');
@@ -216,8 +217,14 @@
       }, []);
 
       useEffect(() => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const shareLink = urlParams.get('link');
+          if (shareLink) {
+              setImportingFlowLink(shareLink);
+              setCurrentPage('import-flow');
+          }
           fetchInitialData();
-      }, []);
+      }, [fetchInitialData]);
 
       const handleLogin = (token) => {
           localStorage.setItem('authToken', token);
@@ -253,7 +260,8 @@
         disparos: <DisparosPage bots={bots} />,
         'disparos-history': <DisparosHistoryPage />,
         integrations: <SettingsPage />,
-        'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />
+        'flow-editor': <FlowEditorPage flow={editingFlow} onBack={() => setCurrentPage('flows')} />,
+        'import-flow': <ImportFlowPage shareableLinkId={importingFlowLink} bots={bots} onImported={() => { setCurrentPage('flows'); window.history.pushState({}, '', window.location.pathname); }} />
       }[currentPage];
 
       return (
@@ -331,8 +339,32 @@
 
         const fetchFlows = useCallback(async () => { if (!selectedBotId) { setFlows([]); return; } try { const res = await api.get('/flows'); setFlows(res.data.filter(f => f.bot_id == selectedBotId)); } catch (e) { console.error("Erro", e); } }, [selectedBotId]);
         useEffect(() => { fetchFlows(); }, [fetchFlows]);
+
         const handleCreate = async () => { const n = prompt("Nome:"); if(n && selectedBotId) { try { await api.post('/flows', { name: n, botId: selectedBotId }); fetchFlows(); } catch (e) { alert("Erro"); } } };
         const handleDelete = async (id) => { if (confirm("Certeza?")) { try { await api.delete(`/flows/${id}`); fetchFlows(); } catch (e) { alert("Erro"); } } };
+
+        const handleShare = async (flow) => {
+            // NOTE: Replace YOUR_FRONTEND_URL with the actual URL of your application
+            const baseUrl = "YOUR_FRONTEND_URL";
+            const shareableLinkId = flow.shareable_link_id;
+    
+            if (shareableLinkId) {
+                prompt("Este fluxo já tem um link de compartilhamento. Copie o link abaixo:", `${baseUrl}/?link=${shareableLinkId}`);
+                return;
+            }
+            
+            if (confirm("Deseja gerar um link de compartilhamento para este fluxo?")) {
+                try {
+                    const response = await api.post(`/flows/${flow.id}/generate-share-link`);
+                    const newLink = response.data.shareable_link_id;
+                    prompt("Link de compartilhamento gerado com sucesso! Copie o link abaixo:", `${baseUrl}/?link=${newLink}`);
+                    fetchFlows();
+                } catch (error) {
+                    alert("Erro ao gerar o link de compartilhamento.");
+                }
+            }
+        };
+
         return (
             <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
                 <div className="page-header"><h2>Fluxos de Conversa</h2><button className="btn btn-primary" onClick={handleCreate} disabled={!selectedBotId}>+ Novo Fluxo</button></div>
@@ -344,7 +376,8 @@
                            <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flexGrow: 1}}>Modificado em: {new Date(flow.updated_at).toLocaleDateString()}</p>
                             <div className="bot-card-actions">
                                 <button className="btn btn-primary btn-sm" onClick={() => onEditFlow(flow)}>Editor</button>
-                                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(flow.id)}>Excluir</button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => handleShare(flow)}>Compartilhar</button>
+                                <button className="btn btn-danger btn-sm" style={{gridColumn: '1 / -1'}} onClick={() => handleDelete(flow.id)}>Excluir</button>
                             </div>
                         </div>
                     ))}
@@ -354,6 +387,54 @@
         );
     }
     
+    function ImportFlowPage({ shareableLinkId, bots, onImported }) {
+        const [selectedBotId, setSelectedBotId] = useState('');
+        const [isImporting, setIsImporting] = useState(false);
+
+        const handleImport = async () => {
+            if (!selectedBotId) {
+                alert('Por favor, selecione um bot para importar o fluxo.');
+                return;
+            }
+            setIsImporting(true);
+            try {
+                await api.post('/flows/import-from-link', {
+                    shareableLinkId: shareableLinkId,
+                    botId: selectedBotId
+                });
+                alert('Fluxo importado com sucesso!');
+                onImported();
+            } catch (error) {
+                alert('Erro ao importar o fluxo: ' + (error.response?.data?.message || 'Tente novamente.'));
+            } finally {
+                setIsImporting(false);
+            }
+        };
+
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header">
+                    <h2>Importar Fluxo</h2>
+                </div>
+                <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                        Você está prestes a importar um fluxo compartilhado. Selecione para qual dos seus bots você deseja adicioná-lo.
+                    </p>
+                    <div className="form-group">
+                        <label htmlFor="botSelectImport">Selecione o Bot de Destino</label>
+                        <select id="botSelectImport" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}>
+                            <option value="">-- Selecione um Bot --</option>
+                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                        </select>
+                    </div>
+                    <button className="btn btn-primary" onClick={handleImport} disabled={isImporting || !selectedBotId}>
+                        {isImporting ? 'Importando...' : 'Confirmar Importação'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     function DisparosPage({ bots }) {
         const [selectedBotIds, setSelectedBotIds] = useState([]);
         const [flowSteps, setFlowSteps] = useState([]);
