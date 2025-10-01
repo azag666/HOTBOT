@@ -171,6 +171,7 @@
     );
     
     const Icons = {
+        contacts: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
         attach: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>,
         bots: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M17 12v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>,
         flows: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h3"/><path d="M7 12h3"/><path d="M12 12h3"/><path d="M17 12h3"/><path d="M5 7v10"/><path d="M10 7v10"/><path d="M15 7v10"/><path d="M20 7v10"/><path d="M5 12a5 5 0 0 0 5 5"/><path d="M10 12a5 5 0 0 1 5 5"/><path d="M15 12a5 5 0 0 0 5-5"/></svg>,
@@ -218,6 +219,7 @@
         bots: <BotsPage />,
         flows: <FlowsListPage onEditFlow={navigateToFlowEditor} />,
         chat: <LiveChatPage />,
+        contacts: <ContactsPage />,
         media: <MediaLibraryPage />,
         disparos: <DisparosPage />,
         integrations: <SettingsPage />,
@@ -236,7 +238,7 @@
     }
     
     function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', media: 'Biblioteca', disparos: 'Disparos', integrations: 'Integrações' };
+        const pages = { bots: 'Bots', flows: 'Fluxos', chat: 'Chat ao Vivo', contacts: 'Contatos', media: 'Biblioteca', disparos: 'Disparos', integrations: 'Integrações' };
         return (
             <aside className="sidebar">
                 <div className="logo">H<span className="logo-text">otbot</span></div>
@@ -630,6 +632,74 @@
                     ))}
                 </div>
                 {media.length === 0 && !isUploading && <p style={{color: 'var(--text-secondary)'}}>A sua biblioteca está vazia.</p>}
+            </div>
+        );
+    }
+    
+    function ContactsPage() {
+        const [bots, setBots] = useState([]);
+        const [sourceBotId, setSourceBotId] = useState('');
+        const [destinationBotId, setDestinationBotId] = useState('');
+        const [isLoading, setIsLoading] = useState(false);
+        const [message, setMessage] = useState('');
+
+        useEffect(() => {
+            api.get('/dashboard/data').then(res => {
+                setBots(res.data.bots || []);
+            });
+        }, []);
+
+        const handleImport = async () => {
+            if (!sourceBotId || !destinationBotId) {
+                alert('Por favor, selecione o bot de origem e o de destino.');
+                return;
+            }
+            if (sourceBotId === destinationBotId) {
+                alert('O bot de origem e o de destino não podem ser os mesmos.');
+                return;
+            }
+            
+            setIsLoading(true);
+            setMessage('');
+
+            try {
+                const response = await api.post('/bots/import-contacts', { sourceBotId, destinationBotId });
+                setMessage(response.data.message);
+            } catch (error) {
+                setMessage('Erro: ' + (error.response?.data?.message || 'Falha ao importar contatos.'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        return (
+            <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
+                <div className="page-header">
+                    <h2>Importar Contatos</h2>
+                </div>
+                <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
+                        Selecione um bot de origem para copiar todos os contatos e um bot de destino para onde eles serão importados. Contatos que já existem no bot de destino não serão duplicados.
+                    </p>
+                    <div className="form-group">
+                        <label htmlFor="sourceBot">De (Origem)</label>
+                        <select id="sourceBot" className="form-select" value={sourceBotId} onChange={e => setSourceBotId(e.target.value)}>
+                            <option value="">-- Selecione o bot de origem --</option>
+                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="destinationBot">Para (Destino)</label>
+                        <select id="destinationBot" className="form-select" value={destinationBotId} onChange={e => setDestinationBotId(e.target.value)}>
+                            <option value="">-- Selecione o bot de destino --</option>
+                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                        </select>
+                    </div>
+                    <button className="btn btn-primary" onClick={handleImport} disabled={isLoading}>
+                        {isLoading ? 'Importando...' : 'Iniciar Importação'}
+                    </button>
+                    {message && <p style={{marginTop: '1.5rem', color: message.startsWith('Erro') ? 'var(--danger-text)' : 'var(--brand-primary)'}}>{message}</p>}
+                </div>
             </div>
         );
     }
