@@ -361,9 +361,27 @@
         const [selectedBotIds, setSelectedBotIds] = useState([]);
         const [flowSteps, setFlowSteps] = useState([]);
         const [campaignName, setCampaignName] = useState('');
+        const [contactCount, setContactCount] = useState(0);
         const [isSending, setIsSending] = useState(false);
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const [mediaSelectionCallback, setMediaSelectionCallback] = useState(null);
+
+        useEffect(() => {
+            const fetchCount = async () => {
+                if (selectedBotIds.length === 0) {
+                    setContactCount(0);
+                    return;
+                }
+                try {
+                    const response = await api.post('/bots/contacts-count', { botIds: selectedBotIds });
+                    setContactCount(response.data.count);
+                } catch (error) {
+                    console.error("Erro ao buscar contagem de contatos", error);
+                    setContactCount(0);
+                }
+            };
+            fetchCount();
+        }, [selectedBotIds]);
 
         const handleBotSelection = (botId) => {
             setSelectedBotIds(prev => prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]);
@@ -428,10 +446,12 @@
                     <form onSubmit={handleSubmit}>
                         <div className="card" style={{marginBottom: '2rem'}}>
                             <div className="form-group"><label>1. Nome da Campanha</label><input type="text" className="form-input" value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="Ex: Lançamento VIP" required /></div>
-                            <div className="form-group"><label>2. Selecione os Bots de Destino</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>{bots.map(bot => (<label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}><input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />{bot.bot_name}</label>))}</div></div>
+                            <div className="form-group"><label>2. Selecione os Bots de Destino</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>{bots.map(bot => (<label key={bot.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}><input type="checkbox" checked={selectedBotIds.includes(bot.id)} onChange={() => handleBotSelection(bot.id)} />{bot.bot_name}</label>))}</div>
+                             <p style={{marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>Total de contatos selecionados: <strong style={{color: 'var(--brand-primary)'}}>{contactCount}</strong></p>
+                            </div>
                         </div>
                         <div className="card" style={{marginBottom: '2rem'}}><label>3. Monte o Fluxo de Disparo</label><p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Adicione as ações na ordem em que devem ser enviadas.</p><div style={{display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem'}}><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('message')}>+ Mensagem</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('image')}>+ Imagem</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('video')}>+ Vídeo</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('audio')}>+ Áudio</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('pix')}>+ Gerar PIX</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => addStep('check_pix')}>+ Verificar PIX</button></div><div>{flowSteps.map(renderStep)}</div>{flowSteps.length === 0 && <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>Nenhuma ação adicionada ainda.</p>}</div>
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={isSending}>{isSending ? 'Enviando...' : 'Iniciar Disparo para ' + selectedBotIds.length + ' bot(s)'}</button>
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={isSending}>{isSending ? 'Agendando...' : `Disparar para ${contactCount} contato(s)`}</button>
                     </form>
                 </div>
             </div>
