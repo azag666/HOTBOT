@@ -143,8 +143,8 @@
     .react-flow__node-typing_action .node-header { background: #f0f9ff; }
     .react-flow__node-action_pix .node-header { background: #dcfce7; }
     .react-flow__node-action_check_pix .node-header { background: #ffedd5; }
-    .react-flow__node-group .node-header { background: #f4f4f5; cursor: move; }
-    .react-flow__node-group { background-color: rgba(244, 244, 245, 0.5); border-style: dashed; }
+    .react-flow__node-group { background-color: rgba(240, 240, 240, 0.25); border: 1px dashed #adb5bd; border-radius: 8px; }
+    .react-flow__node-group .react-flow__handle { display: none; }
     
     .handle-label { position: absolute; font-size: 11px; color: #6c757d; background: white; padding: 2px 6px; border-radius: 4px; bottom: -24px; border: 1px solid #e9ecef; }
     .variable-btn { background: #e9ecef; color: #495057; border: none; border-radius: 4px; padding: 2px 8px; margin-right: 5px; cursor: pointer; font-size: 0.8rem;}
@@ -1025,24 +1025,11 @@
             </div>
         );
     }
-
+    
     // ===== NOVOS COMPONENTES DO EDITOR DE FLUXO (COM GRUPOS) =====
     
     const initialNodes = [{ id: 'start', type: 'trigger', position: { x: 250, y: 50 }, data: {}, deletable: false }];
 
-    const GroupNode = ({ data }) => {
-        return (
-            <div className={`node-header react-flow__node-group`}>
-                <input 
-                    value={data.label}
-                    onChange={(e) => data.onChange(e.target.value)}
-                    className="form-input" 
-                    style={{background: 'transparent', border: 'none', color: '#333', fontWeight: 'bold'}}
-                />
-            </div>
-        );
-    };
-    
     const CustomNode = ({ id, type, data, isConnectable }) => {
         const nodeInfo = {
             trigger: { icon: '🚀', name: 'Gatilho Inicial', content: 'Início do fluxo com click_id.' },
@@ -1086,10 +1073,10 @@
             </>
         );
     };
+    
+    const nodeTypes = { trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, typing_action: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode, group: memo(CustomNode) };
 
-    const nodeTypes = { group: GroupNode, trigger: CustomNode, message: CustomNode, image: CustomNode, video: CustomNode, audio: CustomNode, delay: CustomNode, typing_action: CustomNode, action_pix: CustomNode, action_check_pix: CustomNode };
-
-    function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode }) {
+    function EditorPanel({ selectedNode, setNodes, setEdges, setSelectedNode, availableFlows }) {
         const [nodeData, setNodeData] = useState(selectedNode.data || {});
         const textAreaRef = useRef(null);
         
@@ -1166,14 +1153,28 @@
         const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
         const onPaneClick = useCallback(() => setSelectedNode(null), []);
         const onDragOver = useCallback((event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }, []);
-        const onDrop = useCallback((event) => { event.preventDefault(); const type = event.dataTransfer.getData('application/reactflow'); if (!type) return; const position = reactFlowInstance.project({ x: event.clientX, y: event.clientY }); const newNode = { id: `${type}-${Date.now()}`, type, position, data: {}, }; setNodes((nds) => nds.concat(newNode)); }, [reactFlowInstance] );
+        
+        const onDrop = useCallback((event) => {
+            event.preventDefault();
+            const type = event.dataTransfer.getData('application/reactflow');
+            if (!type) return;
+
+            const position = reactFlowInstance.project({ x: event.clientX, y: event.clientY });
+            const newNode = {
+                id: `${type}-${Date.now()}`,
+                type,
+                position,
+                data: {},
+            };
+            setNodes((nds) => nds.concat(newNode));
+        }, [reactFlowInstance, setNodes]);
         
         const addGroupNode = () => {
             const newNode = {
                 id: `group-${Date.now()}`,
                 type: 'group',
-                position: { x: Math.random() * 400, y: Math.random() * 400 },
-                style: { width: 400, height: 200 },
+                position: { x: 100, y: 100 },
+                style: { width: 400, height: 300, backgroundColor: 'rgba(240, 240, 240, 0.25)', border: '1px dashed #adb5bd' },
                 data: { label: 'Novo Grupo' },
             };
             setNodes(nds => nds.concat(newNode));
@@ -1203,7 +1204,21 @@
                     </div>
                     <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                         <ReactFlowProvider>
-                            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick} onInit={setReactFlowInstance} onDrop={onDrop} onDragOver={onDragOver} onNodesDelete={onNodesDelete} nodeTypes={nodeTypes} fitView>
+                            <ReactFlow
+                                nodes={nodes}
+                                edges={edges}
+                                onNodesChange={onNodesChange}
+                                onEdgesChange={onEdgesChange}
+                                onConnect={onConnect}
+                                onNodeClick={onNodeClick}
+                                onPaneClick={onPaneClick}
+                                onInit={setReactFlowInstance}
+                                onDrop={onDrop}
+                                onDragOver={onDragOver}
+                                onNodesDelete={onNodesDelete}
+                                nodeTypes={nodeTypes}
+                                fitView
+                            >
                                 <Background />
                                 <Controls />
                             </ReactFlow>
