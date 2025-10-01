@@ -584,6 +584,12 @@
         const [messages, setMessages] = useState([]);
         const [newMessage, setNewMessage] = useState('');
         const [searchTerm, setSearchTerm] = useState('');
+        
+        // NOVOS ESTADOS
+        const [showOnlyActive, setShowOnlyActive] = useState(false);
+        const [inactiveChatIds, setInactiveChatIds] = useState([]);
+        const [isValidating, setIsValidating] = useState(false);
+        
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
         const chatWindowRef = useRef(null);
         const fileInputRef = useRef(null);
@@ -645,8 +651,36 @@
         }, [fetchMessages, selectedChat]);
         
         useEffect(() => {
-            setFilteredUsers(users.filter(u => ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || (u.chat_id || '').toString().includes(searchTerm) || (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase())));
-        }, [searchTerm, users]);
+            const activeUsers = showOnlyActive 
+                ? users.filter(u => !inactiveChatIds.includes(u.chat_id))
+                : users;
+
+            setFilteredUsers(
+                activeUsers.filter(u => 
+                    ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    (u.chat_id || '').toString().includes(searchTerm) || 
+                    (u.click_id || '').toLowerCase().includes(searchTerm.toLowerCase())
+                )
+            );
+        }, [searchTerm, users, showOnlyActive, inactiveChatIds]);
+
+        const handleFilterActiveToggle = async () => {
+            const nextState = !showOnlyActive;
+            setShowOnlyActive(nextState);
+
+            if (nextState && selectedBotId) {
+                setIsValidating(true);
+                try {
+                    const { data } = await api.post('/bots/validate-contacts', { botId: selectedBotId });
+                    setInactiveChatIds(data.inactive_contacts.map(c => c.chat_id));
+                } catch (error) {
+                    console.error("Erro ao validar contatos", error);
+                    alert('Não foi possível validar os contatos.');
+                } finally {
+                    setIsValidating(false);
+                }
+            }
+        };
 
         useEffect(() => {
             if (selectedBotId) {
@@ -696,7 +730,27 @@
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
-                        <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => handleSelectChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
+                        <div className="conversations-panel">
+                            <div className="conversations-header">
+                                <input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                            </div>
+                            {/* NOVO ELEMENTO DE FILTRO */}
+                            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <label htmlFor="activeFilter" style={{ cursor: 'pointer', flexGrow: 1, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                    {isValidating ? 'Validando...' : 'Mostrar apenas ativos'}
+                                </label>
+                                <input 
+                                    type="checkbox" 
+                                    id="activeFilter" 
+                                    checked={showOnlyActive} 
+                                    onChange={handleFilterActiveToggle} 
+                                    disabled={isValidating}
+                                />
+                            </div>
+                            <div className="conversations-list">
+                                {filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => handleSelectChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}
+                            </div>
+                        </div>
                         <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list" ref={chatWindowRef}>{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}</div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*,audio/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()} title="Anexar do computador">{Icons.attach}</button><button type="button" className="attach-btn" onClick={() => setIsMediaModalOpen(true)} title="Selecionar da Biblioteca">{Icons.media}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">
                             {selectedChat ? (<>
