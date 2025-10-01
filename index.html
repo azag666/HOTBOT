@@ -585,20 +585,23 @@
         const [newMessage, setNewMessage] = useState('');
         const [searchTerm, setSearchTerm] = useState('');
         const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-        const messagesEndRef = useRef(null);
+        const chatWindowRef = useRef(null);
         const fileInputRef = useRef(null);
         
         useEffect(() => {
             if (bots.length > 0 && !selectedBotId) {
                 setSelectedBotId(bots[0].id);
             }
-        }, [bots, selectedBotId]);
+        }, [bots]);
         
-        useEffect(() => { 
-            if (messages.length) {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        useEffect(() => {
+            const chatWindow = chatWindowRef.current;
+            if (!chatWindow) return;
+            const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 150;
+            if (isScrolledToBottom) {
+                chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
             }
-        }, [messages.length]);
+        }, [messages]);
         
         useEffect(() => {
             api.get('/flows').then(({data}) => setAllFlows(data || []));
@@ -614,31 +617,30 @@
             }
         }, [selectedBotId]);
         
-        // Polling for user list
         useEffect(() => {
             if (!selectedBotId) return;
-            fetchUsers(); // Initial fetch
-            const intervalId = setInterval(fetchUsers, 10000); // Poll every 10 seconds
-            return () => clearInterval(intervalId); // Cleanup on component unmount or bot change
+            const intervalId = setInterval(fetchUsers, 10000);
+            return () => clearInterval(intervalId);
         }, [fetchUsers, selectedBotId]);
 
         const fetchMessages = useCallback(async () => {
              if (!selectedBotId || !selectedChat?.chat_id) return;
              try {
                  const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`);
-                 if (data.length !== messages.length) { // Only update if there's a change
-                     setMessages(data);
-                 }
+                 setMessages(prevMessages => {
+                     if (JSON.stringify(prevMessages) !== JSON.stringify(data)) {
+                         return data;
+                     }
+                     return prevMessages;
+                 });
              } catch (e) {
                  console.error("Erro ao buscar mensagens", e);
              }
-        }, [selectedBotId, selectedChat, messages.length]);
+        }, [selectedBotId, selectedChat?.chat_id]);
 
-        // Polling for messages in the selected chat
         useEffect(() => {
             if (!selectedChat) return;
-            fetchMessages(); // Initial fetch
-            const intervalId = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+            const intervalId = setInterval(fetchMessages, 5000);
             return () => clearInterval(intervalId);
         }, [fetchMessages, selectedChat]);
         
@@ -652,54 +654,21 @@
                 setFilteredUsers([]);
                 setMessages([]);
                 setSelectedChat(null);
+                fetchUsers();
             }
-        }, [selectedBotId]);
+        }, [selectedBotId, fetchUsers]);
 
         const handleSelectChat = useCallback((user) => {
             if (selectedChat?.chat_id !== user.chat_id) {
                 setSelectedChat(user);
-                setMessages([]); // Clear previous messages immediately
+                setMessages([]); 
+                fetchMessages();
             }
-        }, [selectedChat]);
+        }, [selectedChat, fetchMessages]);
 
-
-        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); await fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
-        const handleFileChange = (e) => {
-            const file = e.target.files[0];
-            if (!file || !selectedChat) return;
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                try {
-                    const base64Data = reader.result.split(',')[1];
-                    await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: file.type, fileName: file.name });
-                    fetchMessages();
-                } catch (error) { alert('Falha no upload: ' + (error.response?.data?.message || error.message)); }
-            };
-            e.target.value = null;
-        };
-        const handleSendFromLibrary = async (mediaItem) => {
-            if (!selectedChat) return;
-            setIsMediaModalOpen(false);
-            try {
-                const mediaUrl = `${API_BASE_URL}/media/preview/storage/${mediaItem.file_id}`;
-                const response = await axios.get(mediaUrl, { responseType: 'blob' });
-                const reader = new FileReader();
-                reader.readAsDataURL(response.data);
-                reader.onloadend = async () => {
-                    const base64Data = reader.result.split(',')[1];
-                    await api.post(`/chats/${selectedBotId}/send-media`, {
-                        chatId: selectedChat.chat_id,
-                        fileData: base64Data,
-                        fileType: response.data.type,
-                        fileName: mediaItem.file_name
-                    });
-                    fetchMessages();
-                };
-            } catch (error) {
-                alert('Falha ao enviar mídia da biblioteca: ' + (error.response?.data?.message || error.message));
-            }
-        };
+        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); await fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.');} };
+        const handleFileChange = (e) => { const file = e.target.files[0]; if (!file || !selectedChat) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = async () => { try { const base64Data = reader.result.split(',')[1]; await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: file.type, fileName: file.name }); fetchMessages(); } catch (error) { alert('Falha no upload: ' + (error.response?.data?.message || error.message)); }}; e.target.value = null; };
+        const handleSendFromLibrary = async (mediaItem) => { if (!selectedChat) return; setIsMediaModalOpen(false); try { const mediaUrl = `${API_BASE_URL}/media/preview/storage/${mediaItem.file_id}`; const response = await axios.get(mediaUrl, { responseType: 'blob' }); const reader = new FileReader(); reader.readAsDataURL(response.data); reader.onloadend = async () => { const base64Data = reader.result.split(',')[1]; await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: response.data.type, fileName: mediaItem.file_name }); fetchMessages(); }; } catch (error) { alert('Falha ao enviar mídia da biblioteca: ' + (error.response?.data?.message || error.message)); }};
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
         const getMessageSender = (msg) => {
@@ -716,16 +685,10 @@
             return 'message-attendant';
         };
         const renderMessageContent = (msg) => {
-            if (msg.media_type === 'photo') {
-                return <img src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" alt="Foto" onClick={() => window.open(`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`)} />;
-            }
-            if (msg.media_type === 'video') {
-                return <video src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" controls />;
-            }
-             if (msg.media_type === 'voice') {
-                return <audio src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-audio" controls />;
-            }
-            return msg.message_text;
+            if (msg.media_type === 'photo') { return <img src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" alt="Foto" onClick={() => window.open(`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`)} />; }
+            if (msg.media_type === 'video') { return <video src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" controls />; }
+            if (msg.media_type === 'voice') { return <audio src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-audio" controls />; }
+            return <div dangerouslySetInnerHTML={{ __html: msg.message_text.replace(/\n/g, '<br />') }} />;
         };
         
         const botFlows = allFlows.filter(f => f.bot_id == selectedBotId);
@@ -737,7 +700,7 @@
                     <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
                         <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => handleSelectChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
-                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*,audio/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()} title="Anexar do computador">{Icons.attach}</button><button type="button" className="attach-btn" onClick={() => setIsMediaModalOpen(true)} title="Selecionar da Biblioteca">{Icons.media}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
+                        <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list" ref={chatWindowRef}>{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}</div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*,audio/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()} title="Anexar do computador">{Icons.attach}</button><button type="button" className="attach-btn" onClick={() => setIsMediaModalOpen(true)} title="Selecionar da Biblioteca">{Icons.media}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">
                             {selectedChat ? (<>
                                 <h3>Detalhes</h3>
@@ -895,7 +858,7 @@
             if (bots.length > 0 && !selectedBotId) {
                 setSelectedBotId(bots[0].id);
             }
-        }, [bots, selectedBotId]);
+        }, [bots]);
 
         const handleValidate = async () => {
             if (!selectedBotId) {
