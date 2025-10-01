@@ -597,7 +597,10 @@
         useEffect(() => {
             const chatWindow = chatWindowRef.current;
             if (!chatWindow) return;
-            const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 150;
+
+            // Smart scroll: only scroll down if user is already near the bottom
+            const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 150; // 150px threshold
+
             if (isScrolledToBottom) {
                 chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
             }
@@ -619,7 +622,8 @@
         
         useEffect(() => {
             if (!selectedBotId) return;
-            const intervalId = setInterval(fetchUsers, 10000);
+            fetchUsers();
+            const intervalId = setInterval(fetchUsers, 10000); // Poll users every 10 seconds
             return () => clearInterval(intervalId);
         }, [fetchUsers, selectedBotId]);
 
@@ -627,12 +631,7 @@
              if (!selectedBotId || !selectedChat?.chat_id) return;
              try {
                  const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`);
-                 setMessages(prevMessages => {
-                     if (JSON.stringify(prevMessages) !== JSON.stringify(data)) {
-                         return data;
-                     }
-                     return prevMessages;
-                 });
+                 setMessages(prevMessages => JSON.stringify(prevMessages) === JSON.stringify(data) ? prevMessages : data);
              } catch (e) {
                  console.error("Erro ao buscar mensagens", e);
              }
@@ -640,7 +639,8 @@
 
         useEffect(() => {
             if (!selectedChat) return;
-            const intervalId = setInterval(fetchMessages, 5000);
+            fetchMessages(); 
+            const intervalId = setInterval(fetchMessages, 5000); // Poll messages every 5 seconds
             return () => clearInterval(intervalId);
         }, [fetchMessages, selectedChat]);
         
@@ -650,21 +650,16 @@
 
         useEffect(() => {
             if (selectedBotId) {
-                setUsers([]);
-                setFilteredUsers([]);
-                setMessages([]);
                 setSelectedChat(null);
-                fetchUsers();
             }
-        }, [selectedBotId, fetchUsers]);
+        }, [selectedBotId]);
 
         const handleSelectChat = useCallback((user) => {
             if (selectedChat?.chat_id !== user.chat_id) {
+                setMessages([]);
                 setSelectedChat(user);
-                setMessages([]); 
-                fetchMessages();
             }
-        }, [selectedChat, fetchMessages]);
+        }, [selectedChat]);
 
         const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); await fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.');} };
         const handleFileChange = (e) => { const file = e.target.files[0]; if (!file || !selectedChat) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = async () => { try { const base64Data = reader.result.split(',')[1]; await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: file.type, fileName: file.name }); fetchMessages(); } catch (error) { alert('Falha no upload: ' + (error.response?.data?.message || error.message)); }}; e.target.value = null; };
@@ -685,10 +680,12 @@
             return 'message-attendant';
         };
         const renderMessageContent = (msg) => {
+            const text = msg.message_text || '';
             if (msg.media_type === 'photo') { return <img src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" alt="Foto" onClick={() => window.open(`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`)} />; }
             if (msg.media_type === 'video') { return <video src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-media" controls />; }
             if (msg.media_type === 'voice') { return <audio src={`${API_BASE_URL}/media/preview/${msg.bot_id}/${msg.media_file_id}`} className="chat-audio" controls />; }
-            return <div dangerouslySetInnerHTML={{ __html: msg.message_text.replace(/\n/g, '<br />') }} />;
+            // Renderiza o texto como HTML para suportar tags como <pre> do PIX
+            return <div dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, '<br />') }} />;
         };
         
         const botFlows = allFlows.filter(f => f.bot_id == selectedBotId);
