@@ -698,7 +698,22 @@
 
         const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); await fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.');} };
         const handleFileChange = (e) => { const file = e.target.files[0]; if (!file || !selectedChat) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = async () => { try { const base64Data = reader.result.split(',')[1]; await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: file.type, fileName: file.name }); fetchMessages(); } catch (error) { alert('Falha no upload: ' + (error.response?.data?.message || error.message)); }}; e.target.value = null; };
-        const handleSendFromLibrary = async (mediaItem) => { if (!selectedChat) return; setIsMediaModalOpen(false); try { const mediaUrl = `${API_BASE_URL}/media/preview/storage/${mediaItem.file_id}`; const response = await axios.get(mediaUrl, { responseType: 'blob' }); const reader = new FileReader(); reader.readAsDataURL(response.data); reader.onloadend = async () => { const base64Data = reader.result.split(',')[1]; await api.post(`/chats/${selectedBotId}/send-media`, { chatId: selectedChat.chat_id, fileData: base64Data, fileType: response.data.type, fileName: mediaItem.file_name }); fetchMessages(); }; } catch (error) { alert('Falha ao enviar mídia da biblioteca: ' + (error.response?.data?.message || error.message)); }};
+        
+        const handleSendFromLibrary = async (mediaItem) => {
+            if (!selectedChat || !selectedBotId) return;
+            setIsMediaModalOpen(false);
+            try {
+                await api.post(`/chats/${selectedBotId}/send-library-media`, {
+                    chatId: selectedChat.chat_id,
+                    fileId: mediaItem.file_id,
+                    fileType: mediaItem.file_type
+                });
+                fetchMessages();
+            } catch (error) {
+                alert('Falha ao enviar mídia da biblioteca: ' + (error.response?.data?.message || error.message));
+            }
+        };
+
         const handleDelete = async (id) => { if (confirm(`Certeza?`)) { try { await api.delete(`/chats/${selectedBotId}/${id}`); fetchUsers(); if (selectedChat?.chat_id === id) { setSelectedChat(null); } } catch (e) { alert('Erro'); } } };
         const getDisplayName = (u) => { if (!u) return ''; if (u.click_id) { const cleanId = u.click_id.replace('/start ', ''); return cleanId.charAt(0).toUpperCase() + cleanId.slice(1); } return `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Desconhecido'; };
         const getMessageSender = (msg) => {
