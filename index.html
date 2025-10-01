@@ -626,7 +626,7 @@
              if (!selectedBotId || !selectedChat?.chat_id) return;
              try {
                  const { data } = await api.get(`/chats/${selectedBotId}/${selectedChat.chat_id}`);
-                 if (data.length > messages.length) {
+                 if (data.length !== messages.length) { // Only update if there's a change
                      setMessages(data);
                  }
              } catch (e) {
@@ -637,6 +637,7 @@
         // Polling for messages in the selected chat
         useEffect(() => {
             if (!selectedChat) return;
+            fetchMessages(); // Initial fetch
             const intervalId = setInterval(fetchMessages, 5000); // Poll every 5 seconds
             return () => clearInterval(intervalId);
         }, [fetchMessages, selectedChat]);
@@ -654,18 +655,15 @@
             }
         }, [selectedBotId]);
 
-        useEffect(() => {
-            if (selectedChat) {
-                const currentChatId = selectedChat.chat_id;
-                const updatedChat = users.find(u => u.chat_id === currentChatId);
-                setSelectedChat(updatedChat || null);
-                setMessages([]); // Clear previous messages
-                fetchMessages(); // Trigger initial message fetch for the new chat
+        const handleSelectChat = useCallback((user) => {
+            if (selectedChat?.chat_id !== user.chat_id) {
+                setSelectedChat(user);
+                setMessages([]); // Clear previous messages immediately
             }
-        }, [selectedChat?.chat_id, users]);
+        }, [selectedChat]);
 
 
-        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
+        const handleSend = async (e) => { e.preventDefault(); const txt = newMessage.trim(); if (!txt || !selectedChat) return; const opt = { message_id: Date.now(), first_name: "Você", sender_type: 'operator', message_text: txt, created_at: new Date().toISOString() }; setMessages(p => [...p, opt]); setNewMessage(''); try { await api.post(`/chats/${selectedBotId}/send-message`, { chatId: selectedChat.chat_id, text: txt }); await fetchMessages(); } catch (e) { console.error("Erro", e); alert('Erro ao enviar mensagem.'); setMessages(p => p.filter(m => m.message_id !== opt.message_id)); } };
         const handleFileChange = (e) => {
             const file = e.target.files[0];
             if (!file || !selectedChat) return;
@@ -709,7 +707,7 @@
             switch(msg.sender_type) {
                 case 'user': return `${msg.first_name || ''} ${msg.last_name || ''}`.trim();
                 case 'operator': return 'Você (Operador)';
-                case 'bot': return `${(selectedBot?.bot_name || 'Bot').replace('@', '')} (Fluxo/Disparo)`;
+                case 'bot': return `${(selectedBot?.bot_name || 'Bot').replace('@', '')} (Automação)`;
                 default: return 'Desconhecido';
             }
         };
@@ -738,7 +736,7 @@
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div className="page-header" style={{padding: '2rem 3rem 2rem 3rem', margin: 0}}><h2>Chat ao Vivo</h2><div className="form-group" style={{ marginBottom: 0, minWidth: '300px' }}><select id="botSelectChat" className="form-select" value={selectedBotId} onChange={e => setSelectedBotId(e.target.value)}><option value="">-- Selecione um Bot --</option>{bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}</select></div></div>
                     <div className="chat-container" style={{height: 'calc(100vh - 8.5rem)', margin: '0 3rem 2rem 3rem'}} >
-                        <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => setSelectedChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
+                        <div className="conversations-panel"><div className="conversations-header"><input type="text" className="form-input" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="conversations-list">{filteredUsers.map(u => (<div key={u.chat_id} className={`conversation-item ${selectedChat?.chat_id === u.chat_id ? 'active' : ''}`} onClick={() => handleSelectChat(u)}><div className="conversation-item-name">{getDisplayName(u)}</div><p className="conversation-item-preview">{u.message_text}</p></div>))}</div></div>
                         <div className="chat-window">{selectedChat ? (<><div className="chat-header"><h3>{getDisplayName(selectedChat)}</h3><button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedChat.chat_id)}>Excluir</button></div><div className="message-list">{messages.map((m, i) => (<div key={m.message_id || i} className={`message-bubble ${getMessageBubbleClass(m.sender_type)}`}><strong>{getMessageSender(m)}</strong>{renderMessageContent(m)}<div className="message-bubble-time">{new Date(m.created_at).toLocaleTimeString()}</div></div>))}<div ref={messagesEndRef} /></div><div className="chat-input-area"><form onSubmit={handleSend} className="chat-input-form"><input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*,video/*,audio/*" /><button type="button" className="attach-btn" onClick={() => fileInputRef.current.click()} title="Anexar do computador">{Icons.attach}</button><button type="button" className="attach-btn" onClick={() => setIsMediaModalOpen(true)} title="Selecionar da Biblioteca">{Icons.media}</button><input className="form-input chat-input" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Digite..." /><button className="btn btn-primary" type="submit">{Icons.send}</button></form></div></>) : (<div className="centered-placeholder">{Icons.chat}<h3>Selecione uma conversa</h3><p>Escolha um contato à esquerda.</p></div>)}</div>
                         <div className="contact-panel">
                             {selectedChat ? (<>
@@ -888,105 +886,98 @@
         );
     }
     
-    function ContactsPage({ bots: hotbotBots }) {
-        const [novaApiEmail, setNovaApiEmail] = useState('');
-        const [novaApiPassword, setNovaApiPassword] = useState('');
-        const [novaApiToken, setNovaApiToken] = useState(null);
-        const [novaApiBots, setNovaApiBots] = useState([]);
-        const [sourceBotId, setSourceBotId] = useState('');
-        const [destinationBotId, setDestinationBotId] = useState('');
+    function ContactsPage({ bots }) {
+        const [selectedBotId, setSelectedBotId] = useState('');
         const [isLoading, setIsLoading] = useState(false);
-        const [message, setMessage] = useState('');
+        const [inactiveContacts, setInactiveContacts] = useState(null);
+        
+        useEffect(() => {
+            if (bots.length > 0 && !selectedBotId) {
+                setSelectedBotId(bots[0].id);
+            }
+        }, [bots, selectedBotId]);
 
-        const handleConnect = async () => {
-            if (!novaApiEmail || !novaApiPassword) {
-                alert('Por favor, insira o e-mail e a senha da Nova API.');
+        const handleValidate = async () => {
+            if (!selectedBotId) {
+                alert('Por favor, selecione um bot.');
                 return;
             }
             setIsLoading(true);
-            setMessage('');
+            setInactiveContacts(null);
             try {
-                const response = await api.post('/novaapi/connect', { email: novaApiEmail, password: novaApiPassword });
-                setNovaApiToken(response.data.token);
-                setNovaApiBots(response.data.bots);
-                setMessage(response.data.message);
+                const response = await api.post('/bots/validate-contacts', { botId: selectedBotId });
+                setInactiveContacts(response.data.inactive_contacts);
+                 if (response.data.inactive_contacts.length === 0) {
+                    alert('Nenhum contato inativo encontrado!');
+                }
             } catch (error) {
-                setMessage('Erro: ' + (error.response?.data?.message || 'Falha ao conectar.'));
+                alert('Erro ao validar contatos: ' + (error.response?.data?.message || 'Falha na validação.'));
             } finally {
                 setIsLoading(false);
             }
         };
 
-        const handleImport = async () => {
-            if (!sourceBotId || !destinationBotId) {
-                alert('Por favor, selecione o bot de origem e o de destino.');
+        const handleRemove = async () => {
+            if (!inactiveContacts || inactiveContacts.length === 0) {
+                alert('Nenhum contato inativo para remover.');
                 return;
             }
-            
+            if (!confirm(`Tem certeza que deseja remover ${inactiveContacts.length} contato(s) inativo(s)? Esta ação não pode ser desfeita.`)) {
+                return;
+            }
             setIsLoading(true);
-            setMessage('');
-
             try {
-                const response = await api.post('/novaapi/import', { sourceBotId, destinationBotId, novaApiToken });
-                setMessage(response.data.message);
+                const chatIds = inactiveContacts.map(c => c.chat_id);
+                const response = await api.post('/bots/remove-contacts', { botId: selectedBotId, chatIds });
+                alert(response.data.message);
+                setInactiveContacts([]); // Clear the list after removal
             } catch (error) {
-                setMessage('Erro: ' + (error.response?.data?.message || 'Falha ao importar contatos.'));
+                alert('Erro ao remover contatos: ' + (error.response?.data?.message || 'Falha na remoção.'));
             } finally {
                 setIsLoading(false);
             }
         };
+
 
         return (
             <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
-                <div className="page-header">
-                    <h2>Importar Contatos da Nova API</h2>
-                </div>
-                <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    {!novaApiToken ? (
-                        <>
-                            <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
-                                Conecte-se à sua conta da Nova API para carregar seus bots e contatos.
-                            </p>
-                            <div className="form-group">
-                                <label htmlFor="novaApiEmail">Email (Nova API)</label>
-                                <input id="novaApiEmail" type="email" className="form-input" value={novaApiEmail} onChange={e => setNovaApiEmail(e.target.value)} />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="novaApiPassword">Senha (Nova API)</label>
-                                <input id="novaApiPassword" type="password" className="form-input" value={novaApiPassword} onChange={e => setNovaApiPassword(e.target.value)} />
-                            </div>
-                            <button className="btn btn-primary" onClick={handleConnect} disabled={isLoading}>
-                                {isLoading ? 'Conectando...' : 'Conectar e Carregar Bots'}
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                           <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
-                                Selecione um bot de origem (da Nova API) e um bot de destino (do HotBot) para importar os contatos.
-                            </p>
-                            <div className="form-group">
-                                <label htmlFor="sourceBot">De (Origem - Nova API)</label>
-                                <select id="sourceBot" className="form-select" value={sourceBotId} onChange={e => setSourceBotId(e.target.value)}>
-                                    <option value="">-- Selecione o bot de origem --</option>
-                                    {novaApiBots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="destinationBot">Para (Destino - HotBot)</label>
-                                <select id="destinationBot" className="form-select" value={destinationBotId} onChange={e => setDestinationBotId(e.target.value)}>
-                                    <option value="">-- Selecione o bot de destino --</option>
-                                    {hotbotBots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
-                                </select>
-                            </div>
-                            <button className="btn btn-primary" onClick={handleImport} disabled={isLoading}>
-                                {isLoading ? 'Importando...' : 'Iniciar Importação'}
-                            </button>
-                             <button className="btn btn-secondary" onClick={() => setNovaApiToken(null)} style={{marginLeft: '1rem'}}>
-                                Desconectar
-                            </button>
-                        </>
+                <div className="page-header"><h2>Higienização de Contatos</h2></div>
+                <div className="card" style={{ maxWidth: '700px', margin: '0 auto' }}>
+                    <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
+                        Use esta ferramenta para verificar quais contatos bloquearam seu bot e removê-los da sua base. Isso garante que seus disparos tenham uma melhor entrega e performance.
+                    </p>
+                    <div className="form-group" style={{maxWidth: '400px', marginBottom: '2rem'}}>
+                        <label htmlFor="botSelect">Selecione um Bot</label>
+                        <select id="botSelect" className="form-select" value={selectedBotId} onChange={e => { setSelectedBotId(e.target.value); setInactiveContacts(null); }}>
+                            <option value="">-- Selecione --</option>
+                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                        </select>
+                    </div>
+                    <button className="btn btn-primary" onClick={handleValidate} disabled={isLoading || !selectedBotId}>
+                        {isLoading ? 'Validando...' : 'Validar Contatos Ativos'}
+                    </button>
+                    
+                    {inactiveContacts && (
+                        <div style={{marginTop: '2rem'}}>
+                            <h3>Contatos Inativos Encontrados: {inactiveContacts.length}</h3>
+                            {inactiveContacts.length > 0 ? (
+                                <>
+                                    <ul style={{listStyle: 'none', maxHeight: '300px', overflowY: 'auto', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', margin: '1rem 0'}}>
+                                        {inactiveContacts.map(c => (
+                                            <li key={c.chat_id} style={{padding: '0.5rem', borderBottom: '1px solid var(--border-color)'}}>
+                                                {c.first_name || ''} {c.last_name || ''} ({c.username ? `@${c.username}`: c.chat_id})
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <button className="btn btn-danger" onClick={handleRemove} disabled={isLoading}>
+                                        {isLoading ? 'Removendo...' : `Remover ${inactiveContacts.length} Contato(s)`}
+                                    </button>
+                                </>
+                            ) : (
+                                <p style={{color: 'var(--text-secondary)', marginTop: '1rem'}}>Ótima notícia! Nenhum contato inativo foi encontrado para este bot.</p>
+                            )}
+                        </div>
                     )}
-                     {message && <p style={{marginTop: '1.5rem', color: message.startsWith('Erro') ? 'var(--danger-text)' : 'var(--brand-primary)'}}>{message}</p>}
                 </div>
             </div>
         );
