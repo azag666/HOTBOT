@@ -440,7 +440,7 @@
                 setSelectedBotId(bots[0].id);
             }
         }, [bots, selectedBotId]);
-
+        
         useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
         
         useEffect(() => {
@@ -675,19 +675,38 @@
         );
     }
     
-    function ContactsPage({ bots }) {
+    function ContactsPage({ bots: hotbotBots }) {
+        const [novaApiEmail, setNovaApiEmail] = useState('');
+        const [novaApiPassword, setNovaApiPassword] = useState('');
+        const [novaApiToken, setNovaApiToken] = useState(null);
+        const [novaApiBots, setNovaApiBots] = useState([]);
         const [sourceBotId, setSourceBotId] = useState('');
         const [destinationBotId, setDestinationBotId] = useState('');
         const [isLoading, setIsLoading] = useState(false);
         const [message, setMessage] = useState('');
 
+        const handleConnect = async () => {
+            if (!novaApiEmail || !novaApiPassword) {
+                alert('Por favor, insira o e-mail e a senha da Nova API.');
+                return;
+            }
+            setIsLoading(true);
+            setMessage('');
+            try {
+                const response = await api.post('/novaapi/connect', { email: novaApiEmail, password: novaApiPassword });
+                setNovaApiToken(response.data.token);
+                setNovaApiBots(response.data.bots);
+                setMessage(response.data.message);
+            } catch (error) {
+                setMessage('Erro: ' + (error.response?.data?.message || 'Falha ao conectar.'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         const handleImport = async () => {
             if (!sourceBotId || !destinationBotId) {
                 alert('Por favor, selecione o bot de origem e o de destino.');
-                return;
-            }
-            if (sourceBotId === destinationBotId) {
-                alert('O bot de origem e o de destino não podem ser os mesmos.');
                 return;
             }
             
@@ -695,7 +714,7 @@
             setMessage('');
 
             try {
-                const response = await api.post('/bots/import-contacts', { sourceBotId, destinationBotId });
+                const response = await api.post('/novaapi/import', { sourceBotId, destinationBotId, novaApiToken });
                 setMessage(response.data.message);
             } catch (error) {
                 setMessage('Erro: ' + (error.response?.data?.message || 'Falha ao importar contatos.'));
@@ -707,30 +726,54 @@
         return (
             <div style={{ padding: '2rem 3rem', height: '100%', overflowY: 'auto' }}>
                 <div className="page-header">
-                    <h2>Importar Contatos</h2>
+                    <h2>Importar Contatos da Nova API</h2>
                 </div>
                 <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
-                        Selecione um bot de origem para copiar todos os contatos e um bot de destino para onde eles serão importados. Contatos que já existem no bot de destino não serão duplicados.
-                    </p>
-                    <div className="form-group">
-                        <label htmlFor="sourceBot">De (Origem)</label>
-                        <select id="sourceBot" className="form-select" value={sourceBotId} onChange={e => setSourceBotId(e.target.value)}>
-                            <option value="">-- Selecione o bot de origem --</option>
-                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="destinationBot">Para (Destino)</label>
-                        <select id="destinationBot" className="form-select" value={destinationBotId} onChange={e => setDestinationBotId(e.target.value)}>
-                            <option value="">-- Selecione o bot de destino --</option>
-                            {bots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
-                        </select>
-                    </div>
-                    <button className="btn btn-primary" onClick={handleImport} disabled={isLoading}>
-                        {isLoading ? 'Importando...' : 'Iniciar Importação'}
-                    </button>
-                    {message && <p style={{marginTop: '1.5rem', color: message.startsWith('Erro') ? 'var(--danger-text)' : 'var(--brand-primary)'}}>{message}</p>}
+                    {!novaApiToken ? (
+                        <>
+                            <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
+                                Conecte-se à sua conta da Nova API para carregar seus bots e contatos.
+                            </p>
+                            <div className="form-group">
+                                <label htmlFor="novaApiEmail">Email (Nova API)</label>
+                                <input id="novaApiEmail" type="email" className="form-input" value={novaApiEmail} onChange={e => setNovaApiEmail(e.target.value)} />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="novaApiPassword">Senha (Nova API)</label>
+                                <input id="novaApiPassword" type="password" className="form-input" value={novaApiPassword} onChange={e => setNovaApiPassword(e.target.value)} />
+                            </div>
+                            <button className="btn btn-primary" onClick={handleConnect} disabled={isLoading}>
+                                {isLoading ? 'Conectando...' : 'Conectar e Carregar Bots'}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                           <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem'}}>
+                                Selecione um bot de origem (da Nova API) e um bot de destino (do HotBot) para importar os contatos.
+                            </p>
+                            <div className="form-group">
+                                <label htmlFor="sourceBot">De (Origem - Nova API)</label>
+                                <select id="sourceBot" className="form-select" value={sourceBotId} onChange={e => setSourceBotId(e.target.value)}>
+                                    <option value="">-- Selecione o bot de origem --</option>
+                                    {novaApiBots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="destinationBot">Para (Destino - HotBot)</label>
+                                <select id="destinationBot" className="form-select" value={destinationBotId} onChange={e => setDestinationBotId(e.target.value)}>
+                                    <option value="">-- Selecione o bot de destino --</option>
+                                    {hotbotBots.map(b => <option key={b.id} value={b.id}>{b.bot_name}</option>)}
+                                </select>
+                            </div>
+                            <button className="btn btn-primary" onClick={handleImport} disabled={isLoading}>
+                                {isLoading ? 'Importando...' : 'Iniciar Importação'}
+                            </button>
+                             <button className="btn btn-secondary" onClick={() => setNovaApiToken(null)} style={{marginLeft: '1rem'}}>
+                                Desconectar
+                            </button>
+                        </>
+                    )}
+                     {message && <p style={{marginTop: '1.5rem', color: message.startsWith('Erro') ? 'var(--danger-text)' : 'var(--brand-primary)'}}>{message}</p>}
                 </div>
             </div>
         );
